@@ -1,0 +1,8 @@
+.DS_Store
+node_modules
+tmp/*
+.npm-debug.log
+public/assets
+.vagrant
+.env
+/id_deploy
