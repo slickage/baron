@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <title>Basic Pay</title>
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+
+    <!-- header -->
+    <div class="row underline">
+      <div class="col-md-12">
+        <h1>Basic Pay</h1>
+      </div>
+    </div>
+
+  <!-- Payment Info -->
+  <div class="row spacer helvetica-text">
+
+    <!-- QR Code for xsmall screens -->
+    <div class="col-md-5 col-sm-6 center-margin visible-xs no-padding">
+      <a href="#BitcoinAddressLink">
+        <img src="/images/qrcode.png" alt="" title="" />
+      </a>
+      <br />
+    </div>
+
+    <!-- Data for xsmall screens -->
+    <div class="col-md-7 col-sm-6 col-lg-8 center-margin visible-xs no-padding">
+        <span class="status-pending">Pending Payment</span>
+        <br />
+        1.5314 BTC
+        <a href="#RefreshLink">
+          <img class="right-icon" src="/images/refresh.png" />
+        </a>
+        <br />
+        <span class="green">3</span> Confirmations
+        <a href="#BlockChainLink">
+          <img class="right-icon" src="/images/info.png" />
+        </a>
+        <input type="text" class="form-control address-spacer" value="1BBvAbwdsMuYW9BJA69WbRiV6NamW2hCCu" />
+        <span class="red">This address is only valid for the next 15 minutes.</span>
+    </div>
+
+    <!-- Data for non mobile -->
+    <div class="col-md-7 col-sm-6 col-lg-8 hidden-xs">
+        <span class="status-pending">Pending Payment</span>
+        <div class="invoice-data-width">
+          1.5314 BTC
+          <a href="#RefreshLink">
+            <img class="right-icon" src="/images/refresh.png" />
+          </a>
+          <br />
+          <span class="green">3</span> Confirmations
+          <a href="#BlockChainLink">
+            <img class="right-icon" src="/images/info.png" />
+          </a>
+          <input type="text" class="form-control address-spacer" value="1BBvAbwdsMuYW9BJA69WbRiV6NamW2hCCu" />
+        </div>
+        <span class="red">This address is only valid for the next 15 minutes.</span>
+    </div>
+
+    <!-- QR Code for non mobile -->
+    <div class="col-md-5 col-sm-6 col-lg-4 right hidden-xs">
+      <a href="#BitcoinAddressLink">
+        <img src="/images/qrcode.png" alt="" title="" />
+      </a>
+    </div>
+
+  </div>
+</body>
+</html>
