@@ -1,31 +1,49 @@
 var config = require('./config');
 var path = require('path');
 var payments = require('./payments');
+var helper = require('./helper');
 var express = require('express');
 var qr = require('qr-image');
+var btcAddr = require('bitcoin-address');
 var app = express();
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/pay', function(req, res) {
-  var amount = req.query.amount;
+  var amount = Number(req.query.amount);
+  if (!helper.isNumber(amount)) {
+    res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount entered was not a number.' });
+  }
+
+  var amountDecimals = helper.decimalPlaces(amount);
+  if (amountDecimals > 8) {
+    res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount must have 8 or less decimal places.' });
+  }
+
   payments.getPaymentAddress(function(err, address) {
-    res.render('pay', {
-      address: address,
-      amount: amount,
-      qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
-    });
-  })
+    // remove testnet parameter for production
+    if (btcAddr.validate(address, 'testnet')) {
+      res.render('pay', {
+        address: address,
+        amount: amount.toFixed(8),
+        qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
+      });
+    }
+    else {
+      res.render('error', { errorMsg: 'Address is invalid: The bitcoin address entered is invalid.' });
+    }
+  });
 });
 
 app.get('/paymentqr', function(req, res) {
   var address = req.query.address;
   if (!address) {
-    res.send('No address defined.');
+    res.render('error', { errorMsg: 'Address is invalid: No address defined.' });
   }
-  var amount = req.query.amount || undefined;
-  var code = qr.image('bitcoin:' + address + '&amount=' + amount, { type: 'png' });
+  var amount = Number(req.query.amount) || undefined;
+  var code = qr.image('bitcoin:' + address + '&amount=' + amount, { type: 'svg' });
+  res.type('svg');
   code.pipe(res);
 });
 

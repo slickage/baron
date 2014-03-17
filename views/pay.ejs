@@ -20,8 +20,8 @@
 
     <!-- QR Code for xsmall screens -->
     <div class="col-md-5 col-sm-6 center-margin visible-xs no-padding">
-      <a href="#BitcoinAddressLink">
-        <img src="<%= qrImageUrl %>" alt="" title="" />
+      <a href="bitcoin:<%= address %>?amount=<%= amount %>">
+        <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
       </a>
       <br />
     </div>
@@ -63,8 +63,8 @@
 
     <!-- QR Code for non mobile -->
     <div class="col-md-5 col-sm-6 col-lg-4 right hidden-xs">
-      <a href="#BitcoinAddressLink">
-        <img src="<%= qrImageUrl %>" alt="" title="" />
+      <a href="bitcoin:<%= address %>?amount=<%= amount %>">
+        <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
       </a>
     </div>
 
