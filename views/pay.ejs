@@ -30,7 +30,11 @@
     <div class="col-md-7 col-sm-6 col-lg-8 center-margin visible-xs no-padding">
         <span class="status-pending">Pending Payment</span>
         <br />
-        <%= amount %> BTC
+        <% if (amountLastFour === '0000') { %>
+        <%= amountFirstFour %> BTC
+        <% } else { %>
+        <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+        <% } %>
         <a href="#RefreshLink">
           <img class="right-icon" src="/images/refresh.png" />
         </a>
@@ -47,7 +51,11 @@
     <div class="col-md-7 col-sm-6 col-lg-8 hidden-xs">
         <span class="status-pending">Pending Payment</span>
         <div class="invoice-data-width">
-          <%= amount %> BTC
+          <% if (amountLastFour === '0000') { %>
+          <%= amountFirstFour %> BTC
+          <% } else { %>
+          <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+          <% } %>
           <a href="#RefreshLink">
             <img class="right-icon" src="/images/refresh.png" />
           </a>

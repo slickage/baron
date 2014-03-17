@@ -37,6 +37,10 @@ body {
   color: #41a323;
 }
 
+.gray {
+  color: #bbb;
+}
+
 .spacer {
   margin-top:30px;
 }

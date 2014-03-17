@@ -20,13 +20,14 @@ app.get('/pay', function(req, res) {
   if (amountDecimals > 8) {
     res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount must have 8 or less decimal places.' });
   }
-
   payments.getPaymentAddress(function(err, address) {
     // remove testnet parameter for production
     if (btcAddr.validate(address, 'testnet')) {
       res.render('pay', {
         address: address,
-        amount: amount.toFixed(8),
+        amount: amount,
+        amountFirstFour: helper.toFourDecimals(amount.toFixed(8)),
+        amountLastFour: helper.getLastFourDecimals(amount.toFixed(8)),
         qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
       });
     }

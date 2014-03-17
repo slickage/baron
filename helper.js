@@ -5,5 +5,12 @@ module.exports = {
  	},
  	isNumber: function(number) {
  		    return !isNaN(parseFloat(number)) && isFinite(number); 
- 	}
+ 	},
+  toFourDecimals: function(number) {
+  	var numberArr = number.split('.');
+    return numberArr[0] + '.' + numberArr[1].substring(0, 4);
+  },
+  getLastFourDecimals: function(number) {
+    return number.split('.')[1].substring(4, 8);
+  } 
 };
