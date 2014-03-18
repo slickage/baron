@@ -1,3 +1,5 @@
+var request = require('request');
+
 module.exports = {
   decimalPlaces: function(number) {
     if(Math.floor(number) === number) return 0;
@@ -12,5 +14,8 @@ module.exports = {
   },
   getLastFourDecimals: function(number) {
     return number.split('.')[1].substring(4, 8);
-  } 
+  }, 
+  convertToBtc: function(callback) {
+  		request('https://www.bitstamp.net/api/ticker/', callback);
+  }
 };

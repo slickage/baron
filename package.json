@@ -21,6 +21,7 @@
     "bitcoin": "^2.1.0",
     "ejs": "^0.8.5",
     "qr-image": "^1.1.0",
-    "bitcoin-address": "^0.2.0"
+    "bitcoin-address": "^0.2.0",
+    "request": "^2.34.0"
   }
 }

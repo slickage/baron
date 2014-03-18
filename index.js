@@ -3,6 +3,7 @@ var path = require('path');
 var payments = require('./payments');
 var helper = require('./helper');
 var express = require('express');
+var request = require('request');
 var qr = require('qr-image');
 var btcAddr = require('bitcoin-address');
 var app = express();
@@ -12,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/pay', function(req, res) {
   var amount = Number(req.query.amount);
+  var currency = req.query.currency;
   if (!helper.isNumber(amount)) {
     res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount entered was not a number.' });
   }
@@ -20,21 +22,37 @@ app.get('/pay', function(req, res) {
   if (amountDecimals > 8) {
     res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount must have 8 or less decimal places.' });
   }
-  payments.getPaymentAddress(function(err, address) {
-    // remove testnet parameter for production
-    if (btcAddr.validate(address, 'testnet')) {
-      res.render('pay', {
-        address: address,
-        amount: amount,
-        amountFirstFour: helper.toFourDecimals(amount.toFixed(8)),
-        amountLastFour: helper.getLastFourDecimals(amount.toFixed(8)),
-        qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
-      });
+
+  // Change this later to query from db not directly from api
+  helper.convertToBtc(function(error, response, body) {
+    // calculate amount
+    if (!error && response.statusCode == 200) {
+      var rate = Number(JSON.parse(body).vwap);
+      if (currency === 'USD') {
+        console.log(amount + '/' + rate + '=' + amount/rate);
+        amount = amount/rate;
+      }
     }
-    else {
-      res.render('error', { errorMsg: 'Address is invalid: The bitcoin address entered is invalid.' });
-    }
+
+    payments.getPaymentAddress(function(err, address) {
+      // remove testnet parameter for production
+      if (btcAddr.validate(address, 'testnet')) {
+        res.render('pay', {
+          address: address,
+          amount: amount,
+          currency: currency,
+          amountFirstFour: helper.toFourDecimals(amount.toFixed(8)),
+          amountLastFour: helper.getLastFourDecimals(amount.toFixed(8)),
+          qrImageUrl: '/paymentqr?address=' + address + '&amount=' + helper.convertToBtc(amount, currency)
+        });
+      }
+      else {
+        res.render('error', { errorMsg: 'Address is invalid: The bitcoin address entered is invalid.' });
+      }
+    });    
+
   });
+
 });
 
 app.get('/paymentqr', function(req, res) {
