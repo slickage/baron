@@ -66,5 +66,9 @@ app.get('/paymentqr', function(req, res) {
   code.pipe(res);
 });
 
+app.get('/invoices/:invoiceId', function(req, res) {
+  res.send(req.params.invoiceId);
+});
+
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);
