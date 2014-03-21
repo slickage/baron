@@ -26,8 +26,20 @@
       <% }); %>
       <br />
       Total Amount <%= totalAmount %>
+      <form method="POST" action="/invoices/<%= _id %>">
+      <div class="form-group">
+        <div class="input-group">
+          <div class="input-group-btn">
+          <button type="submit" class="btn btn-lg btn-default">Pay Now</button>
+          </div>
+          <select name="currency" class="form-control currency-dropdown">
+            <option value="BTC" selected="selected">BTC</option>
+            <option value="USD">USD</option>
+          </select>
+        </div>
+      </div>
+    </form>
     </div>
-
   </div>
 </body>
 </html>

@@ -75,3 +75,8 @@ body {
   max-width:400px;
   min-width:320px;
 }
+
+.currency-dropdown {
+  width:75px !important; 
+  height:45px !important;
+}
