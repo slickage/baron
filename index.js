@@ -2,6 +2,7 @@ var config = require('./config');
 var path = require('path');
 var payments = require('./payments');
 var helper = require('./helper');
+var db = require('./db');
 var express = require('express');
 var request = require('request');
 var qr = require('qr-image');
@@ -67,7 +68,26 @@ app.get('/paymentqr', function(req, res) {
 });
 
 app.get('/invoices/:invoiceId', function(req, res) {
-  res.send(req.params.invoiceId);
+  db.findInvoice(req.params.invoiceId, function(err, results) {
+    if (!err) {
+      res.json(results);
+    }
+    else {
+      res.write(err);
+    }
+  });
+});
+
+app.post('/invoices', function(req, res) {
+  var newInvoice = req.body;
+  db.createInvoice(newInvoice, function(err, doc) {
+    if(err) {
+      res.end();
+    }
+    else {
+      res.end();
+    }
+  });
 });
 
 app.listen(config.port);
