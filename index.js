@@ -68,12 +68,13 @@ app.get('/paymentqr', function(req, res) {
 });
 
 app.get('/invoices/:invoiceId', function(req, res) {
-  db.findInvoice(req.params.invoiceId, function(err, results) {
-    if (!err) {
-      res.json(results);
+  db.findInvoice(req.params.invoiceId, function(err, invoiceData) {
+    if (err) {
+      res.write(err.message);
+      res.end();
     }
     else {
-      res.write(err);
+      res.render('invoice', invoiceData);
     }
   });
 });
@@ -82,9 +83,12 @@ app.post('/invoices', function(req, res) {
   var newInvoice = req.body;
   db.createInvoice(newInvoice, function(err, doc) {
     if(err) {
+      res.write(err.message);
       res.end();
     }
     else {
+      // log the created
+      console.log(doc);
       res.end();
     }
   });

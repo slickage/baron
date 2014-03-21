@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <title>Basic Pay</title>
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+
+    <!-- header -->
+    <div class="row underline">
+      <div class="col-md-12">
+        <h1>Basic Pay</h1>
+      </div>
+    </div>
+
+  <!-- Invoice Info -->
+  <div class="row spacer helvetica-text">
+
+    <!-- QR Code for xsmall screens -->
+    <div class="col-xs-12">
+      Invoice <span class="green"> <%= _id %></span><br />
+      <% lineItems.forEach(function(lineItem){ %>
+        <span><%= lineItem.description %>.........<%= lineItem.quantity %>.....<%= lineItem.amount %></span>  <br />
+      <% }); %>
+      <br />
+      Total Amount <%= totalAmount %>
+    </div>
+
+  </div>
+</body>
+</html>
