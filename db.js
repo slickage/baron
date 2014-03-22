@@ -8,7 +8,6 @@ MongoClient.connect(config.mongodb.url, function(err, db) {
   if(err) throw err;
   database = db;
   invoiceCol = db.collection('invoices');
-  paymentCol = db.collection('payments');
 });
 
 module.exports = {
@@ -18,10 +17,7 @@ module.exports = {
   createInvoice: function(invoice, cb) {
     invoiceCol.insert(invoice, cb);
   },
-  findPayment: function(paymentId, cb) {
-    paymentCol.findOne({_id: new ObjectID(paymentId)}, cb);
-  },
-  createPayment: function(paymentData, cb) {
-    paymentCol.insert(paymentData, cb);
+  updateInvoice: function(invoice, cb) {
+    invoiceCol.save(invoice, cb);
   }
 };

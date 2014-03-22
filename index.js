@@ -16,10 +16,9 @@ app.use(express.static(path.join(__dirname, 'public')));
   TODO List:
   - update /pay to receive its params from the body instead of query string
   - does the invoice object need to be aware of the payment object?
-  - when creating a payment do we store current USD and BTC?
-  - should /pay always take the amount in BTC then convert if the currency=USD?
-  - How do we handle currency on payment page vs invoice page? 
-    Right now amount will be read as usd if currency is set to usd.
+  - totalAmount is always stored as BTC
+  - If a invoice is set to a certain currency we display the invoice in that currency
+    payment is still in btc
 */
 
 app.get('/pay', function(req, res) {
@@ -40,11 +39,10 @@ app.get('/pay', function(req, res) {
     if (!err && response.statusCode == 200) {
       var rate = Number(JSON.parse(body).vwap);
       if (currency === 'USD') {
-        console.log(amount + '/' + rate + '=' + Math.round((amount/rate) * 100000000)/100000000);
         amount = amount/rate;
       }
       // round amount to 8 decimal places
-      amount = Math.round(amount * 100000000) / 100000000;
+      amount = helper.roundToEightDecimals(amount);
       payments.getPaymentAddress(function(err, address) {
         // remove testnet parameter for production
         if (btcAddr.validate(address, 'testnet')) {
@@ -52,9 +50,8 @@ app.get('/pay', function(req, res) {
             address: address,
             amount: amount,
             currency: currency,
-            amountFirstFour: helper.toFourDecimals(amount.toFixed(8)),
-            amountLastFour: helper.getLastFourDecimals(amount.toFixed(8)),
-            // this amount needs to be rounded
+            amountFirstFour: helper.toFourDecimals(amount),
+            amountLastFour: helper.getLastFourDecimals(amount),
             qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
           });
         }
@@ -69,41 +66,100 @@ app.get('/pay', function(req, res) {
   });
 });
 
-app.get('/pay/:paymentId', function(req, res) {
-  db.findPayment(req.params.paymentId, function(err, payment) {
+// Handling post from pay button then redirects to /pay
+app.post('/pay/:invoiceId', function(req, res) {
+  var invoiceId = req.params.invoiceId;
+  db.findInvoice(invoiceId, function(err, invoice) {
     if (err) {
-      res.render('error', { errorMsg: 'Cannot find payment.' });
+      res.write(err.message);
+      res.end();
     }
     else {
-      var amount = Number(payment.totalAmount);
+      var paymentArr = invoice.payments;
+      // Only create new address if no payments exist
+      // TODO: create new address if payment is partially paid
+      // TODO: what other cases are there for generating new address
+      console.log(Object.keys(paymentArr).length);
+      if (Object.keys(paymentArr).length > 0) {
+        res.redirect("/pay/" + invoiceId);    
+      }
+      else {
+        // Create payment address
+        payments.getPaymentAddress(function(err, address) {
+          // remove testnet parameter for production
+          if (btcAddr.validate(address, 'testnet')) {
 
-      // Change this later to query from db not directly from api
-      helper.convertToBtc(function(err, response, body) {
-        // calculate amount
-        if (!err && response.statusCode == 200) {
-          if (payment.currency === 'USD') {
-            var rate = Number(JSON.parse(body).vwap);
-            console.log(amount + '/' + rate + '=' + Math.round((amount/rate) * 100000000)/100000000);
-            amount = amount/rate;
+            // Create payment object
+            var payment = {};
+            payment.amount = '';
+            payment.status = 'unpaid';
+            payment.timestamp_utc = new Date().getTime();
+
+            invoice.payments[address] = payment;
+
+            db.updateInvoice(invoice, 
+            function(err, docs) {
+                if (err) {
+                  res.write('error', { errorMsg: 'Error creating payment for invoice.' });
+                  res.end();
+                }
+                else {
+                  res.redirect("/pay/" + invoiceId);    
+                }
+            });
           }
-          // round amount to 8 decimal places
-          amount = Math.round(amount * 100000000) / 100000000;
-          console.log(Math.round(Number(amount) * 100000000)/100000000);
-          res.render('pay', {
-            address: payment.address,
-            amount: amount,
-            currency: payment.currency,
-            amountFirstFour: helper.toFourDecimals(amount.toFixed(8)),
-            amountLastFour: helper.getLastFourDecimals(amount.toFixed(8)),
-            // This amount needs to be rounded
-            qrImageUrl: '/paymentqr?address=' + payment.address + '&amount=' + amount
-          });
-        }
-      });
+          else {
+            res.render('error', { errorMsg: 'Cannot generate valid payment address.' });
+          }
+        });
+      }
     }
   });
 });
 
+// Display payment for give invoiceId
+app.get('/pay/:invoiceId', function(req, res) {
+  var invoiceId = req.params.invoiceId;
+  db.findInvoice(invoiceId, function(err, invoice) {
+    if (err) {
+      res.render('error', { errorMsg: 'Cannot find invoice.' });
+    }
+    else {
+      // See if invoice has payments, get latest payment object
+      var paymentArr = invoice.payments;
+      var keys = Object.keys(paymentArr);
+      console.log("keys: " + keys);
+      var paymentAddress;
+      keys.forEach(function(key) {
+        if (!paymentAddress) {
+          paymentAddress = key;
+        }
+        else {
+          if (paymentArr[key].timestamp_utc > paymentArr[paymentAddress].timestamp_utc) {
+            paymentAddress = key;
+          }
+        }
+      });
+      // If it does, display that payment object using paymentAddress
+      if (paymentAddress) {
+        var amount = invoice.total_amount;
+        res.render('pay', {
+            address: paymentAddress,
+            amount: amount,
+            currency: invoice.currency,
+            amountFirstFour: helper.toFourDecimals(amount),
+            amountLastFour: helper.getLastFourDecimals(amount),
+            qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
+          });
+      }
+      else { // Else error, payment object doesnt exist for invoice
+        res.render('error', { errorMsg: 'Cannot find payment.' });
+      }
+    }
+  });
+});
+
+// Generate payment QR Code
 app.get('/paymentqr', function(req, res) {
   var address = req.query.address;
   if (!address) {
@@ -115,7 +171,7 @@ app.get('/paymentqr', function(req, res) {
   code.pipe(res);
 });
 
-// View invoice by id
+// View Invoice by ID
 app.get('/invoices/:invoiceId', function(req, res) {
   db.findInvoice(req.params.invoiceId, function(err, invoiceData) {
     if (err) {
@@ -128,43 +184,7 @@ app.get('/invoices/:invoiceId', function(req, res) {
   });
 });
 
-// Handling post from pay button then redirects to /pay
-app.post('/invoices/:invoiceId', function(req, res) {
-  db.findInvoice(req.params.invoiceId, function(err, invoiceData) {
-    if (err) {
-      res.write(err.message);
-      res.end();
-    }
-    else {
-      // Create payment address
-      payments.getPaymentAddress(function(err, address) {
-        // remove testnet parameter for production
-        if (btcAddr.validate(address, 'testnet')) {
-          // Create payment object
-          db.createPayment({ 
-          'address':address, 
-          'totalAmount':invoiceData.totalAmount, 
-          'currency':req.body.currency, 
-          'invoiceId':req.params.invoiceId }, 
-          function(err, docs) {
-              if (err) {
-                res.write('error', { errorMsg: 'Error creating payment.' });
-                res.end();
-              }
-              else {
-                var paymentId = docs[0]._id;
-                res.redirect("/pay/" + paymentId);    
-              }
-          });
-        }
-        else {
-          res.render('error', { errorMsg: 'Cannot generate valid payment address.' });
-        }
-      });
-    }
-  });
-});
-
+// Creates new invoice
 app.post('/invoices', function(req, res) {
   var newInvoice = req.body;
   db.createInvoice(newInvoice, function(err, docs) {
