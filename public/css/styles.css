@@ -19,6 +19,15 @@ body {
   text-shadow: 0px 1px #fff;
 }
 
+.medium-text {
+  font-size: 28px;
+}
+
+.line-item {
+  font-size: 28px;
+  color: #999;
+}
+
 .right-icon {
   float: right;
   margin-top: 10px;
@@ -38,15 +47,31 @@ body {
 }
 
 .gray {
-  color: #bbb;
+  color: #999;
 }
 
-.spacer {
+.spacer{
   margin-top:30px;
+}
+
+.spacer-5 {
+  margin-top: 5px;
+}
+
+.spacer-right-10 {
+  margin-right: 20px;
+}
+
+.btn-wide {
+  width:100%;
 }
 
 .underline {
   border-bottom: 7px solid #bbb;
+}
+
+.thin-underline {
+  border-bottom: 1px dotted #bbb;
 }
 
 .right {
@@ -74,9 +99,4 @@ body {
 .invoice-data-width {
   max-width:400px;
   min-width:320px;
-}
-
-.currency-dropdown {
-  width:75px !important; 
-  height:45px !important;
 }

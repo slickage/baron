@@ -15,34 +15,43 @@
       </div>
     </div>
 
-  <!-- Invoice Info -->
-  <div class="row spacer helvetica-text">
-    <div class="col-xs-12">
-      Invoice <span class="green"> <%= _id %></span><br />
-      <% line_items.forEach(function(item){ %>
-        <span>
-          <%= item.description %>.........<%= item.quantity %>.....<%= item.amount %> 
-          <% if (currency === "USD") { %>
-            USD
-          <% } else { %>
-            BTC
-          <% } %>
-        </span> 
-        <br />
-      <% }); %>
-      <br />
-      Total Amount <%= total_amount %> 
-      <% if (currency === "USD") { %>
-        USD
-      <% } else { %>
-        BTC
-      <% } %>
-      <form method="POST" action="/pay/<%= _id %>">
-      <div class="form-group">
-        <button type="submit" class="btn btn-lg btn-default">Pay Now</button>
+    <!-- Invoice Info -->
+    <div class="row spacer helvetica-text">
+      <div class="col-sm-12">
+        Invoice 
+        <span class="green hidden-xs"> <%= _id %></span>
+        <span class="green visible-xs medium-text"><%= _id %></span>
       </div>
-    </form>
     </div>
+
+    <% line_items.forEach(function(item){ %>
+      <div class="row line-item thin-underline helvetica-text">
+        <div class="col-sm-6"><%= item.description %></div>
+        <div class="col-sm-2 right"><%= item.quantity %> &times;</div>
+        <div class="col-sm-4 right">
+          <%= item.amount %> <%= currency.toUpperCase() %>
+        </div> 
+      </div>
+    <% }); %>
+
+    <div class="row helvetica-text">
+      <div class="col-xs-4">
+        <form method="POST" action="/pay/<%= _id %>">
+          <div class="form-group">
+            <button type="submit" class="btn btn-lg btn-default btn-wide">
+              Pay Now
+            </button>
+          </div>
+        </form>      
+      </div>
+      <div class="col-xs-8 spacer-5 right">
+        <span class="spacer-right-10 hidden-xs">Total Amount</span>
+        <span class="gray">
+          <%= total_amount %> <%= currency.toUpperCase() %>  
+        </span>
+      </div>
+    </div>
+
   </div>
 </body>
 </html>

@@ -14,17 +14,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 /*
   TODO List:
-  - update /pay to receive its params from the body instead of query string
-  - does the invoice object need to be aware of the payment object?
-  - totalAmount is always stored as BTC
-  - If a invoice is set to a certain currency we display the invoice in that currency
-    payment is still in btc
+  - If invoice is created in USD, we need to keep track of that USD value to 
+    convert into BTC to ensure total amount is accurate.
+  - Should invoice view display history of payments?
+  - Confirm that /pay get route no longer requires currency. 
+  - Do we still need the /pay get route? 
+  - Can a GET route accept body parameters? (/pay GET)
+  - Should status of payment in payment object be stored as a number or string?
+  - Need to handle cases for when invoice should generate new payment
 */
 
 var main = function(app) {
+
   app.get('/pay', function(req, res) {
     var amount = Number(req.query.amount);
-    var currency = req.query.currency;
     if (!helper.isNumber(amount)) {
       res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount entered was not a number.' });
     }
@@ -34,35 +37,20 @@ var main = function(app) {
       res.render('error', { errorMsg: 'Amount is invalid: Bitcoin amount must have 8 or less decimal places.' });
     }
 
-    // Change this later to query from db not directly from api
-    helper.convertToBtc(function(err, response, body) {
-      // calculate amount
-      if (!err && response.statusCode == 200) {
-        var rate = Number(JSON.parse(body).vwap);
-        if (currency === 'USD') {
-          amount = amount/rate;
-        }
-        // round amount to 8 decimal places
-        amount = helper.roundToEightDecimals(amount);
-        payments.getPaymentAddress(function(err, address) {
-          // remove testnet parameter for production
-          if (btcAddr.validate(address, 'testnet')) {
-            res.render('pay', {
-              address: address,
-              amount: amount,
-              currency: currency,
-              amountFirstFour: helper.toFourDecimals(amount),
-              amountLastFour: helper.getLastFourDecimals(amount),
-              qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
-            });
-          }
-          else {
-            res.render('error', { errorMsg: 'Cannot generate valid payment address.' });
-          }
-        });    
+    amount = helper.roundToDecimal(amount, 8);
+    payments.getPaymentAddress(function(err, address) {
+      // remove testnet parameter for production
+      if (btcAddr.validate(address, 'testnet')) {
+        res.render('pay', {
+          address: address,
+          amount: amount,
+          amountFirstFour: helper.toFourDecimals(amount),
+          amountLastFour: helper.getLastFourDecimals(amount),
+          qrImageUrl: '/paymentqr?address=' + address + '&amount=' + amount
+        });
       }
       else {
-        res.render('error', { errorMsg: 'Error calculating exchange rate.' });
+        res.render('error', { errorMsg: 'Cannot generate valid payment address.' });
       }
     });
   });
@@ -80,9 +68,8 @@ var main = function(app) {
         // Only create new address if no payments exist
         // TODO: create new address if payment is partially paid
         // TODO: what other cases are there for generating new address
-        console.log(Object.keys(paymentArr).length);
         if (Object.keys(paymentArr).length > 0) {
-          res.redirect("/pay/" + invoiceId);    
+          res.redirect('/pay/' + invoiceId);
         }
         else {
           // Create payment address
@@ -98,14 +85,13 @@ var main = function(app) {
 
               invoice.payments[address] = payment;
 
-              db.updateInvoice(invoice, 
-              function(err, docs) {
+              db.updateInvoice(invoice, function(err, docs) {
                   if (err) {
                     res.write('error', { errorMsg: 'Error creating payment for invoice.' });
                     res.end();
                   }
                   else {
-                    res.redirect("/pay/" + invoiceId);    
+                    res.redirect('/pay/' + invoiceId);
                   }
               });
             }
@@ -129,7 +115,6 @@ var main = function(app) {
         // See if invoice has payments, get latest payment object
         var paymentArr = invoice.payments;
         var keys = Object.keys(paymentArr);
-        console.log("keys: " + keys);
         var paymentAddress;
         keys.forEach(function(key) {
           if (!paymentAddress) {
@@ -147,7 +132,6 @@ var main = function(app) {
           res.render('pay', {
               address: paymentAddress,
               amount: amount,
-              currency: invoice.currency,
               amountFirstFour: helper.toFourDecimals(amount),
               amountLastFour: helper.getLastFourDecimals(amount),
               qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
@@ -174,13 +158,31 @@ var main = function(app) {
 
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
-    db.findInvoice(req.params.invoiceId, function(err, invoiceData) {
+    db.findInvoice(req.params.invoiceId, function(err, invoice) {
       if (err) {
-        res.write(err.message);
-        res.end();
+        res.render('error', err.message);
       }
       else {
-        res.render('invoice', invoiceData);
+        // Convert btc to usd
+        if (invoice.currency.toUpperCase() === 'USD') {
+          helper.convertToBtc(function(err, response, body) {
+            // calculate amount
+            if (!err && response.statusCode === 200) {
+              var rate = Number(JSON.parse(body).vwap);
+              invoice.line_items.forEach(function(item) {
+                item.amount = helper.roundToDecimal(item.amount * rate, 2);
+              });
+              invoice.total_amount = helper.roundToDecimal(invoice.total_amount * rate, 2);
+              res.render('invoice', invoice);
+            }
+            else {
+              res.render('error', { errorMsg: 'Error: Cannot convert USD to BTC.' });
+            }
+          });
+        }
+        else {
+          res.render('invoice', invoice);
+        }
       }
     });
   });
@@ -188,14 +190,14 @@ var main = function(app) {
   // Creates new invoice
   app.post('/invoices', function(req, res) {
     var newInvoice = req.body;
-    db.createInvoice(newInvoice, function(err, docs) {
+    db.createInvoice(newInvoice, function(err, invoice) {
       if(err) {
         res.write(err.message);
         res.end();
       }
       else {
         // log the created invoice
-        console.log(docs);
+        console.log(invoice);
         res.end();
       }
     });

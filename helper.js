@@ -9,16 +9,17 @@ module.exports = {
  		    return !isNaN(parseFloat(number)) && isFinite(number); 
  	},
   toFourDecimals: function(number) {
-    number = number.toFixed(8).toString();
+    number = Number(number).toFixed(8).toString();
   	var numberArr = number.toString().split('.');
     return numberArr[0] + '.' + numberArr[1].substring(0, 4);
   },
   getLastFourDecimals: function(number) {
-    number = number.toFixed(8).toString();
+    number = Number(number).toFixed(8).toString();
     return number.split('.')[1].substring(4, 8);
   }, 
-  roundToEightDecimals: function(number) {
-    return Math.round(number * 100000000) / 100000000;
+  roundToDecimal: function(number, decimalPlaces) {
+    var offset = Math.pow(10, decimalPlaces);
+    return (Math.round(number * offset) / offset).toFixed(decimalPlaces);
   },
   convertToBtc: function(callback) {
   		request('https://www.bitstamp.net/api/ticker/', callback);
