@@ -52,6 +52,37 @@
       </div>
     </div>
 
+    <br />
+    <br />
+
+    <!-- Payment History -->
+    <% if (Object.keys(payments).length > 0) { %>
+      <div class="row helvetica-text">
+        <div class="col-sm-12">
+          Payment History
+        </div>
+      </div>
+
+      <% Object.keys(payments).forEach(function(address){ %>
+        <div class="row line-item thin-underline helvetica-text">
+          <div class="col-sm-6 address-text">
+            <a href="../pay/<%= _id %>?paymentKey=<%= address %>"><%= address %></a>
+          </div>
+          <div class="col-sm-3 right <%= payments[address].status %>">
+            <%=payments[address].status.charAt(0).toUpperCase() + payments[address].status.slice(1).toLowerCase() %>
+          </div>
+          <div class="col-sm-3 right">
+            <% if (!payments[address].amount) { %>
+              0
+            <% } else { %>
+              <%= payments[address].amount %>
+            <% } %>
+            BTC
+          </div> 
+        </div>
+      <% }); %>
+    <% } %>
+
   </div>
 </body>
 </html>

@@ -28,16 +28,34 @@
 
       <!-- Data for xsmall screens -->
       <div class="col-md-7 col-sm-6 col-lg-8 center-margin visible-xs no-padding">
-          <span class="status-pending">Pending Payment</span>
+          <span class="<%= status %>">
+            <% if (status === 'pending') { %>
+              Payment is Pending
+            <% } else if (status === 'unpaid') { %>
+              Balance is Unpaid
+            <% } else if (status === 'paid') { %>
+              Balance is Paid
+            <% } else if (status === 'underpaid') { %>
+              Balance is Underpaid
+            <% } else if (status === 'overpaid') { %>
+              Balance is Overpaid
+            <% } else if (status === 'expired') { %>
+              Payment is Expired
+            <% } else { %>
+              Payment status is Unknown
+            <% } %>
+          </span>
           <br />
           <% if (amountLastFour === '0000') { %>
           <%= amountFirstFour %> BTC
           <% } else { %>
           <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
           <% } %>
-          <a href="#RefreshLink">
-            <img class="right-icon" src="/images/refresh.png" />
-          </a>
+          <% if (status === 'unpaid') { %>
+            <a href="<%= invoiceId %>">
+              <img class="right-icon" src="/images/refresh.png" />
+            </a>
+          <% } %>
           <br />
           <span class="green">3</span> Confirmations
           <a href="#BlockChainLink">
@@ -49,16 +67,34 @@
 
       <!-- Data for non mobile -->
       <div class="col-md-7 col-sm-6 col-lg-8 hidden-xs">
-          <span class="status-pending">Pending Payment</span>
+          <span class="<%= status %>">
+            <% if (status === 'pending') { %>
+              Payment is Pending
+            <% } else if (status === 'unpaid') { %>
+              Balance is Unpaid
+            <% } else if (status === 'paid') { %>
+              Balance has been Paid
+            <% } else if (status === 'underpaid') { %>
+              Balance has been Underpaid
+            <% } else if (status === 'overpaid') { %>
+              Balance has been Overpaid
+            <% } else if (status === 'expired') { %>
+              Payment is Expired
+            <% } else { %>
+              Payment status is Unknown
+            <% } %>
+          </span>
           <div class="invoice-data-width">
             <% if (amountLastFour === '0000') { %>
             <%= amountFirstFour %> BTC
             <% } else { %>
             <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
             <% } %>
-            <a href="#RefreshLink">
-              <img class="right-icon" src="/images/refresh.png" />
-            </a>
+            <% if (status === 'unpaid') { %>
+              <a href="<%= invoiceId %>">
+                <img class="right-icon" src="/images/refresh.png" />
+              </a>
+            <% } %>
             <br />
             <span class="green">3</span> Confirmations
             <a href="#BlockChainLink">

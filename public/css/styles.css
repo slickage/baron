@@ -12,6 +12,15 @@ body {
   background: url(../images/debut_light.png);
 }
 
+a, a:link, a:visited {
+  color: #3399FF;
+  text-decoration: none;
+}
+
+a:hover, a:active {
+  color: #999;
+}
+
 .helvetica-text {
   font-family: "HelveticaNeue-Thin", "Helvetica Neue Thin", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-weight: 300;
@@ -21,6 +30,15 @@ body {
 
 .medium-text {
   font-size: 28px;
+}
+
+.small-text {
+  font-size: 20px;
+}
+
+.address-text {
+  font-size: 19px;
+  padding-top: 13px;
 }
 
 .line-item {
@@ -34,15 +52,15 @@ body {
   font-size: 20px;
 }
 
-.status-unpaid, .red {
+.unpaid, .expired, .red {
   color: #ff4848;
 }
 
-.status-pending, .orange {
+.pending, .underpaid, .orange {
   color: #e9941b;
 }
 
-.status-paid, .green {
+.paid, .overpaid, .green {
   color: #41a323;
 }
 
@@ -68,6 +86,10 @@ body {
 
 .underline {
   border-bottom: 7px solid #bbb;
+}
+
+.medium-underline {
+  border-bottom: 3px solid #bbb;
 }
 
 .thin-underline {
