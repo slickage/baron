@@ -59,9 +59,8 @@ var main = function(app) {
   app.post('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
     db.findInvoice(invoiceId, function(err, invoice) {
-      if (err) {
-        res.write(err.message);
-        res.end();
+      if (err || !helper.isValidObjectID(invoiceId) || !invoice) {
+        res.render('error', { errorMsg: 'Invalid invoice cannot generate payment.' });
       }
       else {
         var paymentArr = invoice.payments;
@@ -108,7 +107,7 @@ var main = function(app) {
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
     db.findInvoice(invoiceId, function(err, invoice) {
-      if (err) {
+      if (err || !helper.isValidObjectID(invoiceId) || !invoice) {
         res.render('error', { errorMsg: 'Cannot find invoice.' });
       }
       else {
@@ -128,7 +127,7 @@ var main = function(app) {
         });
         // If it does, display that payment object using paymentAddress
         if (paymentAddress) {
-          var amount = invoice.total_amount;
+          var amount = invoice.balance_due;
           res.render('pay', {
               address: paymentAddress,
               amount: amount,
@@ -158,33 +157,39 @@ var main = function(app) {
 
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
-    db.findInvoice(req.params.invoiceId, function(err, invoice) {
-      if (err) {
-        res.render('error', err.message);
-      }
-      else {
-        // Convert btc to usd
-        if (invoice.currency.toUpperCase() === 'USD') {
-          helper.convertToBtc(function(err, response, body) {
-            // calculate amount
-            if (!err && response.statusCode === 200) {
-              var rate = Number(JSON.parse(body).vwap);
-              invoice.line_items.forEach(function(item) {
-                item.amount = helper.roundToDecimal(item.amount * rate, 2);
-              });
-              invoice.total_amount = helper.roundToDecimal(invoice.total_amount * rate, 2);
-              res.render('invoice', invoice);
-            }
-            else {
-              res.render('error', { errorMsg: 'Error: Cannot convert USD to BTC.' });
-            }
-          });
+    var invoiceId = req.params.invoiceId;
+    if (helper.isValidObjectID(invoiceId)) {
+      db.findInvoice(req.params.invoiceId, function(err, invoice) {
+        if (err || !invoice) {
+          res.render('error',  { errorMsg: 'Cannot find invoice.' });
         }
         else {
-          res.render('invoice', invoice);
+          // Convert btc to usd
+          if (invoice.currency.toUpperCase() === 'USD') {
+            helper.convertToBtc(function(err, response, body) {
+              // calculate amount
+              if (!err && response.statusCode === 200) {
+                var rate = Number(JSON.parse(body).vwap);
+                invoice.line_items.forEach(function(item) {
+                  item.amount = helper.roundToDecimal(item.amount * rate, 2);
+                });
+                invoice.balance_due = helper.roundToDecimal(invoice.balance_due * rate, 2);
+                res.render('invoice', invoice);
+              }
+              else {
+                res.render('error', { errorMsg: 'Error: Cannot convert USD to BTC.' });
+              }
+            });
+          }
+          else {
+            res.render('invoice', invoice);
+          }
         }
-      }
-    });
+      });
+    }
+    else {
+     res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
+    }
   });
 
   // Creates new invoice

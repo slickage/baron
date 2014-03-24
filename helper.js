@@ -23,5 +23,14 @@ module.exports = {
   },
   convertToBtc: function(callback) {
   		request('https://www.bitstamp.net/api/ticker/', callback);
+  },
+  isValidObjectID: function(str) {
+    str = str + '';
+    var len = str.length, valid = false;
+    if (len == 12 || len == 24) {
+      valid = /^[0-9a-fA-F]+$/.test(str);
+    }
+    console.log(valid);
+    return valid;
   }
 };
