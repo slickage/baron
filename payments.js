@@ -10,7 +10,6 @@ var client = new bitcoin.Client({
 
 module.exports = {
   bitcoinClient: client,
-  // function(err, body)
   getPaymentAddress: function(cb) {
     client.getNewAddress(cb);
   }
