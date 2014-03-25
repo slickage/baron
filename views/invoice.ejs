@@ -40,11 +40,9 @@
     <div class="row helvetica-text">
       <div class="col-xs-12 col-sm-4">
         <form method="POST" action="/pay/<%= invoice._id %>">
-          <div class="form-group">
-            <button type="submit" class="btn btn-lg btn-default btn-wide">
-              Pay Now
-            </button>
-          </div>
+          <button type="submit" class="btn btn-lg btn-default btn-wide">
+            Pay Now
+          </button>
         </form>      
       </div>
       <div class="col-xs-12 col-sm-8 spacer-5 right gray">
@@ -56,7 +54,7 @@
     </div>
 
     <div class="row helvetica-text">
-      <div class="col-xs-12 right gray neg-margin-12">
+      <div class="col-xs-12 right gray">
         <div class="balance-container">
           <span class="hidden-xs float-left">Balance Paid</span>
           <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>

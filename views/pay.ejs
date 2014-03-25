@@ -35,7 +35,7 @@
               Balance is Unpaid
             <% } else if (status === 'paid') { %>
               Balance is Paid
-            <% } else if (status === 'underpaid') { %>
+            <% } else if (status === 'partial') { %>
               Balance is Underpaid
             <% } else if (status === 'overpaid') { %>
               Balance is Overpaid
@@ -51,7 +51,7 @@
           <% } else { %>
           <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
           <% } %>
-          <% if (status === 'unpaid') { %>
+          <% if (status === 'unpaid' && showRefresh) { %>
             <a href="<%= invoiceId %>">
               <img class="right-icon" src="/images/refresh.png" />
             </a>
@@ -74,7 +74,7 @@
               Balance is Unpaid
             <% } else if (status === 'paid') { %>
               Balance has been Paid
-            <% } else if (status === 'underpaid') { %>
+            <% } else if (status === 'partial') { %>
               Balance has been Underpaid
             <% } else if (status === 'overpaid') { %>
               Balance has been Overpaid
@@ -90,7 +90,7 @@
             <% } else { %>
             <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
             <% } %>
-            <% if (status === 'unpaid') { %>
+            <% if (status === 'unpaid' && showRefresh) { %>
               <a href="<%= invoiceId %>">
                 <img class="right-icon" src="/images/refresh.png" />
               </a>

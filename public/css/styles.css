@@ -37,8 +37,9 @@ a:hover, a:active {
 }
 
 .address-text {
-  font-size: 19px;
+  font-size: 18px;
   padding-top: 13px;
+  font-family: "Andale Mono", AndaleMono, monospace;
 }
 
 .line-item {
@@ -56,7 +57,7 @@ a:hover, a:active {
   color: #ff4848;
 }
 
-.pending, .underpaid, .orange {
+.pending, .partial, .orange {
   color: #e9941b;
 }
 
@@ -102,10 +103,6 @@ a:hover, a:active {
 
 .float-left {
   float: left;
-}
-
-.neg-margin-12 {
-  margin-top: -12px;
 }
 
 .balance-container {

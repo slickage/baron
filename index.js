@@ -13,16 +13,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 /*
   TODO List:
-  - Store payment status as strings (Paid, Pending, Unpaid, Partially Paid, Over-Paid, Expired)
+  - Store payment status as strings (paid, pending, unpaid, partial, overpaid, expired)
   - Payments should log the current "spot_rate" when paid (at 0 confirmations)
-  - Need to handle cases for when invoice should generate new payment
-    - BTC
-      - Only one payment, unless payment is partially paid, then generate new
-    - USD
-      - If payment expires, generate new payment
-      - If partially paid, generate new payment
-      - Don't need to create new payment address just need to update amount
+  - Add fudge rate for fiat balance due
   - Invoice needs expiration (optionally) (Warren)
+  - Need to handle locking in Rate for 5 minutes for fiat
+  - Handle balance paid for fiat 
 */
 
 var main = function(app) {
@@ -40,19 +36,20 @@ var main = function(app) {
           var keys = Object.keys(paymentArr);
           var paymentAddress;
           keys.forEach(function(key) {
-            if (!paymentAddress) {
-              paymentAddress = key;
-            }
-            else {
+            if (paymentAddress) {
               if (paymentArr[key].timestamp_utc > paymentArr[paymentAddress].timestamp_utc) {
                 paymentAddress = key;
               }
             }
+            else {
+              paymentAddress = key;
+            }
           });
-          if (keys.length > 0 && paymentArr[paymentAddress].status !== 'underpaid') {
+          // If payment exists and its not underpaid redirect
+          if (keys.length > 0 && paymentArr[paymentAddress].status !== 'partial') {
             res.redirect('/pay/' + invoiceId);
           }
-          else {
+          else { // Create a payment
             // Create payment address
             payments.getPaymentAddress(function(err, address) {
               // remove testnet parameter for production
@@ -63,8 +60,9 @@ var main = function(app) {
                 payment.amount_paid = 0;
                 payment.spot_rate = null;
                 payment.status = 'unpaid';
-                payment.expired = false;
                 payment.timestamp_utc = new Date().getTime();
+                payment.txId = null;
+                payment.ntxId = null;
 
                 invoice.payments[address] = payment;
 
@@ -100,6 +98,7 @@ var main = function(app) {
           res.render('error', { errorMsg: 'Cannot find invoice.' });
         }
         else {
+          var isUSD = (invoice.currency.toUpperCase() === 'USD');
           var paymentArr = invoice.payments;
           var keys = Object.keys(paymentArr);
           var paymentAddress;
@@ -123,16 +122,24 @@ var main = function(app) {
           // Calculate Total Paid and format status for view
           keys.forEach(function(key) {
             var paidAmount = paymentArr[key].amount_paid;
+            var spotRate = paymentArr[key].spot_rate;
             if (paidAmount) {
-              totalPaid += paidAmount;
+              if (isUSD) {
+                totalPaid += paidAmount * spotRate;
+              }
+              else {
+                totalPaid += paidAmount;
+              }
             } 
           });
+
+          totalPaid = helper.roundToDecimal(totalPaid , 2);
           var remainingBalance = invoice.balance_due - totalPaid;
 
           // If it does, display that payment object using paymentAddress
           if (paymentAddress) {
             // Convert btc to usd
-            if (invoice.currency.toUpperCase() === 'USD') {
+            if (isUSD) {
               helper.convertToBtc(function(err, response, body) {
                 // calculate amount
                 if (!err && response.statusCode === 200) {
@@ -140,8 +147,8 @@ var main = function(app) {
                   // Display amount remaining
                   invoice.balance_due = helper.roundToDecimal(remainingBalance / rate, 8);
                   var amount = invoice.balance_due;
-
                   res.render('pay', {
+                    showRefresh: true,
                     invoiceId: invoiceId,
                     status: paymentArr[paymentAddress].status,
                     address: paymentAddress,
@@ -158,6 +165,7 @@ var main = function(app) {
             }
             else {
               res.render('pay', {
+                showRefresh: false,
                 invoiceId: invoiceId,
                 status: paymentArr[paymentAddress].status,
                 address: paymentAddress,
@@ -219,8 +227,14 @@ var main = function(app) {
           // Calculate Total Paid and format status for view
           keys.forEach(function(key) {
             var paidAmount = paymentArr[key].amount_paid;
+            var spotRate = paymentArr[key].spot_rate;
             if (paidAmount) {
-              totalPaid += paidAmount;
+              if(isUSD) {
+                totalPaid += paidAmount * spotRate;
+              }
+              else {
+                totalPaid += paidAmount;
+              }
             } 
             var status = paymentArr[key].status;
             paymentArr[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
@@ -228,9 +242,9 @@ var main = function(app) {
 
           var remainingBalance = invoice.balance_due - totalPaid;
 
-          // If USD Rount to two decimals
+          // If USD Round to two decimals
           if (isUSD) {
-            totalPaid = helper.roundToDecimal(totalPaid, 2);
+            totalPaid = helper.roundToDecimal(totalPaid , 2);
             remainingBalance = helper.roundToDecimal(remainingBalance, 2);
             invoice.balance_due = helper.roundToDecimal(invoice.balance_due, 2);
           }
