@@ -6,64 +6,69 @@ var invoices = function(app) {
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    if (helper.isValidObjectID(invoiceId)) {
+    if (helper.isValidObjectID(invoiceId)) { // Validate the invoice id
       db.findInvoice(invoiceId, function(err, invoice) {
         if (err || !invoice) {
-          res.render('error',  { errorMsg: 'Cannot find invoice.' });
+          res.render('error',  { errorMsg: 'Cannot find Invoice ' + invoiceId });
         }
         else {
-          var isUSD = (invoice.currency.toUpperCase() === 'USD');
-          // Calculate and create Line Item Totals
+          var isUSD = invoice.currency.toUpperCase() === 'USD';
+
+          // Calculate Amount * Quantity for each line item's total
           invoice.line_items.forEach(function (item){
             item.line_total = item.amount * item.quantity;
-            // Round USD to two decimals
-            if (isUSD) {
+            console.log(helper.roundToDecimal(item.line_total, 8));
+            if (isUSD) { // Round USD to two decimals
               item.amount = helper.roundToDecimal(item.amount, 2);
               item.line_total = helper.roundToDecimal(item.line_total, 2);
             }
+            // If our calculated line total has more than 8 decimals round to 8
+            else if (helper.decimalPlaces(item.line_total) > 8) { 
+              item.line_total = helper.roundToDecimal(item.line_total, 8);
+            }
           });
 
-          // Calculate Balance Paid and Remaining
-          var paymentArr = invoice.payments;
-          var keys = Object.keys(paymentArr);
-          var totalPaid = 0;
+          var paymentDict = invoice.payments; 
+          var keys = Object.keys(paymentDict); 
+          var totalPaid = 0; // Will store sum of payment object's amount paid.
 
-          // Calculate Total Paid and format status for view
+          // Loop through each payment object to sum up totalPaid
           keys.forEach(function(key) {
-            var paidAmount = paymentArr[key].amount_paid;
-            var spotRate = paymentArr[key].spot_rate;
+            var paidAmount = paymentDict[key].amount_paid; 
             if (paidAmount) {
-              if(isUSD) {
-                totalPaid += paidAmount * spotRate;
-              }
-              else {
-                totalPaid += paidAmount;
-              }
+                // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
+                totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
             } 
-            var status = paymentArr[key].status;
-            paymentArr[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+
+            // Capitalizing first letter of payment status for display in invoice view
+            var status = paymentDict[key].status;
+            paymentDict[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
           });
 
+          // Calculate remaining balance using totalPaid
           var remainingBalance = invoice.balance_due - totalPaid;
 
-          // If USD Round to two decimals
+          // If invoice is in USD, round to two decimals
           if (isUSD) {
             totalPaid = helper.roundToDecimal(totalPaid , 2);
             remainingBalance = helper.roundToDecimal(remainingBalance, 2);
             invoice.balance_due = helper.roundToDecimal(invoice.balance_due, 2);
           }
+
+          // Add new variables to invoice object for display in invoice view
           invoice.total_paid = totalPaid;
           invoice.remaining_balance = remainingBalance;
           res.render('invoice', { invoice: invoice });
         }
       });
     }
-    else {
+    else { // Invalid invoice ID was passed in
      res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
     }
   });
 
-  // Creates new invoice
+  // Post invoice object to /invoice to create new invoice
+  // TODO: Do we need to validate the input?
   app.post('/invoices', function(req, res) {
     var newInvoice = req.body;
     db.createInvoice(newInvoice, function(err, invoice) {
