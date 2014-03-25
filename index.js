@@ -1,7 +1,6 @@
 var config = require('./config');
 var path = require('path');
 var express = require('express');
-var routes = require('./routes');
 var app = express();
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
@@ -13,12 +12,13 @@ app.use(express.static(path.join(__dirname, 'public')));
   - Payments should log the current "spot_rate" when paid (at 0 confirmations)
   - Add fudge rate for fiat balance due
   - Invoice needs expiration (optionally) (Warren)
-  - Need to handle locking in Rate for 5 minutes for fiat
-  - Handle balance paid for fiat 
+  - Need to handle locking in Rate for 5 minutes for fiat (Talk to James)
+  - Hook up confirmations and status update from bitcoind
+  - Add link to blockchain.info
 */
 
 var index = function(app) {
-  routes(app);
+  require('./routes')(app);
 };
 
 module.exports = index;

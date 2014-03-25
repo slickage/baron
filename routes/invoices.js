@@ -17,7 +17,6 @@ var invoices = function(app) {
           // Calculate Amount * Quantity for each line item's total
           invoice.line_items.forEach(function (item){
             item.line_total = item.amount * item.quantity;
-            console.log(helper.roundToDecimal(item.line_total, 8));
             if (isUSD) { // Round USD to two decimals
               item.amount = helper.roundToDecimal(item.amount, 2);
               item.line_total = helper.roundToDecimal(item.line_total, 2);
