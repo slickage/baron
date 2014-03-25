@@ -49,7 +49,7 @@ var main = function(app) {
               }
             }
           });
-          if (keys.length > 0 && paymentArr[paymentAddress].status !== 'underpaid' ) {
+          if (keys.length > 0 && paymentArr[paymentAddress].status !== 'underpaid') {
             res.redirect('/pay/' + invoiceId);
           }
           else {
@@ -60,8 +60,8 @@ var main = function(app) {
 
                 // Create payment object
                 var payment = {};
-                payment.amount = '';
-                payment.spot_rate = '';
+                payment.amount_paid = 0;
+                payment.spot_rate = null;
                 payment.status = 'unpaid';
                 payment.expired = false;
                 payment.timestamp_utc = new Date().getTime();
@@ -94,33 +94,41 @@ var main = function(app) {
   // Display payment for give invoiceId
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    var paymentKey = req.query.paymentKey;
     if (helper.isValidObjectID(invoiceId)) {
       db.findInvoice(invoiceId, function(err, invoice) {
         if (err || !invoice) {
           res.render('error', { errorMsg: 'Cannot find invoice.' });
         }
         else {
-          // See if invoice has payments, get latest payment object
           var paymentArr = invoice.payments;
           var keys = Object.keys(paymentArr);
           var paymentAddress;
-          if (paymentKey) { // if key is specified show that payment
-            paymentAddress = paymentKey;
-          }
-          else { // grab latest payment if key isnt specified
-            keys.forEach(function(key) {
-              if (!paymentAddress) {
+
+          // See if invoice has payments, get latest payment object
+          keys.forEach(function(key) {
+            if (paymentAddress) {
+              if (paymentArr[key].timestamp_utc > paymentArr[paymentAddress].timestamp_utc) {
                 paymentAddress = key;
-              }
-              else {
-                if (paymentArr[key].timestamp_utc > paymentArr[paymentAddress].timestamp_utc) {
-                  paymentAddress = key;
-                }
-              }
-            });
-          }
-          var amount = invoice.balance_due;
+              }              
+            }
+            else {
+              paymentAddress = key;
+            }
+          });
+        
+          var paymentArr = invoice.payments;
+          var keys = Object.keys(paymentArr);
+          var totalPaid = 0;
+
+          // Calculate Total Paid and format status for view
+          keys.forEach(function(key) {
+            var paidAmount = paymentArr[key].amount_paid;
+            if (paidAmount) {
+              totalPaid += paidAmount;
+            } 
+          });
+          var remainingBalance = invoice.balance_due - totalPaid;
+
           // If it does, display that payment object using paymentAddress
           if (paymentAddress) {
             // Convert btc to usd
@@ -129,8 +137,10 @@ var main = function(app) {
                 // calculate amount
                 if (!err && response.statusCode === 200) {
                   var rate = Number(JSON.parse(body).vwap);
-                  invoice.balance_due = helper.roundToDecimal(invoice.balance_due / rate, 8);
-                  amount = invoice.balance_due;
+                  // Display amount remaining
+                  invoice.balance_due = helper.roundToDecimal(remainingBalance / rate, 8);
+                  var amount = invoice.balance_due;
+
                   res.render('pay', {
                     invoiceId: invoiceId,
                     status: paymentArr[paymentAddress].status,
@@ -151,10 +161,10 @@ var main = function(app) {
                 invoiceId: invoiceId,
                 status: paymentArr[paymentAddress].status,
                 address: paymentAddress,
-                amount: amount,
-                amountFirstFour: helper.toFourDecimals(amount),
-                amountLastFour: helper.getLastFourDecimals(amount),
-                qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
+                amount: remainingBalance,
+                amountFirstFour: helper.toFourDecimals(remainingBalance),
+                amountLastFour: helper.getLastFourDecimals(remainingBalance),
+                qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + remainingBalance
               });
             }
           }
@@ -190,13 +200,43 @@ var main = function(app) {
           res.render('error',  { errorMsg: 'Cannot find invoice.' });
         }
         else {
-          if (invoice.currency.toUpperCase() === 'USD') {
-            invoice.line_items.forEach(function (item){
+          var isUSD = (invoice.currency.toUpperCase() === 'USD');
+          // Calculate and create Line Item Totals
+          invoice.line_items.forEach(function (item){
+            item.line_total = item.amount * item.quantity;
+            // Round USD to two decimals
+            if (isUSD) {
               item.amount = helper.roundToDecimal(item.amount, 2);
-            });
+              item.line_total = helper.roundToDecimal(item.line_total, 2);
+            }
+          });
+
+          // Calculate Balance Paid and Remaining
+          var paymentArr = invoice.payments;
+          var keys = Object.keys(paymentArr);
+          var totalPaid = 0;
+
+          // Calculate Total Paid and format status for view
+          keys.forEach(function(key) {
+            var paidAmount = paymentArr[key].amount_paid;
+            if (paidAmount) {
+              totalPaid += paidAmount;
+            } 
+            var status = paymentArr[key].status;
+            paymentArr[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+          });
+
+          var remainingBalance = invoice.balance_due - totalPaid;
+
+          // If USD Rount to two decimals
+          if (isUSD) {
+            totalPaid = helper.roundToDecimal(totalPaid, 2);
+            remainingBalance = helper.roundToDecimal(remainingBalance, 2);
             invoice.balance_due = helper.roundToDecimal(invoice.balance_due, 2);
           }
-          res.render('invoice', invoice);
+          invoice.total_paid = totalPaid;
+          invoice.remaining_balance = remainingBalance;
+          res.render('invoice', { invoice: invoice });
         }
       });
     }

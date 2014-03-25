@@ -30,7 +30,6 @@ module.exports = {
     if (len == 12 || len == 24) {
       valid = /^[0-9a-fA-F]+$/.test(str);
     }
-    console.log(valid);
     return valid;
   }
 };

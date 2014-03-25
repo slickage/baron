@@ -100,6 +100,19 @@ a:hover, a:active {
   text-align: right;
 }
 
+.float-left {
+  float: left;
+}
+
+.neg-margin-12 {
+  margin-top: -12px;
+}
+
+.balance-container {
+  width: 475px;
+  float: right;
+}
+
 .center {
   text-align: center;
 }

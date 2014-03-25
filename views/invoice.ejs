@@ -19,24 +19,27 @@
     <div class="row spacer helvetica-text">
       <div class="col-sm-12">
         Invoice 
-        <span class="green hidden-xs"> <%= _id %></span>
-        <span class="green visible-xs medium-text"><%= _id %></span>
+        <span class="green hidden-xs"> <%= invoice._id %></span>
+        <span class="green visible-xs medium-text"><%= invoice._id %></span>
       </div>
     </div>
 
-    <% line_items.forEach(function(item){ %>
+    <% invoice.line_items.forEach(function(item){ %>
       <div class="row line-item thin-underline helvetica-text">
-        <div class="col-sm-6"><%= item.description %></div>
+        <div class="col-sm-4"><%= item.description %></div>
         <div class="col-sm-2 right"><%= item.quantity %> &times;</div>
-        <div class="col-sm-4 right">
-          <%= item.amount %> <%= currency.toUpperCase() %>
+        <div class="col-sm-3 right">
+          <%= item.amount %> <%= invoice.currency.toUpperCase() %>
         </div> 
+        <div class="col-sm-3 right">
+          <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
+        </div>
       </div>
     <% }); %>
 
     <div class="row helvetica-text">
-      <div class="col-xs-4">
-        <form method="POST" action="/pay/<%= _id %>">
+      <div class="col-xs-12 col-sm-4">
+        <form method="POST" action="/pay/<%= invoice._id %>">
           <div class="form-group">
             <button type="submit" class="btn btn-lg btn-default btn-wide">
               Pay Now
@@ -44,11 +47,29 @@
           </div>
         </form>      
       </div>
-      <div class="col-xs-8 spacer-5 right">
-        <span class="spacer-right-10 hidden-xs">Balance Due</span>
-        <span class="gray">
-          <%= balance_due %> <%= currency.toUpperCase() %>  
-        </span>
+      <div class="col-xs-12 col-sm-8 spacer-5 right gray">
+        <div class="balance-container">
+          <span class="hidden-xs float-left">Balance Due</span>
+          <span class="red"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row helvetica-text">
+      <div class="col-xs-12 right gray neg-margin-12">
+        <div class="balance-container">
+          <span class="hidden-xs float-left">Balance Paid</span>
+          <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row helvetica-text">
+      <div class="col-xs-12 right gray">
+        <div class="balance-container">
+          <span class="hidden-xs float-left">Remaining</span>
+          <span class="orange"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
+        </div>
       </div>
     </div>
 
@@ -56,26 +77,26 @@
     <br />
 
     <!-- Payment History -->
-    <% if (Object.keys(payments).length > 0) { %>
+    <% if (Object.keys(invoice.payments).length > 0) { %>
       <div class="row helvetica-text">
         <div class="col-sm-12">
           Payment History
         </div>
       </div>
 
-      <% Object.keys(payments).forEach(function(address){ %>
+      <% Object.keys(invoice.payments).forEach(function(address){ %>
         <div class="row line-item thin-underline helvetica-text">
           <div class="col-sm-6 address-text">
-            <a href="../pay/<%= _id %>?paymentKey=<%= address %>"><%= address %></a>
+            <a href="#BlockChainInfo"><%= address %></a>
           </div>
-          <div class="col-sm-3 right <%= payments[address].status %>">
-            <%=payments[address].status.charAt(0).toUpperCase() + payments[address].status.slice(1).toLowerCase() %>
+          <div class="col-sm-3 right <%= invoice.payments[address].status.toLowerCase() %>">
+            <%= invoice.payments[address].status %>
           </div>
           <div class="col-sm-3 right">
-            <% if (!payments[address].amount) { %>
+            <% if (!invoice.payments[address].amount_paid) { %>
               0
             <% } else { %>
-              <%= payments[address].amount %>
+              <%= invoice.payments[address].amount_paid %>
             <% } %>
             BTC
           </div> 
