@@ -48,10 +48,10 @@
           </button>
         </form>      
       </div>
-      <div class="col-xs-12 col-sm-8 spacer-5 right gray">
-          <span class="visible-xs float-left dark-gray">Total</span>
-          <span class="hidden-xs float-left dark-gray">Balance Total</span>
-          <span class="red"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
+      <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
+          <span class="visible-xs float-left">Total</span>
+          <span class="hidden-xs float-left">Balance Total</span>
+          <%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %>
       </div>
     </div>
 
@@ -73,7 +73,7 @@
     <div class="row visible-xs">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Due</span>
-          <span class="orange"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="red"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
       </div>
     </div>
 
@@ -81,7 +81,7 @@
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Amount Due</span>
-          <span class="orange"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="red"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
       </div>
     </div>
 
@@ -97,24 +97,26 @@
       </div>
 
       <% Object.keys(invoice.payments).forEach(function(address){ %>
-        <div class="row line-item thin-underline">
-          <div class="col-xs-12 col-sm-6 col-md-6 address-text">
-            <a href="#BlockChainInfo"><%= address %></a>
+        <% if (invoice.payments[address].status.toLowerCase() !== 'unpaid') { %>
+          <div class="row line-item thin-underline">
+            <div class="col-xs-12 col-sm-6 col-md-6 address-text">
+              <a href="#BlockChainInfo"><%= address %></a>
+            </div>
+            <div class="col-xs-4 visible-xs med-sm-text">Status</div>
+            <div class="col-xs-8 col-sm-2 col-md-3 right <%= invoice.payments[address].status.toLowerCase() %>">
+              <%= invoice.payments[address].status %>
+            </div>
+            <div class="col-xs-4 visible-xs med-sm-text">Amount</div>
+            <div class="col-xs-8 col-sm-4 col-md-3 right">
+              <% if (!invoice.payments[address].amount_paid) { %>
+                0
+              <% } else { %>
+                <%= invoice.payments[address].amount_paid %>
+              <% } %>
+              BTC
+            </div> 
           </div>
-          <div class="col-xs-4 visible-xs med-sm-text">Status</div>
-          <div class="col-xs-8 col-sm-2 col-md-3 right <%= invoice.payments[address].status.toLowerCase() %>">
-            <%= invoice.payments[address].status %>
-          </div>
-          <div class="col-xs-4 visible-xs med-sm-text">Amount</div>
-          <div class="col-xs-8 col-sm-4 col-md-3 right">
-            <% if (!invoice.payments[address].amount_paid) { %>
-              0
-            <% } else { %>
-              <%= invoice.payments[address].amount_paid %>
-            <% } %>
-            BTC
-          </div> 
-        </div>
+        <% } %>
       <% }); %>
     <% } %>
 
