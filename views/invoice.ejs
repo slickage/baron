@@ -92,14 +92,14 @@
     <br />
 
     <!-- Payment History -->
-    <% if (Object.keys(invoice.payments).length > 0) { %>
+    <% if (invoice.show_history) { %>
       <div class="row">
         <div class="col-sm-12">
           Payment History
         </div>
       </div>
 
-      <% Object.keys(invoice.payments).forEach(function(address){ %>
+      <% Object.keys(invoice.payments).forEach(function(address) { %>
         <% if (invoice.payments[address].status.toLowerCase() !== 'unpaid') { %>
           <div class="row line-item thin-underline">
             <div class="col-xs-12 col-sm-6 col-md-6">

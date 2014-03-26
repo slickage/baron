@@ -1,4 +1,5 @@
 var helper = require('../helper');
+var validate = require('../validate');
 var db = require('../db');
 
 var invoices = function(app) {
@@ -6,7 +7,7 @@ var invoices = function(app) {
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    if (helper.isValidObjectID(invoiceId)) { // Validate the invoice id
+    if (validate.objectID(invoiceId)) { // Validate the invoice id
       db.findInvoice(invoiceId, function(err, invoice) {
         if (err || !invoice) {
           res.render('error',  { errorMsg: 'Cannot find Invoice ' + invoiceId });
@@ -30,7 +31,7 @@ var invoices = function(app) {
           var paymentDict = invoice.payments; 
           var keys = Object.keys(paymentDict); 
           var totalPaid = 0; // Will store sum of payment object's amount paid.
-
+          var showPaymentHistory = false; // Should the invoice display payment history
           // Loop through each payment object to sum up totalPaid
           keys.forEach(function(key) {
             var paidAmount = paymentDict[key].amount_paid; 
@@ -39,9 +40,11 @@ var invoices = function(app) {
                 totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
             } 
 
-            // Capitalizing first letter of payment status for display in invoice view
             var status = paymentDict[key].status;
-            paymentDict[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()
+            // Only show payment history if the invoice has payment that is not in unpaid status
+            showPaymentHistory = status.toLowerCase() !== 'unpaid' || showPaymentHistory;
+            // Capitalizing first letter of payment status for display in invoice view
+            paymentDict[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
           });
 
           // Calculate remaining balance using totalPaid
@@ -57,6 +60,7 @@ var invoices = function(app) {
           // Add new variables to invoice object for display in invoice view
           invoice.total_paid = totalPaid;
           invoice.remaining_balance = remainingBalance;
+          invoice.show_history = showPaymentHistory;
           res.render('invoice', { invoice: invoice });
         }
       });
@@ -67,19 +71,26 @@ var invoices = function(app) {
   });
 
   // Post invoice object to /invoice to create new invoice
-  // TODO: Do we need to validate the input?
   app.post('/invoices', function(req, res) {
-    var newInvoice = req.body;
-    db.createInvoice(newInvoice, function(err, invoice) {
-      if(err || !invoice) {
-        res.write(err.message);
-        res.end();
-      }
-      else {
-        res.json(invoice);
-        res.end();
-      }
-    });
+    // Validate the new invoice
+    var newInvoice = validate.invoice(req.body);
+    if (newInvoice) {
+      db.createInvoice(newInvoice, function(err, invoice) {
+        if(err || !invoice) {
+          res.json({ error:err });
+          res.end();
+        }
+        else {        
+          res.json(invoice);
+          res.end();
+        }
+      });
+    }
+    else {
+      res.json({ error:'The received invoice failed validation. Verify that ' + 
+        'the invoice object being sent conforms to the specifications in the API' });
+      res.end();
+    }
   });
 };
 

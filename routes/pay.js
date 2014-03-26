@@ -1,5 +1,6 @@
 var payments = require('../payments');
 var helper = require('../helper');
+var validate = require('../validate');
 var db = require('../db');
 var btcAddr = require('bitcoin-address');
 
@@ -8,7 +9,7 @@ var pay = function(app) {
   // Creates a new payment or redirects to existing payment
   app.post('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    if (helper.isValidObjectID(invoiceId)) { // Validate invoice ID
+    if (validate.objectID(invoiceId)) { // Validate invoice ID
       db.findInvoice(invoiceId, function(err, invoice) {
         if (err || !invoice) {
           res.render('error', { errorMsg: 'Invalid invoice cannot generate payment.' });
@@ -74,7 +75,7 @@ var pay = function(app) {
   // Displays payment for given invoiceId
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    if (helper.isValidObjectID(invoiceId)) { // Validate invoice ID
+    if (validate.objectID(invoiceId)) { // Validate invoice ID
       db.findInvoice(invoiceId, function(err, invoice) {
         if (err || !invoice) {
           res.render('error', { errorMsg: 'Cannot find invoice.' });

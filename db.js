@@ -15,6 +15,9 @@ module.exports = {
     invoiceCol.findOne({_id: new ObjectID(invoiceId)}, cb);
   },
   createInvoice: function(invoice, cb) {
+    if (!invoice.payments) {
+      invoice.payments = {};
+    }
     invoiceCol.insert(invoice, cb);
   },
   updateInvoice: function(invoice, cb) {
