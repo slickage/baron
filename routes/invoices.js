@@ -9,8 +9,10 @@ var invoices = function(app) {
     var invoiceId = req.params.invoiceId;
     if (validate.objectID(invoiceId)) { // Validate the invoice id
       db.findInvoice(invoiceId, function(err, invoice) {
-        if (err || !invoice) {
-          res.render('error',  { errorMsg: 'Cannot find Invoice ' + invoiceId });
+        var expired = validate.invoiceExpired(invoice);
+        if (err || !invoice || expired) {
+          var errMsg = expired ? 'Error: Invoice associated with payment is expired.' : 'Cannot find invoice.';
+          res.render('error', { errorMsg:errMsg });
         }
         else {
           var isUSD = invoice.currency.toUpperCase() === 'USD';
