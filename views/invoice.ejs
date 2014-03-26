@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Basic Pay</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">  
   <link href="/css/bootstrap.min.css" rel="stylesheet">
   <link href="/css/styles.css" rel="stylesheet">
 </head>
@@ -20,20 +22,20 @@
       <div class="col-sm-12">
         Invoice 
         <span class="green hidden-xs"> <%= invoice._id %></span>
-        <span class="green visible-xs medium-text"><%= invoice._id %></span>
+        <span class="green visible-xs mobile-text"><%= invoice._id %></span>
       </div>
     </div>
 
     <% invoice.line_items.forEach(function(item){ %>
       <div class="row line-item thin-underline">
         <div class="col-xs-12 col-sm-4 dark-gray"><%= item.description %></div>
-        <div class="col-xs-4 visible-xs med-sm-text">Quantity</div>          
+        <div class="col-xs-4 visible-xs mobile-lbl-text">Quantity</div>          
         <div class="col-xs-8 col-sm-2 right"><%= item.quantity %> &times;</div>
-        <div class="col-xs-4 visible-xs med-sm-text">Cost</div>          
+        <div class="col-xs-4 visible-xs mobile-lbl-text">Cost</div>          
         <div class="col-xs-8 col-sm-3 right">
           <%= item.amount %> <%= invoice.currency.toUpperCase() %>
         </div> 
-        <div class="col-xs-4 visible-xs med-sm-text">Line Total</div>          
+        <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>          
         <div class="col-xs-8 col-sm-3 right">
           <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
         </div>
@@ -49,13 +51,14 @@
         </form>      
       </div>
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
-          <span class="visible-xs float-left">Total</span>
-          <span class="hidden-xs float-left">Balance Total</span>
-          <%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %>
+        <span class="visible-xs float-left medium-text">Total</span>
+        <span class="hidden-xs float-left">Balance Total</span>
+        <span class="visible-xs medium-text"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
+        <span class="hidden-xs"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
       </div>
     </div>
 
-    <div class="row visible-xs">
+    <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Paid</span>
           <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>
@@ -70,7 +73,7 @@
       </div>
     </div>
 
-    <div class="row visible-xs">
+    <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Due</span>
           <span class="red"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
@@ -99,15 +102,16 @@
       <% Object.keys(invoice.payments).forEach(function(address){ %>
         <% if (invoice.payments[address].status.toLowerCase() !== 'unpaid') { %>
           <div class="row line-item thin-underline">
-            <div class="col-xs-12 col-sm-6 col-md-6 address-text">
-              <a href="#BlockChainInfo"><%= address %></a>
+            <div class="col-xs-12 col-sm-6 col-md-6">
+              <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= address %></a></span>
+              <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= address %></a></span>
             </div>
-            <div class="col-xs-4 visible-xs med-sm-text">Status</div>
-            <div class="col-xs-8 col-sm-2 col-md-3 right <%= invoice.payments[address].status.toLowerCase() %>">
+            <div class="col-xs-3 visible-xs mobile-lbl-text">Status</div>
+            <div class="col-xs-9 col-sm-2 col-md-3 right <%= invoice.payments[address].status.toLowerCase() %>">
               <%= invoice.payments[address].status %>
             </div>
-            <div class="col-xs-4 visible-xs med-sm-text">Amount</div>
-            <div class="col-xs-8 col-sm-4 col-md-3 right">
+            <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
+            <div class="col-xs-9 col-sm-4 col-md-3 right">
               <% if (!invoice.payments[address].amount_paid) { %>
                 0
               <% } else { %>

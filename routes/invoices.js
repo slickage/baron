@@ -76,10 +76,12 @@ var invoices = function(app) {
         res.end();
       }
       else {
+        res.json(invoice);
         res.end();
       }
     });
   });
 };
+
 
 module.exports = invoices;

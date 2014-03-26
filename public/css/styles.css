@@ -9,7 +9,7 @@ h1 {
 
 body {
   /* Debut pattern from http://subtlepatterns.com/debut-light/ by user Luke McDonald (http://lukemcdonald.com) */
-  background: url(../images/debut_light.png);
+  background: url(../images/subtlenet2.png);
   font-family: "HelveticaNeue-Thin", "Helvetica Neue Thin", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-weight: 300;
   font-size: 34px;
@@ -29,8 +29,13 @@ a:hover, a:active {
   font-size: 28px;
 }
 
-.med-sm-text {
-  font-size: 24px; 
+.mobile-lbl-text {
+  padding-top:10px;
+  font-size: 18px; 
+}
+
+.mobile-text {
+  font-size: 22px;
 }
 
 .small-text {
@@ -44,6 +49,12 @@ a:hover, a:active {
 .address-text {
   font-size: 18px;
   padding-top: 13px;
+  font-family: "Andale Mono", AndaleMono, monospace;
+}
+
+.mobile-address-text {
+  font-size: 14px;
+  padding-top: 10px;
   font-family: "Andale Mono", AndaleMono, monospace;
 }
 
@@ -110,11 +121,6 @@ a:hover, a:active {
   float: left;
 }
 
-.balance-container {
-  width: 475px;
-  float: right;
-}
-
 .center {
   text-align: center;
 }
@@ -125,6 +131,11 @@ a:hover, a:active {
 
 .center-margin {
   width: 320px;
+  margin: 0 auto;
+}
+
+.center-margin-data {
+  width: 300px;
   margin: 0 auto;
 }
 
