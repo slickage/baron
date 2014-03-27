@@ -77,6 +77,8 @@ var invoices = function(app) {
     // Validate the new invoice
     var newInvoice = validate.invoice(req.body);
     if (newInvoice) {
+      // Set create date
+      newInvoice.created = new Date().getTime();
       db.createInvoice(newInvoice, function(err, invoice) {
         if(err || !invoice) {
           res.json({ error:err });
@@ -95,6 +97,5 @@ var invoices = function(app) {
     }
   });
 };
-
 
 module.exports = invoices;
