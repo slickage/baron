@@ -1,6 +1,7 @@
 var config = require('./config');
 var path = require('path');
 var express = require('express');
+var bitstamped = require('bitstamped');
 var app = express();
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
@@ -19,6 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var index = function(app) {
   require('./routes')(app);
+  bitstamped(app);
 };
 
 module.exports = index;
