@@ -21,7 +21,6 @@ var pay = function(app) {
           var paymentDict = invoice.payments;
           var keys = Object.keys(paymentDict);
           var paymentAddress; // Will store the active payments address
-
           // Loop through payments to find the latest payment object
           keys.forEach(function(key) {
             if (paymentAddress) {
@@ -71,7 +70,7 @@ var pay = function(app) {
       });
     }
     else { // Invalid invoice ID was input
-     res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
+      res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
     }
   });
 
@@ -162,7 +161,7 @@ var pay = function(app) {
       });
     }
     else { // Invalid invoice ID was input
-     res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
+      res.render('error',  { errorMsg: 'Invalid Invoice ID.' });
     }
   });
 };
