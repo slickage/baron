@@ -2,7 +2,7 @@ var payments = require('../payments');
 var helper = require('../helper');
 var validate = require('../validate');
 var db = require('../db');
-var bitstamped = require('bitstamped')
+var bitstamped = require('bitstamped');
 var btcAddr = require('bitcoin-address');
 
 var pay = function(app) {
@@ -37,7 +37,7 @@ var pay = function(app) {
             res.redirect('/pay/' + invoiceId);
           }
           // Create a new payment object for invoices without a payment or with a partial payment
-          else { 
+          else {
             payments.getPaymentAddress(function(err, address) { // Get payment address from bitcond
               if (btcAddr.validate(address, 'testnet')) { // TODO: Remove testnet parameter for production
                 // Create payment object
@@ -97,7 +97,7 @@ var pay = function(app) {
           keys.forEach(function(key) {
             // Grab latest paymentAddress
             if (paymentAddress) {
-              paymentAddress = paymentDict[key].timestamp > paymentDict[paymentAddress].timestamp ? key : paymentAddress;            
+              paymentAddress = paymentDict[key].timestamp > paymentDict[paymentAddress].timestamp ? key : paymentAddress;
             }
             else {
               paymentAddress = key;
@@ -107,7 +107,7 @@ var pay = function(app) {
             if (paidAmount) {
               // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
               totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
-            } 
+            }
           });
 
           // Calculate remaining balance and round if invoice is in USD
@@ -135,7 +135,7 @@ var pay = function(app) {
                     amountLastFour: helper.getLastFourDecimals(amount),
                     qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
                   });
-                } 
+                }
                 else {
                   res.json({ error: err });
                   res.end();

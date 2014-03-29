@@ -25,22 +25,22 @@ var invoices = function(app) {
               item.line_total = helper.roundToDecimal(item.line_total, 2);
             }
             // If our calculated line total has more than 8 decimals round to 8
-            else if (helper.decimalPlaces(item.line_total) > 8) { 
+            else if (helper.decimalPlaces(item.line_total) > 8) {
               item.line_total = helper.roundToDecimal(item.line_total, 8);
             }
           });
 
-          var paymentDict = invoice.payments; 
-          var keys = Object.keys(paymentDict); 
+          var paymentDict = invoice.payments;
+          var keys = Object.keys(paymentDict);
           var totalPaid = 0; // Will store sum of payment object's amount paid.
           var showPaymentHistory = false; // Should the invoice display payment history
           // Loop through each payment object to sum up totalPaid
           keys.forEach(function(key) {
-            var paidAmount = paymentDict[key].amount_paid; 
+            var paidAmount = paymentDict[key].amount_paid;
             if (paidAmount) {
                 // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
                 totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
-            } 
+            }
 
             var status = paymentDict[key].status;
             // Only show payment history if the invoice has payment that is not in unpaid status
@@ -84,14 +84,14 @@ var invoices = function(app) {
           res.json({ error:err });
           res.end();
         }
-        else {        
+        else {
           res.json(invoice);
           res.end();
         }
       });
     }
     else {
-      res.json({ error:'The received invoice failed validation. Verify that ' + 
+      res.json({ error:'The received invoice failed validation. Verify that ' +
         'the invoice object being sent conforms to the specifications in the API' });
       res.end();
     }
