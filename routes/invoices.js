@@ -3,7 +3,6 @@ var validate = require('../validate');
 var db = require('../db');
 
 var invoices = function(app) {
-
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
@@ -75,13 +74,9 @@ var invoices = function(app) {
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
     // Validate the new invoice
-    var newInvoice = validate.invoice(req.body);
-    if (newInvoice) {
-      // Set create date
-      newInvoice.created = new Date().getTime();
-      db.createInvoice(newInvoice, function(err, invoice) {
+    db.createInvoice(req.body, function(err, invoice) {
         if(err || !invoice) {
-          res.json({ error:err });
+          res.json({ error: err });
           res.end();
         }
         else {
@@ -89,12 +84,6 @@ var invoices = function(app) {
           res.end();
         }
       });
-    }
-    else {
-      res.json({ error:'The received invoice failed validation. Verify that ' +
-        'the invoice object being sent conforms to the specifications in the API' });
-      res.end();
-    }
   });
 };
 

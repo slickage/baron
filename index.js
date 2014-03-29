@@ -2,6 +2,7 @@ var config = require('./config');
 var path = require('path');
 var express = require('express');
 var bitstamped = require('bitstamped');
+var db = require('./db');
 var app = express();
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
@@ -18,12 +19,15 @@ app.use(express.static(path.join(__dirname, 'public')));
   - Add link to blockchain.info
 */
 
-var index = function(app) {
+var init = function(app) {
   require('./routes')(app);
 };
 
-module.exports = index;
+module.exports = {
+  init: init,
+  createInvoice: db.createInvoice
+};
 
-index(app);
+init(app);
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);
