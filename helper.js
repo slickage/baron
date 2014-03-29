@@ -1,4 +1,5 @@
 var request = require('request');
+var bitstamped = require('bitstamped');
 
 module.exports = {
   decimalPlaces: function(number) {
@@ -20,8 +21,5 @@ module.exports = {
   roundToDecimal: function(number, decimalPlaces) {
     var offset = Math.pow(10, decimalPlaces);
     return (Math.round(number * offset) / offset).toFixed(decimalPlaces);
-  },
-  convertToBtc: function(callback) {
-  		request('https://www.bitstamp.net/api/ticker/', callback);
   }
 };

@@ -2,6 +2,7 @@ var payments = require('../payments');
 var helper = require('../helper');
 var validate = require('../validate');
 var db = require('../db');
+var bitstamped = require('bitstamped')
 var btcAddr = require('bitcoin-address');
 
 var pay = function(app) {
@@ -116,9 +117,12 @@ var pay = function(app) {
           // Check that there is a payment for this invoice
           if (paymentAddress) {
             if (isUSD) { // Convert balance due from USD to BTC if invoice is in USD
-              helper.convertToBtc(function(err, response, body) {
-                if (!err && response.statusCode === 200) {
-                  var rate = Number(JSON.parse(body).vwap); // Bitcoin volume weighted average price
+              var curTime = new Date().getTime();
+              bitstamped.getTicker(curTime, function(err, body) {
+                if (!err) {
+                  var tickerData = body.rows[0].value;
+                  console.log(tickerData.vwap);
+                  var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
                   invoice.balance_due = helper.roundToDecimal(remainingBalance / rate, 8);
                   var amount = invoice.balance_due;
                   res.render('pay', {
@@ -131,9 +135,10 @@ var pay = function(app) {
                     amountLastFour: helper.getLastFourDecimals(amount),
                     qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
                   });
-                }
-                else { // Error converting USD to BTC
-                  res.render('error', { errorMsg: 'Error: Cannot convert USD to BTC.' });
+                } 
+                else {
+                  res.json({ error: err });
+                  res.end();
                 }
               });
             }

@@ -20,7 +20,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var index = function(app) {
   require('./routes')(app);
-  bitstamped(app);
 };
 
 module.exports = index;
