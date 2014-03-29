@@ -113,44 +113,31 @@ var pay = function(app) {
 
         // Check that there is a payment for this invoice
         if (paymentAddress) {
-          if (isUSD) { // Convert balance due from USD to BTC if invoice is in USD
-            var curTime = new Date().getTime();
-            bitstamped.getTicker(curTime, function(err, body) {
-              if (!err) {
+          var curTime = new Date().getTime();
+          bitstamped.getTicker(curTime, function(err, body) {
+            if (!err) {
+              if (isUSD) {
                 var tickerData = body.rows[0].value;
-                console.log(tickerData.vwap);
                 var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
                 invoice.balance_due = helper.roundToDecimal(remainingBalance / rate, 8);
-                var amount = invoice.balance_due;
-                res.render('pay', {
-                  showRefresh: true, // Refresh is only needed for invoices in USD
-                  invoiceId: invoiceId,
-                  status: paymentDict[paymentAddress].status,
-                  address: paymentAddress,
-                  amount: amount,
-                  amountFirstFour: helper.toFourDecimals(amount),
-                  amountLastFour: helper.getLastFourDecimals(amount),
-                  qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + amount
-                });
+                remainingBalance = invoice.balance_due;
               }
-              else {
-                res.json({ error: err });
-                res.end();
-              }
-            });
-          }
-          else { // Invoice is already in BTC, just display payment
-            res.render('pay', {
-              showRefresh: false, // No refresh since invoice is in BTC
-              invoiceId: invoiceId,
-              status: paymentDict[paymentAddress].status,
-              address: paymentAddress,
-              amount: remainingBalance,
-              amountFirstFour: helper.toFourDecimals(remainingBalance),
-              amountLastFour: helper.getLastFourDecimals(remainingBalance),
-              qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + remainingBalance
-            });
-          }
+              res.render('pay', {
+                showRefresh: isUSD, // Refresh is only needed for invoices in USD
+                invoiceId: invoiceId,
+                status: paymentDict[paymentAddress].status,
+                address: paymentAddress,
+                amount: remainingBalance,
+                amountFirstFour: helper.toFourDecimals(remainingBalance),
+                amountLastFour: helper.getLastFourDecimals(remainingBalance),
+                qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + remainingBalance
+              });
+            }
+            else {
+              res.json({ error: err });
+              res.end();
+            }
+          });
         }
         else { // Else error, payment object doesnt exist for invoice
           res.render('error', { errorMsg: 'Cannot find payment.' });
