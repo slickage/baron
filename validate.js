@@ -10,19 +10,11 @@ module.exports = {
     }
   },
   invoiceExpired: function(invoice) {
-    if (invoice.expiration) {
+    if (invoice && invoice.expiration) {
       return invoice.expiration < new Date().getTime();
     }
     else {
       return false;
     }
-  },
-  objectID: function(str) {
-    str = str + '';
-    var len = str.length, valid = false;
-    if (len === 12 || len === 24) {
-      valid = /^[0-9a-fA-F]+$/.test(str);
-    }
-    return valid;
   }
 };

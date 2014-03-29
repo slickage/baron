@@ -25,7 +25,8 @@ var init = function(app) {
 
 module.exports = {
   init: init,
-  createInvoice: db.createInvoice
+  createInvoice: db.createInvoice,
+  findInvoice: db.findInvoice
 };
 
 init(app);

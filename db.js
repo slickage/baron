@@ -5,14 +5,19 @@ var config = require('./config');
 var validate = require('./validate');
 
 MongoClient.connect(config.mongodb.url, function(err, db) {
-  if(err) { throw err; }
+  if (err) { throw err; }
   database = db;
   invoiceCol = db.collection('invoices');
 });
 
 module.exports = {
   findInvoice: function(invoiceId, cb) {
-    invoiceCol.findOne({_id: new ObjectID(invoiceId)}, cb);
+    try {
+      invoiceCol.findOne({_id: new ObjectID(invoiceId)}, cb);
+    }
+    catch (e) {
+      cb('Invalid Invoice ID.');
+    }
   },
   createInvoice: function(invoice, cb) {
     if (validate.invoice(invoice)) {
