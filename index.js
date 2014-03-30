@@ -1,12 +1,4 @@
-var config = require('./config');
-var path = require('path');
-var express = require('express');
-var bitstamped = require('bitstamped');
 var db = require('./db');
-var app = express();
-app.set('view engine', 'ejs');
-app.use(express.bodyParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
 /*
   TODO List:
@@ -21,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var init = function(app) {
   require('./routes')(app);
+  require('bitstamped');
 };
 
 module.exports = {
@@ -28,7 +21,3 @@ module.exports = {
   createInvoice: db.createInvoice,
   findInvoice: db.findInvoice
 };
-
-init(app);
-app.listen(config.port);
-console.log('HTTP Server on port: ' + config.port);
