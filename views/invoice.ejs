@@ -99,23 +99,23 @@
         </div>
       </div>
 
-      <% Object.keys(invoice.payments).forEach(function(address) { %>
-        <% if (invoice.payments[address].status.toLowerCase() !== 'unpaid') { %>
+      <% invoice.payments.forEach(function(payment) { %>
+        <% if (payment.status.toLowerCase() !== 'unpaid') { %>
           <div class="row line-item thin-underline">
             <div class="col-xs-12 col-sm-6 col-md-6">
-              <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= address %></a></span>
-              <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= address %></a></span>
+              <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
+              <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
             </div>
             <div class="col-xs-3 visible-xs mobile-lbl-text">Status</div>
-            <div class="col-xs-9 col-sm-2 col-md-3 right <%= invoice.payments[address].status.toLowerCase() %>">
-              <%= invoice.payments[address].status %>
+            <div class="col-xs-9 col-sm-2 col-md-3 right <%= payment.status.toLowerCase() %>">
+              <%= payment.status %>
             </div>
             <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
             <div class="col-xs-9 col-sm-4 col-md-3 right">
-              <% if (!invoice.payments[address].amount_paid) { %>
+              <% if (!payment.amount_paid) { %>
                 0
               <% } else { %>
-                <%= invoice.payments[address].amount_paid %>
+                <%= payment.amount_paid %>
               <% } %>
               BTC
             </div> 

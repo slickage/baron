@@ -1,38 +1,32 @@
-var MongoClient = require('mongodb').MongoClient,
-    ObjectID = require('mongodb').ObjectID;
-var database, invoiceCol;
-var config = require('./config');
 var validate = require('./validate');
+var nano = require('nano')('http://localhost:5984');
+var dbname = 'basicpay';
+var basicpay;
 
-MongoClient.connect(config.mongodb.url, function(err, db) {
-  if (err) { throw err; }
-  database = db;
-  invoiceCol = db.collection('invoices');
+nano.db.create(dbname, function(err, body) {
+  if (!err) { console.log('Database created.'); }
+  basicpay = nano.use(dbname);
 });
 
 module.exports = {
   findInvoice: function(invoiceId, cb) {
-    try {
-      invoiceCol.findOne({_id: new ObjectID(invoiceId)}, cb);
-    }
-    catch (e) {
-      cb('Invalid Invoice ID.');
-    }
+    basicpay.view(dbname, 'invoicesWithPayments', { key:invoiceId }, cb);
   },
   createInvoice: function(invoice, cb) {
     if (validate.invoice(invoice)) {
-      if (!invoice.payments) {
-        invoice.payments = {};
-      }
       invoice.created = new Date().getTime();
-      invoiceCol.insert(invoice, cb);
+      invoice.type = 'invoice';
+      basicpay.insert(invoice, cb);
     }
     else {
      cb('The received invoice failed validation. Verify that ' +
       'the invoice object being sent conforms to the specifications in the API');
     }
   },
-  updateInvoice: function(invoice, cb) {
-    invoiceCol.save(invoice, cb);
+  createPayment: function(payment, cb) {
+    basicpay.insert(payment, cb);
+  },
+  update: function(doc, cb) { // Used to update a payment or invoice
+    basicpay.insert(doc, cb);
   }
 };

@@ -1,5 +1,4 @@
 var db = require('./db');
-
 /*
   TODO List:
   - Store payment status as strings (paid, pending, unpaid, partial, overpaid, expired)

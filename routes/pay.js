@@ -10,7 +10,18 @@ var pay = function(app) {
   // Creates a new payment or redirects to existing payment
   app.post('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    db.findInvoice(invoiceId, function(err, invoice) {
+    db.findInvoice(invoiceId, function(err, doc) {
+      var invoice;
+      var paymentsArr = [];
+      doc.rows.forEach(function (row) {
+        if (row.value.type === 'invoice') {
+          invoice = row.value;
+        }
+        else if (row.value.type === 'payment') {
+          paymentsArr.push(row.value);
+        }
+      });
+
       var expired = validate.invoiceExpired(invoice);
       if (err || !invoice || expired) {
         if (!err) {
@@ -19,42 +30,41 @@ var pay = function(app) {
         res.render('error', { errorMsg:err });
       }
       else {
-        var paymentDict = invoice.payments;
-        var keys = Object.keys(paymentDict);
-        var paymentAddress; // Will store the active payments address
+        var activePayment; // Will store the active payments address
         // Loop through payments to find the latest payment object
-        keys.forEach(function(key) {
-          if (paymentAddress) {
-            paymentAddress = paymentDict[key].timestamp > paymentDict[paymentAddress].timestamp ? key : paymentAddress;
+        paymentsArr.forEach(function(payment) {
+          if (activePayment) {
+            activePayment = payment.created > activePayment.created ? payment : activePayment;
           }
           else {
-            paymentAddress = key;
+            activePayment = payment;
           }
         });
-
         // If payment exists and it's not partially paid redirect to display payment view
-        if (paymentAddress && paymentDict[paymentAddress].status !== 'partial') {
+        if (activePayment && activePayment.status !== 'partial') {
           res.redirect('/pay/' + invoiceId);
         }
         // Create a new payment object for invoices without a payment or with a partial payment
         else {
           payments.getPaymentAddress(function(err, address) { // Get payment address from bitcond
+            console.log(address);
             if (btcAddr.validate(address, 'testnet')) { // TODO: Remove testnet parameter for production
               // Create payment object
               var payment = {};
+              payment.invoiceId = invoiceId;
+              payment.address = address;
               payment.amount_paid = 0; // Always stored in BTC
               payment.spot_rate = null; // Exchange rate at time of payment
               payment.status = 'unpaid';
-              payment.timestamp = new Date().getTime();
+              payment.created = new Date().getTime();
+              payment.paid_timestamp = null;
               payment.txId = null; // Bitcoind txid for transaction
               payment.ntxId = null; // Normalized txId
+              payment.type = 'payment';
 
               // Add payment object to invoice
-              invoice.payments[address] = payment;
-
-              // Update the invoice object after adding payment
-              db.updateInvoice(invoice, function(err, savedInvoice) {
-                if (err || !savedInvoice) {
+              db.createPayment(payment, function(err, doc) {
+                if (err || !doc) {
                   res.render('error', { errorMsg: 'Error creating payment for invoice.' });
                 }
                 else { // Redirect to display payment view after saving invoice
@@ -74,7 +84,18 @@ var pay = function(app) {
   // Displays payment for given invoiceId
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    db.findInvoice(invoiceId, function(err, invoice) {
+    db.findInvoice(invoiceId, function(err, doc) {
+      var invoice;
+      var paymentsArr = [];
+      doc.rows.forEach(function (row) {
+        if (row.value.type === 'invoice') {
+          invoice = row.value;
+        }
+        else if (row.value.type === 'payment') {
+          paymentsArr.push(row.value);
+        }
+      });
+
       var expired = validate.invoiceExpired(invoice);
       if (err || !invoice || expired) {
         if (!err) {
@@ -84,26 +105,25 @@ var pay = function(app) {
       }
       else {
         var isUSD = invoice.currency.toUpperCase() === 'USD';
-        var paymentDict = invoice.payments;
-        var keys = Object.keys(paymentDict);
-        var paymentAddress; // Will store the active payments address
+ 
+        var activePayment; // Will store the active payments address
         var totalPaid = 0; // Will store the sum of payments
 
         // Loop through payments to find the latest payment object
         // Also calculate total paid amount so we can calculate remaining balance
-        keys.forEach(function(key) {
+        paymentsArr.forEach(function(payment) {
           // Grab latest paymentAddress
-          if (paymentAddress) {
-            paymentAddress = paymentDict[key].timestamp > paymentDict[paymentAddress].timestamp ? key : paymentAddress;
+          if (activePayment) {
+            activePayment = payment.created > activePayment.created ? payment : activePayment;
           }
           else {
-            paymentAddress = key;
+            activePayment = payment;
           }
           // Calculate totalPaid
-          var paidAmount = paymentDict[key].amount_paid;
+          var paidAmount = payment.amount_paid;
           if (paidAmount) {
             // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-            totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
+            totalPaid += isUSD ? paidAmount * activePayment.spot_rate : paidAmount;
           }
         });
 
@@ -112,7 +132,7 @@ var pay = function(app) {
         remainingBalance = isUSD ? helper.roundToDecimal(remainingBalance, 2) : remainingBalance;
 
         // Check that there is a payment for this invoice
-        if (paymentAddress) {
+        if (activePayment) {
           var curTime = new Date().getTime();
           bitstamped.getTicker(curTime, function(err, body) {
             if (!err) {
@@ -125,12 +145,12 @@ var pay = function(app) {
               res.render('pay', {
                 showRefresh: isUSD, // Refresh is only needed for invoices in USD
                 invoiceId: invoiceId,
-                status: paymentDict[paymentAddress].status,
-                address: paymentAddress,
+                status: activePayment.status,
+                address: activePayment.address,
                 amount: remainingBalance,
                 amountFirstFour: helper.toFourDecimals(remainingBalance),
                 amountLastFour: helper.getLastFourDecimals(remainingBalance),
-                qrImageUrl: '/paymentqr?address=' + paymentAddress + '&amount=' + remainingBalance
+                qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + remainingBalance
               });
             }
             else {

@@ -6,7 +6,18 @@ var invoices = function(app) {
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    db.findInvoice(invoiceId, function(err, invoice) {
+    db.findInvoice(invoiceId, function(err, doc) {
+      var invoice;
+      var paymentsArr = [];
+      doc.rows.forEach(function (row) {
+        if (row.value.type === 'invoice') {
+          invoice = row.value;
+        }
+        else if (row.value.type === 'payment') {
+          paymentsArr.push(row.value);
+        }
+      });
+
       var expired = validate.invoiceExpired(invoice);
       if (err || !invoice || expired) {
         if (!err) {
@@ -30,23 +41,21 @@ var invoices = function(app) {
           }
         });
 
-        var paymentDict = invoice.payments;
-        var keys = Object.keys(paymentDict);
         var totalPaid = 0; // Will store sum of payment object's amount paid.
         var showPaymentHistory = false; // Should the invoice display payment history
         // Loop through each payment object to sum up totalPaid
-        keys.forEach(function(key) {
-          var paidAmount = paymentDict[key].amount_paid;
+        paymentsArr.forEach(function(payment) {
+          var paidAmount = payment.amount_paid;
           if (paidAmount) {
               // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-              totalPaid += isUSD ? paidAmount * paymentDict[key].spot_rate : paidAmount;
+              totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
           }
 
-          var status = paymentDict[key].status;
+          var status = payment.status;
           // Only show payment history if the invoice has payment that is not in unpaid status
           showPaymentHistory = status.toLowerCase() !== 'unpaid' || showPaymentHistory;
           // Capitalizing first letter of payment status for display in invoice view
-          paymentDict[key].status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+          payment.status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
         });
 
         // Calculate remaining balance using totalPaid
@@ -63,6 +72,7 @@ var invoices = function(app) {
         invoice.total_paid = totalPaid;
         invoice.remaining_balance = remainingBalance;
         invoice.show_history = showPaymentHistory;
+        invoice.payments = paymentsArr;
         res.render('invoice', { invoice: invoice });
       }
     });
@@ -70,17 +80,16 @@ var invoices = function(app) {
 
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
-    // Validate the new invoice
     db.createInvoice(req.body, function(err, invoice) {
-        if(err || !invoice) {
-          res.json({ error: err });
-          res.end();
-        }
-        else {
-          res.json(invoice);
-          res.end();
-        }
-      });
+      if(err || !invoice) {
+        res.json({ error: err });
+        res.end();
+      }
+      else {
+        res.json(invoice);
+        res.end();
+      }
+    });
   });
 };
 
