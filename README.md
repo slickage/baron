@@ -14,8 +14,6 @@ Basic pay is a bitcoin payment processor that makes it easy to manage bitcoin tr
 
 Invoices allow a person to receive payment for goods or services in BTC. The invoice can be created in USD for a fixed price invoice or in BTC. USD invoices are converted to BTC at time of payment using the current exchange rate for BTC. 
 
-**NOTE:** Balance due and line item amounts are stored in whatever currency the invoice is set to. 
-
 Invoices can be viewed by going to the /invoices/:invoiceId route. For example:
 ```sh
 http://localhost:8080/invoices/305148c3f6b5c3944bbc92b8772b502f
@@ -32,6 +30,8 @@ Invoices have the following properties:
   * description - Line item description text
   * quantity - Quantity of the item purchased
   * amount - The unit cost of the line item
+
+**NOTE:** Balance due and line item amounts are stored in whatever currency the invoice is set to. 
 
 An example of a new Invoice object:
 ```js
@@ -64,12 +64,30 @@ http://localhost:8080/invoices
 Alternatively, if Basic Pay is being used as a module, invoices can be created internally using:
 
 ```js
-basicpay.createInvoice(newInvoice);
+basicpay.createInvoice(newInvoice, function(err, doc) {
+  if (err) {
+    res.write(err);
+    res.end();
+  }
+  else {
+    // Success
+  }
+});
 ```
 
 Invoices with payments can be queried by invoiceId using:
 ```js
-basicpay.findInvoiceAndPayments(invoiceId);
+basicpay.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+  if (err) {
+    res.write(err);
+    res.end();
+  }
+  else {
+    // Success
+    console.log(invoice);
+    console.log(paymentsArr)
+  }
+});
 ```
 
 ### Payments
