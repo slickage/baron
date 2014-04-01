@@ -8,12 +8,6 @@ Basic pay is a bitcoin payment processor that makes it easy to manage bitcoin tr
 * Records BTC exchange rates when payments are made
 * Keeps a history of all invoices and payments
 
-## Requirements
-
-* [node](http://nodejs.org)
-* [couchdb](http://wiki.apache.org/couchdb/Installation)
-* [bitcoin-qt](https://bitcoin.org/en/download)
-
 ## Information
 
 ### Invoices
@@ -103,6 +97,12 @@ Payments have the following properties:
 * paid_timestamp - Time that payment became 'paid' status
 
 **NOTE:** Payments are created and handled internally.
+
+## Requirements
+
+* [node](http://nodejs.org)
+* [couchdb](http://wiki.apache.org/couchdb/Installation)
+* [bitcoin-qt](https://bitcoin.org/en/download)
 
 ## Installation
 
