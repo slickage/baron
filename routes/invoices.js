@@ -1,69 +1,38 @@
 var helper = require('../helper');
 var validate = require('../validate');
 var db = require('../db');
+var invoiceUtil = require('../invoiceutil');
 
 var invoices = function(app) {
+  
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
     db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
-      var expired = validate.invoiceExpired(invoice);
-      if (err || !invoice || expired) {
-        if (!err) {
-          err = expired ? 'Error: Invoice is expired.' : 'Cannot find invoice.';
-        }
-        res.render('error', { errorMsg:err });
+      // Validate that invoice is not expired
+      if (err || validate.invoiceExpired(invoice)) {
+        var errorMsg = err ? err.toString() : 'Error: Invoice is expired.';
+        return res.render('error', { errorMsg:errorMsg });
       }
-      else {
-        var isUSD = invoice.currency.toUpperCase() === 'USD';
+      // Calculate Amount * Quantity for each line item's total
+      invoiceUtil.calculateLineTotals(invoice);
 
-        // Calculate Amount * Quantity for each line item's total
-        invoice.line_items.forEach(function (item){
-          item.line_total = item.amount * item.quantity;
-          if (isUSD) { // Round USD to two decimals
-            item.amount = helper.roundToDecimal(item.amount, 2);
-            item.line_total = helper.roundToDecimal(item.line_total, 2);
-          }
-          // If our calculated line total has more than 8 decimals round to 8
-          else if (helper.decimalPlaces(item.line_total) > 8) {
-            item.line_total = helper.roundToDecimal(item.line_total, 8);
-          }
-        });
+      // Get the total paid amount for invoice
+      var isUSD = invoice.currency.toUpperCase() === 'USD';
+      invoice.total_paid = invoiceUtil.getTotalPaid(paymentsArr, isUSD);
 
-        var totalPaid = 0; // Will store sum of payment object's amount paid.
-        var showPaymentHistory = false; // Should the invoice display payment history
-        // Loop through each payment object to sum up totalPaid
-        paymentsArr.forEach(function(payment) {
-          var paidAmount = payment.amount_paid;
-          if (paidAmount) {
-              // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-              totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
-          }
+      // Round balance due to 2 decimals if USD. (Ex: turns $1.5 to $1.50)
+      invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;
 
-          var status = payment.status;
-          // Only show payment history if the invoice has payment that is not in unpaid status
-          showPaymentHistory = status.toLowerCase() !== 'unpaid' || showPaymentHistory;
-          // Capitalizing first letter of payment status for display in invoice view
-          payment.status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-        });
+      // Calculate the remaining balance using total paid and balance due
+      invoice.remaining_balance = invoice.balance_due - invoice.total_paid;
 
-        // Calculate remaining balance using totalPaid
-        var remainingBalance = invoice.balance_due - totalPaid;
+      // Get the payment history for this invoice
+      var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr); // Should the invoice display payment history
+      invoice.payment_history = paymentHistory;
 
-        // If invoice is in USD, round to two decimals
-        if (isUSD) {
-          totalPaid = helper.roundToDecimal(totalPaid , 2);
-          remainingBalance = helper.roundToDecimal(remainingBalance, 2);
-          invoice.balance_due = helper.roundToDecimal(invoice.balance_due, 2);
-        }
-
-        // Add new variables to invoice object for display in invoice view
-        invoice.total_paid = totalPaid;
-        invoice.remaining_balance = remainingBalance;
-        invoice.show_history = showPaymentHistory;
-        invoice.payments = paymentsArr;
-        res.render('invoice', { invoice: invoice });
-      }
+      // Show the invoice
+      res.render('invoice', { invoice: invoice });
     });
   });
 
@@ -80,6 +49,7 @@ var invoices = function(app) {
       }
     });
   });
+
 };
 
 module.exports = invoices;

@@ -44,11 +44,13 @@
 
     <div class="row">
       <div class="col-xs-12 col-sm-4">
-        <form method="POST" action="/pay/<%= invoice._id %>">
-          <button type="submit" class="btn btn-lg btn-default btn-wide">
-            Pay Now
-          </button>
-        </form>      
+        <% if (invoice.remaining_balance > 0) { %>
+          <form method="POST" action="/pay/<%= invoice._id %>">
+            <button type="submit" class="btn btn-lg btn-default btn-wide">
+              Pay Now
+            </button>
+          </form>
+        <% } %>
       </div>
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
         <span class="visible-xs float-left medium-text">Total</span>
@@ -92,35 +94,33 @@
     <br />
 
     <!-- Payment History -->
-    <% if (invoice.show_history) { %>
+    <% if (invoice.payment_history.length > 0) { %>
       <div class="row">
         <div class="col-sm-12">
           Payment History
         </div>
       </div>
 
-      <% invoice.payments.forEach(function(payment) { %>
-        <% if (payment.status.toLowerCase() !== 'unpaid') { %>
-          <div class="row line-item thin-underline">
-            <div class="col-xs-12 col-sm-6 col-md-6">
-              <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
-              <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
-            </div>
-            <div class="col-xs-3 visible-xs mobile-lbl-text">Status</div>
-            <div class="col-xs-9 col-sm-2 col-md-3 right <%= payment.status.toLowerCase() %>">
-              <%= payment.status %>
-            </div>
-            <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
-            <div class="col-xs-9 col-sm-4 col-md-3 right">
-              <% if (!payment.amount_paid) { %>
-                0
-              <% } else { %>
-                <%= payment.amount_paid %>
-              <% } %>
-              BTC
-            </div> 
+      <% invoice.payment_history.forEach(function(payment) { %>
+        <div class="row line-item thin-underline">
+          <div class="col-xs-12 col-sm-6 col-md-6">
+            <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
+            <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= payment.address %></a></span>
           </div>
-        <% } %>
+          <div class="col-xs-3 visible-xs mobile-lbl-text">Status</div>
+          <div class="col-xs-9 col-sm-2 col-md-3 right <%= payment.status.toLowerCase() %>">
+            <%= payment.status %>
+          </div>
+          <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
+          <div class="col-xs-9 col-sm-4 col-md-3 right">
+            <% if (!payment.amount_paid) { %>
+              0
+            <% } else { %>
+              <%= payment.amount_paid %>
+            <% } %>
+            BTC
+          </div> 
+        </div>
       <% }); %>
     <% } %>
 

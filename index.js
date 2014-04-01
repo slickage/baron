@@ -21,10 +21,10 @@ module.exports = function (externalConfig) {
   global.externalConfig = externalConfig;
   config = require('./config');
   db =  require('./db');
-  var methods = {
+  var externalMethods = {
     init: init,
     createInvoice: db.createInvoice,
     findInvoiceAndPayments: db.findInvoiceAndPayments
   };
-  return methods;
+  return externalMethods;
 };
