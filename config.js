@@ -4,8 +4,8 @@ var localConfig = {
   bitcoind:  {
     host: process.env.BITCOIND_HOST || 'localhost',
     port: Number(process.env.BITCOIND_PORT) || 18332,
-    user: process.env.BITCOIND_USER || 'bitcoinrpc',
-    pass: process.env.BITCOIND_PASS || 'asdf1234'
+    user: process.env.BITCOIND_USER || 'username',
+    pass: process.env.BITCOIND_PASS || 'password'
   }
 };
 
