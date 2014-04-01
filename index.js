@@ -1,4 +1,3 @@
-var db = require('./db');
 /*
   TODO List:
   - Store payment status as strings (paid, pending, unpaid, partial, overpaid, expired)
@@ -10,13 +9,22 @@ var db = require('./db');
   - Add link to blockchain.info
 */
 
+var db;
+var config;
+
 var init = function(app) {
   require('./routes')(app);
   require('bitstamped');
 };
 
-module.exports = {
-  init: init,
-  createInvoice: db.createInvoice,
-  findInvoice: db.findInvoice
+module.exports = function (externalConfig) {
+  global.externalConfig = externalConfig;
+  config = require('./config');
+  db =  require('./db');
+  var methods = {
+    init: init,
+    createInvoice: db.createInvoice,
+    findInvoiceAndPayments: db.findInvoiceAndPayments
+  };
+  return methods;
 };

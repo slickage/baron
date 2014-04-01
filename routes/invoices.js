@@ -6,18 +6,7 @@ var invoices = function(app) {
   // View Invoice by ID
   app.get('/invoices/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    db.findInvoice(invoiceId, function(err, doc) {
-      var invoice;
-      var paymentsArr = [];
-      doc.rows.forEach(function (row) {
-        if (row.value.type === 'invoice') {
-          invoice = row.value;
-        }
-        else if (row.value.type === 'payment') {
-          paymentsArr.push(row.value);
-        }
-      });
-
+    db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
       var expired = validate.invoiceExpired(invoice);
       if (err || !invoice || expired) {
         if (!err) {

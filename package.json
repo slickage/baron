@@ -24,7 +24,9 @@
     "bitcoin-address": "^0.2.0",
     "request": "^2.34.0",
     "bitstamped": "slickage/bitstamped.git",
-    "nano": "^5.7.1",
+    "nano": "^5.7.1"
+  },
+  "devDependencies": {
     "couchapp": "^0.11.0"
   }
 }

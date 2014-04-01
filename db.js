@@ -1,5 +1,6 @@
 var validate = require('./validate');
-var nano = require('nano')('http://localhost:5984');
+var config = require('./config');
+var nano = require('nano')(config.dbUrl);
 var dbname = 'basicpay';
 var basicpay;
 
@@ -9,8 +10,20 @@ nano.db.create(dbname, function(err, body) {
 });
 
 module.exports = {
-  findInvoice: function(invoiceId, cb) {
-    basicpay.view(dbname, 'invoicesWithPayments', { key:invoiceId }, cb);
+  findInvoiceAndPayments: function(invoiceId, cb) {
+    basicpay.view(dbname, 'invoicesWithPayments', { key:invoiceId }, function (err, docs) {
+      var invoice;
+      var paymentsArr = [];
+      docs.rows.forEach(function (row) {
+        if (row.value.type === 'invoice') {
+          invoice = row.value;
+        }
+        else if (row.value.type === 'payment') {
+          paymentsArr.push(row.value);
+        }
+      });
+      cb(err, invoice, paymentsArr);
+    });
   },
   createInvoice: function(invoice, cb) {
     if (validate.invoice(invoice)) {
