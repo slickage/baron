@@ -1,9 +1,6 @@
-var configExports = {
+var localConfig = {
   port: process.env.PORT || 8080,
   dbUrl: process.env.DB_URL || 'http://localhost:5984',
-  mongodb: {
-    url: process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/basicpay',
-  },
   bitcoind:  {
     host: process.env.BITCOIND_HOST || 'localhost',
     port: Number(process.env.BITCOIND_PORT) || 18332,
@@ -12,11 +9,5 @@ var configExports = {
   }
 };
 
-if (global.externalConfig) {
-  console.log('externalConfig');
-  console.log(JSON.stringify(global.externalConfig));
-}
-else {
-  console.log('ohshit');
-}
-module.exports = global.externalConfig ? global.externalConfig : configExports;
+// If config was passed in, export that. If not export local config.
+module.exports = global.externalConfig ? global.externalConfig : localConfig;
