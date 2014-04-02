@@ -18,7 +18,7 @@ ddoc.views.invoicesWithPayments = {
   }
 };
 
-ddoc.views.invoice = {
+ddoc.views.invoices = {
   map: function(doc) {
     if (doc.type === 'invoice') {
       emit(doc._id, doc);

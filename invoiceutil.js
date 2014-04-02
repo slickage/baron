@@ -1,6 +1,6 @@
 var helper = require('./helper');
 var bitstamped = require('bitstamped');
-var payments = require('./payments');
+var bitcoinUtil = require('./bitcoinutil');
 var btcAddr = require('bitcoin-address');
 var db = require('./db');
 
@@ -68,7 +68,7 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
 };
 
 var createNewPayment = function(invoiceId, cb) {
-  payments.getPaymentAddress(function(err, address) { // Get payment address from bitcond
+  bitcoinUtil.getPaymentAddress(function(err, address) { // Get payment address from bitcond
     if (err) {
       return cb(err, undefined);
     }
@@ -80,6 +80,7 @@ var createNewPayment = function(invoiceId, cb) {
     payment.invoice_id = invoiceId;
     payment.address = address;
     payment.amount_paid = 0; // Always stored in BTC
+    payment.confirmations = null;
     payment.spot_rate = null; // Exchange rate at time of payment
     payment.status = 'unpaid';
     payment.created = new Date().getTime();
@@ -108,12 +109,67 @@ var getPaymentHistory = function(paymentsArr) {
   return history;
 };
 
+var updatePayment = function(paymentData, cb) {
+  db.findPayment(paymentData.address, function(err, payment) {
+    if (!err) {
+      db.findInvoice(payment.invoice_id, function(err, invoice) {
+        if (!err) {
+          // Update payment object
+          payment.amount_paid = paymentData.amount;
+          payment.confirmations = paymentData.confirmations;
+          payment.tx_id = paymentData.txid;
+          payment.ntx_id = paymentData.normtxid;
+          payment.paid_timestamp = paymentData.timereceived;
+
+          // TODO: Caclulate Payment status
+          payment.status = payment.status;
+          // unpaid (no check), pending (no confs), partial (remaining balance), paid (0 remaining balance), overpaid (- remaining balance)
+
+          // Update payment stored in couch
+          db.update(payment, function(err, doc) {
+            return cb(err, doc);
+          });
+        }
+        return cb(err, undefined);
+      });
+    }
+    return cb(err, undefined);
+  });
+};
+
+var updateSpotRate = function(payment, cb) {
+  var status = payment.status;
+  if (status === 'paid' || status === 'overpaid' || status === 'partial') { return; }
+  var address = payment.address;
+  db.findPayment(address, function(err, curPayment) {
+    if (!err) {
+      var curTime = new Date().getTime();
+      bitstamped.getTicker(curTime, function(err, docs) {
+        if (!err && docs.rows && docs.rows.length > 0) {
+          var tickerData = docs.rows[0].value; // Get ticker object
+          var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+
+          // Update payment spot rate then save
+          curPayment.spot_rate = rate;
+          db.update(curPayment, function(err, doc) {
+            return cb(err, doc);
+          });
+        }
+        return cb(err, undefined);
+      });
+    }
+    return cb(err, undefined);
+  });
+};
+
 module.exports = {
   calculateLineTotals: calculateLineTotals,
   getTotalPaid: getTotalPaid,
   getActivePayment: getActivePayment,
   calculateRemainingBalance: calculateRemainingBalance,
   createNewPayment: createNewPayment,
-  getPaymentHistory: getPaymentHistory
+  getPaymentHistory: getPaymentHistory,
+  updatePayment: updatePayment,
+  updateSpotRate: updateSpotRate
 };
 

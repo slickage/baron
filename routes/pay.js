@@ -23,7 +23,7 @@ var pay = function(app) {
 
       // Create a new payment object for invoices without a payment or with a partial payment
       invoiceUtil.createNewPayment(invoiceId, function(err, doc) {
-        if (err) {
+        if (err || !doc) {
           return res.render('error', { errorMsg: 'Error creating payment for invoice.' });
         }
         return res.redirect('/pay/' + invoiceId);
@@ -48,8 +48,12 @@ var pay = function(app) {
         return res.render('error', { errorMsg: errorMsg });
       }
 
+      invoiceUtil.updateSpotRate(activePayment, function(err, doc) {
+        if (err || !doc) { return res.render('error', { errorMsg: 'Error: Cannot store exchange rate for payment.' }); }
+      });
+
       // Calculate the remaining balance and render the payment view
-      invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function (err, remainingBalance) {
+      invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
         // Error checking
         if (err || remainingBalance <= 0) {
           errorMsg = err ? err.toString() : 'Error: Invoice is paid in full, no payments exist.';

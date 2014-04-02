@@ -8,10 +8,17 @@ var client = new bitcoin.Client({
   pass: config.bitcoind.pass
 });
 
+var getPaymentAddress = function(cb) {
+  client.getNewAddress(cb);
+};
+
+var getTransaction = function(txId, cb) {
+  client.getTransaction(txId, cb);
+};
+
 module.exports = {
   bitcoinClient: client,
-  getPaymentAddress: function(cb) {
-    client.getNewAddress(cb);
-  }
+  getPaymentAddress: getPaymentAddress,
+  getTransaction: getTransaction,
 };
 
