@@ -13,7 +13,7 @@ ddoc.views.invoicesWithPayments = {
       emit(doc._id, doc);
     }
     if (doc.type === 'payment') {
-      emit(doc.invoiceId, doc);
+      emit(doc.invoice_id, doc);
     }
   }
 };

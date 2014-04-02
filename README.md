@@ -22,16 +22,16 @@ http://localhost:8080/invoices/305148c3f6b5c3944bbc92b8772b502f
 ### Invoice Data Model
 
 Invoices have the following properties:
-* currency - Can be either USD or BTC.
-* min_confirmations - Minimum confirmations before a payment is considered paid
-* balance_due - The total balance due for the invoice
-* expiration (optional) - Expiration time for invoice (unix timestamp)
-* line_items - Array storing line items
-  * description - Line item description text
-  * quantity - Quantity of the item purchased
-  * amount - The unit cost of the line item
+* ```currency``` - Can be either USD or BTC.
+* ```min_confirmations``` - Minimum confirmations before a payment is considered paid
+* ```balance_due``` - The total balance due for the invoice
+* ```expiration``` ***(optional)*** - Expiration time for invoice (unix timestamp)
+* ```line_items``` - Array storing line items
+  * ```description``` - Line item description text
+  * ```quantity``` - Quantity of the item purchased
+  * ```amount``` - The unit cost of the line item
 
-**NOTE:** Balance due and line item amounts are stored in whatever currency the invoice is set to. 
+**NOTE:** Balance due and line item amounts are stored in whatever currency the invoice is set to. Expiration is an optional property that will make an invoice expire given unix timestamp.
 
 An example of a new Invoice object:
 ```js
@@ -104,15 +104,15 @@ http://localhost:8080/pay/305148c3f6b5c3944bbc92b8772b502f
 ### Payment Data Model
 
 Payments have the following properties:
-* invoiceId - Invoice that this payment is associated with
-* address - Address to send BTC to
-* amount_paid - Stores the amount that was paid (Always stored in BTC)
-* spot_rate - Stores the exchange rate at the time of payment
-* status - The status of this payment (paid, unpaid, partial, overpaid, pending)
-* txId - Stores the transaction ID from bitcoind
-* ntxId - Stores the normalized transaction ID from bitcoind
-* created - Time the payment was created
-* paid_timestamp - Time that payment became 'paid' status
+* ```invoice_id``` - Invoice that this payment is associated with
+* ```address``` - Address to send BTC to
+* ```amount_paid``` - Stores the amount that was paid (Always stored in BTC)
+* ```spot_rate``` - Stores the exchange rate at the time of payment
+* ```status``` - The status of this payment (paid, unpaid, partial, overpaid, pending)
+* ```tx_id``` - Stores the transaction ID from bitcoind
+* ```ntx_id``` - Stores the normalized transaction ID from bitcoind
+* ```created``` - Time the payment was created
+* ```paid_timestamp``` - Time that payment became 'paid' status
 
 **NOTE:** Payments are created and handled internally.
 
@@ -120,13 +120,13 @@ Payments have the following properties:
 
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
-* [bitcoin-qt](https://bitcoin.org/en/download)
+* [bitcoin](https://bitcoin.org/en/download)
 
 ## Installation
 
 Clone the repository:
 ```sh
-$ git clone git@github.com:slickage/basicpay.git
+$ git clone https://github.com/slickage/basicpay.git
 ```
 
 Change directories to basicpay and install dependencies:
@@ -145,7 +145,7 @@ BITCOIND_USER=username
 BITCOIND_PASS=password
 ```
 
-Modify bitcoin-qt's bitcoin.conf:
+Modify bitcoin's bitcoin.conf:
 ```sh
 discover=0 # for testing, not for production
 testnet=1 # for testing, not for production
@@ -155,7 +155,6 @@ server=1 # allows json-rpc api calls
 rpcuser=username
 rpcpassword=password
 ```
-
 
 Run basicpay
 ```sh

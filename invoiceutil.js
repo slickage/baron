@@ -77,15 +77,15 @@ var createNewPayment = function(invoiceId, cb) {
     }
     // Create payment object
     var payment = {};
-    payment.invoiceId = invoiceId;
+    payment.invoice_id = invoiceId;
     payment.address = address;
     payment.amount_paid = 0; // Always stored in BTC
     payment.spot_rate = null; // Exchange rate at time of payment
     payment.status = 'unpaid';
     payment.created = new Date().getTime();
     payment.paid_timestamp = null;
-    payment.txId = null; // Bitcoind txid for transaction
-    payment.ntxId = null; // Normalized txId
+    payment.tx_id = null; // Bitcoind txid for transaction
+    payment.ntx_id = null; // Normalized txId
     payment.type = 'payment';
 
     // Add payment object to database
