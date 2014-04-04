@@ -17,7 +17,7 @@ var pay = function(app) {
 
       // If payment exists and it's not partially paid redirect to display payment view
       var activePayment = invoiceUtil.getActivePayment(paymentsArr);
-      if (activePayment && activePayment.status !== 'partial') {
+      if (activePayment && activePayment.status !== 'partial' && activePayment.status !== 'pending') {
         return res.redirect('/pay/' + invoiceId);
       }
 
@@ -40,7 +40,7 @@ var pay = function(app) {
 
       var errorMsg = ''; // Set error message based on point of failure
       if (expired) { errorMsg = 'Error: Invoice associated with payment is expired.'; }
-      else if (!activePayment) { errorMsg = 'Error: Invoice does not has no active payments.'; }
+      else if (!activePayment) { errorMsg = 'Error: Invoice does not have any active payments.'; }
       else if (err) { errorMsg = err.toString(); }
 
       // Render error view with message
@@ -55,20 +55,23 @@ var pay = function(app) {
       // Calculate the remaining balance and render the payment view
       invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
         // Error checking
-        if (err || remainingBalance <= 0) {
+        if (err || remainingBalance <= 0 && activePayment.status !=='pending') {
           errorMsg = err ? err.toString() : 'Error: Invoice is paid in full, no payments exist.';
           return res.render('error', { errorMsg: errorMsg });
         }
         var isUSD = invoice.currency.toUpperCase() === 'USD';
+        var amountToDisplay = remainingBalance === 0 ? activePayment.amount_paid : remainingBalance;
         res.render('pay', {
           showRefresh: isUSD, // Refresh is only needed for invoices in USD
           invoice_id: invoiceId,
           status: activePayment.status,
           address: activePayment.address,
-          amount: remainingBalance,
-          amountFirstFour: helper.toFourDecimals(remainingBalance),
-          amountLastFour: helper.getLastFourDecimals(remainingBalance),
-          qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + remainingBalance
+          confirmations: activePayment.confirmations ? activePayment.confirmations : 0,
+          ntxId: activePayment.ntx_id,
+          amount: amountToDisplay,
+          amountFirstFour: helper.toFourDecimals(amountToDisplay),
+          amountLastFour: helper.getLastFourDecimals(amountToDisplay),
+          qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay
         });
       });
       

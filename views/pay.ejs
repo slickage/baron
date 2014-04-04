@@ -59,7 +59,7 @@
             </a>
           <% } %>
           <br />
-          <span class="green">3</span> Confirmations
+          <span class="green"><%= confirmations %></span> Confirmations
           <a href="#BlockChainLink">
             <img class="right-icon" src="/images/info.png" />
           </a>
@@ -87,10 +87,14 @@
             <% } %>
           </span>
           <div class="invoice-data-width">
+
             <% if (amountLastFour === '0000') { %>
-            <%= amountFirstFour %> BTC
+              <%= amountFirstFour %> BTC 
             <% } else { %>
-            <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+             <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+            <% } %>
+            <% if (ntxId) { %>
+              <span class="green"> Sent</span>
             <% } %>
             <% if (status === 'unpaid' && showRefresh) { %>
               <a href="<%= invoice_id %>">
@@ -98,7 +102,7 @@
               </a>
             <% } %>
             <br />
-            <span class="green">3</span> Confirmations
+            <span class="green"><%= confirmations %></span> Confirmations
             <a href="#BlockChainLink">
               <img class="right-icon" src="/images/info.png" />
             </a>

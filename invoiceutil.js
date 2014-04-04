@@ -7,8 +7,14 @@ var db = require('./db');
 function getPaymentStatus(payment, minConfirmations, remainingBalance) {
   var status = payment.status;
   var confirmationsMet = payment.confirmations === minConfirmations;
+  console.log('PAYMENT STATUS DATA: ');
+  console.log('Status: ' + status);
+  console.log('Payment Confirmations: ' + payment.confirmations);
+  console.log('Min Confirmations: ' + minConfirmations);
+  console.log('Remaining Balance: ' + remainingBalance);
+  console.log('Payment Obj: ' + JSON.stringify(payment));
 
-  if (payment.paid_amount > 0 && !confirmationsMet) {
+  if (payment.amount_paid > 0 && !confirmationsMet) {
     status = 'pending';
   }
   else if (confirmationsMet) {
@@ -22,7 +28,7 @@ function getPaymentStatus(payment, minConfirmations, remainingBalance) {
       status = 'overpaid';
     }
   }
-
+  console.log(status);
   return status;
 }
 
@@ -48,7 +54,7 @@ function updateConfirmations(payment, transaction, cb) {
           // Update confirmations and status
           payment.confirmations = transaction.confirmations;
           payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance);
-          console.log('Updating Confirmations: ' + payment);
+          console.log('Updating Confirmations: ' + JSON.stringify(payment));
 
           // Update payment stored in couch
           db.update(payment, function(err, doc) {
@@ -78,7 +84,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
           // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
           // isn't aware of the incoming payment amount           
           payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
-          console.log('Initial Payment Walletnotify: ' + payment);
+          console.log('Initial Payment Walletnotify: ' +  JSON.stringify(payment));
 
           // Update payment stored in couch
           db.update(payment, cb);
@@ -121,7 +127,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
               payment.ntx_id = transaction.normtxid; // Normalized txId
               payment.type = 'payment';
 
-              console.log('Creating Duplicate Address Payment: ' + payment);
+              console.log('Creating Duplicate Address Payment: ' +  JSON.stringify(payment));
 
               // Add payment object to database
               db.createPayment(payment, cb);
@@ -231,7 +237,6 @@ var getPaymentHistory = function(paymentsArr) {
   paymentsArr.forEach(function(payment) {
     var status = payment.status;
     // Only show history of paid payments
-    console.log(payment);
     if(status.toLowerCase() !== 'unpaid') {
       history.push(payment);
     }
