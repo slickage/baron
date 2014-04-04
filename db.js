@@ -36,9 +36,19 @@ var findPayment = function(address, cb) {
   });
 };
 
+var findPaymentByNormalizedTxId = function(txId, cb) {
+  basicpay.view(dbname, 'paymentsNormalizedTxId', { key:txId }, function (err, docs) {
+    if (!err && docs.rows && docs.rows.length > 0) {
+      var payment = docs.rows[0].value;
+      return cb(err, payment);
+    }
+    return cb(err, undefined);
+  });
+};
+
 var findInvoice = function(invoiceId, cb) {
   basicpay.view(dbname, 'invoices', { key:invoiceId }, function (err, docs) {
-    if (!err  && docs.rows && docs.rows.length > 0) {
+    if (!err && docs.rows && docs.rows.length > 0) {
       var invoice = docs.rows[0].value;
       return cb(err, invoice);
     }
@@ -69,6 +79,7 @@ var update = function(doc, cb) { // Used to update a payment or invoice
 module.exports = {
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPayment: findPayment,
+  findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
   findInvoice: findInvoice,
   createInvoice: createInvoice,
   createPayment: createPayment,

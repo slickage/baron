@@ -4,6 +4,138 @@ var bitcoinUtil = require('./bitcoinutil');
 var btcAddr = require('bitcoin-address');
 var db = require('./db');
 
+function getPaymentStatus(payment, minConfirmations, remainingBalance) {
+  var status = payment.status;
+  var confirmationsMet = payment.confirmations === minConfirmations;
+
+  if (payment.paid_amount > 0 && !confirmationsMet) {
+    status = 'pending';
+  }
+  else if (confirmationsMet) {
+    if(remainingBalance === 0) {
+      status = 'paid';
+    }
+    else if (remainingBalance > 0) {
+      status = 'partial';
+    }
+    else if (remainingBalance < 0) {
+      status = 'overpaid';
+    }
+  }
+
+  return status;
+}
+
+// TODO:
+// Currently assuming there is only one detail with the category receive
+// Possible that this will change
+function getReceiveDetail(details) {
+  var receiveDetail;
+  details.forEach(function(detail) {
+    if(detail.category === 'receive') {
+      receiveDetail = detail;
+    }
+  });
+  return receiveDetail;
+}
+
+// Case 1: Found payment by ntx_id so were just updating confirmations
+function updateConfirmations(payment, transaction, cb) {
+    db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
+    if (!err) {
+      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+        if (!err) {
+          // Update confirmations and status
+          payment.confirmations = transaction.confirmations;
+          payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance);
+          console.log('Updating Confirmations: ' + payment);
+
+          // Update payment stored in couch
+          db.update(payment, function(err, doc) {
+            return cb(err, doc);
+          });
+        }
+        return cb(err, undefined);
+      });
+    }
+    return cb(err, undefined);
+  });
+}
+
+// Case 2: Found payment by address and ntx_id wasnt populated yet. This is the
+// first walletnotify for this payment object.
+function initialPaymentUpdate(payment, transaction, cb) {
+    db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
+    if (!err) {
+      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+        if (!err) {
+          // Update payment object
+          payment.amount_paid = transaction.amount;
+          payment.confirmations = transaction.confirmations;
+          payment.tx_id = transaction.txid;
+          payment.ntx_id = transaction.normtxid;
+          payment.paid_timestamp = transaction.time * 1000;
+          // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
+          // isn't aware of the incoming payment amount           
+          payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
+          console.log('Initial Payment Walletnotify: ' + payment);
+
+          // Update payment stored in couch
+          db.update(payment, cb);
+        }
+        return cb(err, undefined);
+      });
+    }
+    return cb(err, undefined);
+  });
+}
+
+// Case 3: Found payment by address and ntx_id is populated, this means someone 
+// sent another payment to a preexisting payment address. We need to create a new payment 
+// object with the same address. Two paymment objects will now have the same address,
+// but different ntx_id's
+function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
+  var paidTime = transaction.time * 1000;
+  db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+    if (!err) {
+      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+        if (!err) {
+          bitstamped.getTicker(paidTime, function(err, docs) {
+            if (!err && docs.rows && docs.rows.length > 0) {
+              var tickerData = docs.rows[0].value; // Get ticker object
+              var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+
+              // Create payment object
+              var payment = {};
+              payment.invoice_id = invoiceId;
+              payment.address = getReceiveDetail(transaction.details).address;
+              payment.amount_paid = transaction.amount; // Always stored in BTC
+              payment.confirmations = transaction.confirmations;
+              payment.spot_rate = rate; // Exchange rate at time of payment
+              // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
+              // isn't aware of the incoming payment amount 
+              payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
+              payment.created = new Date().getTime();
+              payment.paid_timestamp = paidTime;
+              payment.tx_id = transaction.txid; // Bitcoind txid for transaction
+              payment.ntx_id = transaction.normtxid; // Normalized txId
+              payment.type = 'payment';
+
+              console.log('Creating Duplicate Address Payment: ' + payment);
+
+              // Add payment object to database
+              db.createPayment(payment, cb);
+            }
+            return cb(err, undefined);
+          });
+        }
+        return cb(err, undefined);
+      });
+    }
+    return cb(err, undefined);
+  });
+}
+
 var calculateLineTotals = function(invoice) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   invoice.line_items.forEach(function (item){
@@ -56,8 +188,7 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value; // Get ticker object
         var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
-        invoice.balance_due = helper.roundToDecimal(remainingBalance / rate, 8);
-        remainingBalance = invoice.balance_due;
+        remainingBalance = helper.roundToDecimal(remainingBalance / rate, 8);
       }
       return cb(err, remainingBalance);
     });
@@ -100,6 +231,7 @@ var getPaymentHistory = function(paymentsArr) {
   paymentsArr.forEach(function(payment) {
     var status = payment.status;
     // Only show history of paid payments
+    console.log(payment);
     if(status.toLowerCase() !== 'unpaid') {
       history.push(payment);
     }
@@ -109,53 +241,51 @@ var getPaymentHistory = function(paymentsArr) {
   return history;
 };
 
-var updatePayment = function(paymentData, cb) {
-  db.findPayment(paymentData.address, function(err, payment) {
-    if (!err) {
-      db.findInvoice(payment.invoice_id, function(err, invoice) {
-        if (!err) {
-          // Update payment object
-          payment.amount_paid = paymentData.amount;
-          payment.confirmations = paymentData.confirmations;
-          payment.tx_id = paymentData.txid;
-          payment.ntx_id = paymentData.normtxid;
-          payment.paid_timestamp = paymentData.timereceived;
-
-          // TODO: Caclulate Payment status
-          payment.status = payment.status;
-          // unpaid (no check), pending (no confs), partial (remaining balance), paid (0 remaining balance), overpaid (- remaining balance)
-
-          // Update payment stored in couch
-          db.update(payment, function(err, doc) {
-            return cb(err, doc);
-          });
+var updatePayment = function(transaction, cb) {
+  var address = getReceiveDetail(transaction.details).address;
+  var ntxId = transaction.normtxid;
+  // Try to look up by ntx_id first, if we find a match we are just
+  // updating that existing payments confirmations
+  db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
+    if (!err && payment) { // found match for ntx_id
+      // Updating confirmations of an existing payment
+      updateConfirmations(payment, transaction, cb);
+    }
+    else { // No match found, try looking up by address
+      db.findPayment(address, function(err, payment) {
+        // If payment object doesnt have ntx_id populated that means it exists
+        // but has not been updated by a walletnotify before
+        if (!err && !payment.ntx_id) {
+          // Initial update from walletnotify
+          initialPaymentUpdate(payment, transaction, cb);
+        }
+        // If payment object with same address exists, but does have 
+        // ntx_id populated that means it exists and is already being 
+        // monitored by wallet notify. So this is a new transaction
+        // using the same payment address. Create new payment
+        else if (!err && payment.ntx_id) { // Payment exists and already has ntx so we need to create new payment
+          // Create new payment for same invoice as pre-existing payment
+          createNewPaymentWithTransaction(payment.invoice_id, transaction, cb);
         }
         return cb(err, undefined);
       });
     }
-    return cb(err, undefined);
   });
 };
 
 var updateSpotRate = function(payment, cb) {
   var status = payment.status;
   if (status === 'paid' || status === 'overpaid' || status === 'partial') { return; }
-  var address = payment.address;
-  db.findPayment(address, function(err, curPayment) {
-    if (!err) {
-      var curTime = new Date().getTime();
-      bitstamped.getTicker(curTime, function(err, docs) {
-        if (!err && docs.rows && docs.rows.length > 0) {
-          var tickerData = docs.rows[0].value; // Get ticker object
-          var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+  var curTime = new Date().getTime();
+  bitstamped.getTicker(curTime, function(err, docs) {
+    if (!err && docs.rows && docs.rows.length > 0) {
+      var tickerData = docs.rows[0].value; // Get ticker object
+      var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
 
-          // Update payment spot rate then save
-          curPayment.spot_rate = rate;
-          db.update(curPayment, function(err, doc) {
-            return cb(err, doc);
-          });
-        }
-        return cb(err, undefined);
+      // Update payment spot rate then save
+      payment.spot_rate = rate;
+      db.update(payment, function(err, doc) {
+        return cb(err, doc);
       });
     }
     return cb(err, undefined);

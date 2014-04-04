@@ -33,3 +33,11 @@ ddoc.views.payments = {
     }
   }
 };
+
+ddoc.views.paymentsNormalizedTxId = {
+  map: function(doc) {
+    if (doc.type === 'payment') {
+      emit(doc.ntx_id, doc);
+    }
+  }
+};

@@ -26,6 +26,7 @@ var invoices = function(app) {
 
       // Calculate the remaining balance using total paid and balance due
       invoice.remaining_balance = invoice.balance_due - invoice.total_paid;
+      invoice.remaining_balance = isUSD ? helper.roundToDecimal(invoice.remaining_balance , 2) : invoice.remaining_balance;
 
       // Get the payment history for this invoice
       var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr); // Should the invoice display payment history
@@ -39,7 +40,7 @@ var invoices = function(app) {
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
     db.createInvoice(req.body, function(err, invoice) {
-      if(err || !invoice) {
+      if(err) {
         res.json({ error: err });
         res.end();
       }
