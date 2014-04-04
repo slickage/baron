@@ -60,7 +60,7 @@ var pay = function(app) {
           return res.render('error', { errorMsg: errorMsg });
         }
         var isUSD = invoice.currency.toUpperCase() === 'USD';
-        var amountToDisplay = remainingBalance === 0 ? activePayment.amount_paid : remainingBalance;
+        var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : remainingBalance;
         res.render('pay', {
           showRefresh: isUSD, // Refresh is only needed for invoices in USD
           invoice_id: invoiceId,

@@ -247,7 +247,9 @@ var getPaymentHistory = function(paymentsArr) {
 };
 
 var updatePayment = function(transaction, cb) {
-  var address = getReceiveDetail(transaction.details).address;
+  var receiveDetail = getReceiveDetail(transaction.details);
+  if (!receiveDetail) { return cb('Error'); }
+  var address = receiveDetail.address;
   var ntxId = transaction.normtxid;
   // Try to look up by ntx_id first, if we find a match we are just
   // updating that existing payments confirmations
