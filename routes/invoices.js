@@ -19,7 +19,7 @@ var invoices = function(app) {
 
       // Get the total paid amount for invoice
       var isUSD = invoice.currency.toUpperCase() === 'USD';
-      invoice.total_paid = invoiceUtil.getTotalPaid(paymentsArr, isUSD);
+      invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr, true);
 
       // Round balance due to 2 decimals if USD. (Ex: turns $1.5 to $1.50)
       invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;

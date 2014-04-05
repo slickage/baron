@@ -16,9 +16,14 @@ var getTransaction = function(txId, cb) {
   client.getTransaction(txId, cb);
 };
 
+var getBlock = function(txId, cb) {
+  client.getBlock(txId, cb);
+};
+
 module.exports = {
   bitcoinClient: client,
   getPaymentAddress: getPaymentAddress,
   getTransaction: getTransaction,
+  getBlock: getBlock
 };
 

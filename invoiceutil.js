@@ -6,13 +6,13 @@ var db = require('./db');
 
 function getPaymentStatus(payment, minConfirmations, remainingBalance) {
   var status = payment.status;
-  var confirmationsMet = payment.confirmations === minConfirmations;
+  var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
   console.log('PAYMENT STATUS DATA: ');
-  console.log('Status: ' + status);
+  console.log('Initial Status: ' + status);
   console.log('Payment Confirmations: ' + payment.confirmations);
   console.log('Min Confirmations: ' + minConfirmations);
+  console.log('Confirmations Met: ' + confirmationsMet);
   console.log('Remaining Balance: ' + remainingBalance);
-  console.log('Payment Obj: ' + JSON.stringify(payment));
 
   if (payment.amount_paid > 0 && !confirmationsMet) {
     status = 'pending';
@@ -28,7 +28,8 @@ function getPaymentStatus(payment, minConfirmations, remainingBalance) {
       status = 'overpaid';
     }
   }
-  console.log(status);
+  console.log('End Status: ' + status);
+  console.log('Payment Obj: ' + JSON.stringify(payment));
   return status;
 }
 
@@ -49,12 +50,12 @@ function getReceiveDetail(details) {
 function updateConfirmations(payment, transaction, cb) {
     db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+      calculateRemainingBalance(invoice, paymentsArr, false, function(err, remainingBalance) {
         if (!err) {
           // Update confirmations and status
           payment.confirmations = transaction.confirmations;
+          console.log('Updating Confirmations:');
           payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance);
-          console.log('Updating Confirmations: ' + JSON.stringify(payment));
 
           // Update payment stored in couch
           db.update(payment, function(err, doc) {
@@ -73,7 +74,7 @@ function updateConfirmations(payment, transaction, cb) {
 function initialPaymentUpdate(payment, transaction, cb) {
     db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+      calculateRemainingBalance(invoice, paymentsArr, true, function(err, remainingBalance) {
         if (!err) {
           // Update payment object
           payment.amount_paid = transaction.amount;
@@ -82,9 +83,9 @@ function initialPaymentUpdate(payment, transaction, cb) {
           payment.ntx_id = transaction.normtxid;
           payment.paid_timestamp = transaction.time * 1000;
           // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
-          // isn't aware of the incoming payment amount           
+          // isn't aware of the incoming payment amount    
+          console.log('Initial Payment Walletnotify:');       
           payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
-          console.log('Initial Payment Walletnotify: ' +  JSON.stringify(payment));
 
           // Update payment stored in couch
           db.update(payment, cb);
@@ -104,7 +105,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+      calculateRemainingBalance(invoice, paymentsArr, true, function(err, remainingBalance) {
         if (!err) {
           bitstamped.getTicker(paidTime, function(err, docs) {
             if (!err && docs.rows && docs.rows.length > 0) {
@@ -120,14 +121,13 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
               payment.spot_rate = rate; // Exchange rate at time of payment
               // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
               // isn't aware of the incoming payment amount 
+              console.log('Creating Duplicate Address Payment:');
               payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
               payment.created = new Date().getTime();
               payment.paid_timestamp = paidTime;
               payment.tx_id = transaction.txid; // Bitcoind txid for transaction
               payment.ntx_id = transaction.normtxid; // Normalized txId
               payment.type = 'payment';
-
-              console.log('Creating Duplicate Address Payment: ' +  JSON.stringify(payment));
 
               // Add payment object to database
               db.createPayment(payment, cb);
@@ -171,21 +171,32 @@ var getActivePayment = function(paymentsArr) {
   return activePayment;
 };
 
-var getTotalPaid = function(paymentsArr, convert) {
+var getTotalPaid = function(invoice, paymentsArr, includePending) {
+  var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = 0;
   paymentsArr.forEach(function(payment) {
+    if (!includePending && payment.status === 'pending') { return; }
       var paidAmount = payment.amount_paid;
       if (paidAmount) {
         // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-        totalPaid += convert ? paidAmount * payment.spot_rate : paidAmount;
+        totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
       }
   });
-  return convert ? helper.roundToDecimal(totalPaid, 2) : totalPaid;
+  if (isUSD) {
+    // If were dealing in fiat and the calculated total is within 10 cents consider it paid
+    if (Math.abs(invoice.balance_due - totalPaid) < 0.1) {
+      totalPaid = helper.roundToDecimal(invoice.balance_due, 2);
+    }
+    else {
+      totalPaid = helper.roundToDecimal(totalPaid, 2);
+    }
+  }
+  return totalPaid;
 };
 
-var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
+var calculateRemainingBalance = function(invoice, paymentsArr, includePending, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = getTotalPaid(paymentsArr, isUSD);
+  var totalPaid = getTotalPaid(invoice, paymentsArr, includePending);
   var remainingBalance = invoice.balance_due - totalPaid;
   if (isUSD) {
     remainingBalance = helper.roundToDecimal(remainingBalance, 2); // Round to 2 places for USD
