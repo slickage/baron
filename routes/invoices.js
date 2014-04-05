@@ -40,7 +40,7 @@ var invoices = function(app) {
         }
       });
       invoice.is_paid = !hasPending && invoice.remaining_balance <= 0;
-
+      invoice.is_overpaid = !hasPending && invoice.remaining_balance < 0;
       // Show the invoice
       res.render('invoice', { invoice: invoice });
     });

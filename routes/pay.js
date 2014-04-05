@@ -48,12 +48,6 @@ var pay = function(app) {
         return res.render('error', { errorMsg: errorMsg });
       }
 
-      // Only update spot rate for non paid payments
-      if (activePayment.amount_paid <= 0.0) {
-        invoiceUtil.updateSpotRate(activePayment, function(err, doc) {
-          if (err) { return res.render('error', { errorMsg: 'Error: Cannot store exchange rate for payment.' }); }
-        });
-      }
       // Calculate the remaining balance and render the payment view
       invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
         // Error checking
@@ -61,6 +55,15 @@ var pay = function(app) {
           errorMsg = err ? err.toString() : 'Error: Invoice is paid in full, no payments exist.';
           return res.render('error', { errorMsg: errorMsg });
         }
+
+        // Only update non paid payments
+        if (activePayment.amount_paid <= 0.0) {
+          // Update expected amount and spot rate
+          invoiceUtil.updatePaymentData(activePayment, remainingBalance, function(err, doc) {
+            if (err) { return res.render('error', { errorMsg: 'Error: Cannot store exchange rate for payment.' }); }
+          });
+        }
+
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : remainingBalance;
         res.render('pay', {

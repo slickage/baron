@@ -4,35 +4,28 @@ var bitcoinUtil = require('./bitcoinutil');
 var btcAddr = require('bitcoin-address');
 var db = require('./db');
 
-function getPaymentStatus(payment, minConfirmations, invoice) {
+function getPaymentStatus(payment, minConfirmations) {
   var status = payment.status;
-  var isUSD = invoice.currency.toUpperCase() === 'USD';
   var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
+  var expectedAmount = payment.expected_amount;
+  var amountPaid = payment.amount_paid;
   console.log('PAYMENT STATUS DATA: ');
   console.log('Initial Status: ' + status);
   console.log('Payment Confirmations: ' + payment.confirmations);
   console.log('Min Confirmations: ' + minConfirmations);
   console.log('Confirmations Met: ' + confirmationsMet);
-  var amountDue = Number(invoice.balance_due);
-  console.log('Remaining Balance: ' + amountDue);
-  var amountPaid = isUSD ? Number(payment.amount_paid) * payment.spot_rate : Number(payment.amount_paid);
-  
-  // If were dealing in USD and the calculated amount Paid is within 10c consider it paid
-  if (isUSD && Math.abs(amountDue - amountPaid) < 0.1) {
-    amountPaid = amountDue;
-  }
 
   if (amountPaid > 0 && !confirmationsMet) {
     status = 'pending';
   }
   else if (confirmationsMet) {
-    if(amountPaid === amountDue) {
+    if(amountPaid === expectedAmount) {
       status = 'paid';
     }
-    else if (amountPaid < amountDue) {
+    else if (amountPaid < expectedAmount) {
       status = 'partial';
     }
-    else if (amountPaid > amountDue) {
+    else if (amountPaid > expectedAmount) {
       status = 'overpaid';
     }
   }
@@ -61,7 +54,7 @@ function updateConfirmations(payment, transaction, cb) {
       // Update confirmations and status
       payment.confirmations = transaction.confirmations;
       console.log('Updating Confirmations:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations);
 
       // Update payment stored in couch
       db.update(payment, function(err, doc) {
@@ -84,7 +77,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
       payment.ntx_id = transaction.normtxid;
       payment.paid_timestamp = transaction.time * 1000;
       console.log('Initial Payment Walletnotify:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations);
 
       // Update payment stored in couch
       db.update(payment, cb);
@@ -112,10 +105,12 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           payment.invoice_id = invoiceId;
           payment.address = getReceiveDetail(transaction.details).address;
           payment.amount_paid = transaction.amount; // Always stored in BTC
+          // TODO: How should we treat the status of these types of payments
+          payment.expected_amount = 0; // overpaid status by default
           payment.confirmations = transaction.confirmations;
           payment.spot_rate = rate; // Exchange rate at time of payment
           console.log('Creating Duplicate Address Payment:');
-          payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
+          payment.status = getPaymentStatus(payment, invoice.min_confirmations);
           payment.created = new Date().getTime();
           payment.paid_timestamp = paidTime;
           payment.tx_id = transaction.txid; // Bitcoind txid for transaction
@@ -217,6 +212,7 @@ var createNewPayment = function(invoiceId, cb) {
     payment.invoice_id = invoiceId;
     payment.address = address;
     payment.amount_paid = 0; // Always stored in BTC
+    payment.expected_amount = null;
     payment.confirmations = null;
     payment.spot_rate = null; // Exchange rate at time of payment
     payment.status = 'unpaid';
@@ -280,7 +276,7 @@ var updatePayment = function(transaction, cb) {
   });
 };
 
-var updateSpotRate = function(payment, cb) {
+var updatePaymentData = function(payment, remainingBalance, cb) {
   var status = payment.status;
   if (status === 'paid' || status === 'overpaid' || status === 'partial') { return; }
   var curTime = new Date().getTime();
@@ -291,6 +287,8 @@ var updateSpotRate = function(payment, cb) {
 
       // Update payment spot rate then save
       payment.spot_rate = rate;
+      // Updated the payments expected payment amount
+      payment.expected_amount = remainingBalance;
       db.update(payment, function(err, doc) {
         return cb(err, doc);
       });
@@ -307,6 +305,6 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
-  updateSpotRate: updateSpotRate
+  updatePaymentData: updatePaymentData
 };
 
