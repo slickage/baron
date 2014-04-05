@@ -35,7 +35,6 @@ var invoices = function(app) {
       // Is the invoice paid in full?
       var hasPending = false;
       paymentHistory.forEach(function(payment) {
-        console.log(payment.status);
         if (payment.status.toLowerCase() === 'pending') {
           hasPending = true;
         }

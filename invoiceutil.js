@@ -4,17 +4,24 @@ var bitcoinUtil = require('./bitcoinutil');
 var btcAddr = require('bitcoin-address');
 var db = require('./db');
 
-function getPaymentStatus(payment, minConfirmations, amountDue) {
+function getPaymentStatus(payment, minConfirmations, invoice) {
   var status = payment.status;
+  var isUSD = invoice.currency.toUpperCase() === 'USD';
   var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
   console.log('PAYMENT STATUS DATA: ');
   console.log('Initial Status: ' + status);
   console.log('Payment Confirmations: ' + payment.confirmations);
   console.log('Min Confirmations: ' + minConfirmations);
   console.log('Confirmations Met: ' + confirmationsMet);
+  var amountDue = Number(invoice.balance_due);
   console.log('Remaining Balance: ' + amountDue);
-  amountDue = Number(amountDue);
-  var amountPaid = Number(payment.amount_paid);
+  var amountPaid = isUSD ? Number(payment.amount_paid) * payment.spot_rate : Number(payment.amount_paid);
+  
+  // If were dealing in USD and the calculated amount Paid is within 10c consider it paid
+  if (isUSD && Math.abs(amountDue - amountPaid) < 0.1) {
+    amountPaid = amountDue;
+  }
+
   if (amountPaid > 0 && !confirmationsMet) {
     status = 'pending';
   }
@@ -54,7 +61,7 @@ function updateConfirmations(payment, transaction, cb) {
       // Update confirmations and status
       payment.confirmations = transaction.confirmations;
       console.log('Updating Confirmations:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
 
       // Update payment stored in couch
       db.update(payment, function(err, doc) {
@@ -77,7 +84,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
       payment.ntx_id = transaction.normtxid;
       payment.paid_timestamp = transaction.time * 1000;
       console.log('Initial Payment Walletnotify:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
 
       // Update payment stored in couch
       db.update(payment, cb);
@@ -108,7 +115,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           payment.confirmations = transaction.confirmations;
           payment.spot_rate = rate; // Exchange rate at time of payment
           console.log('Creating Duplicate Address Payment:');
-          payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
+          payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice);
           payment.created = new Date().getTime();
           payment.paid_timestamp = paidTime;
           payment.tx_id = transaction.txid; // Bitcoind txid for transaction
