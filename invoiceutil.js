@@ -4,7 +4,7 @@ var bitcoinUtil = require('./bitcoinutil');
 var btcAddr = require('bitcoin-address');
 var db = require('./db');
 
-function getPaymentStatus(payment, minConfirmations, remainingBalance) {
+function getPaymentStatus(payment, minConfirmations, amountDue) {
   var status = payment.status;
   var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
   console.log('PAYMENT STATUS DATA: ');
@@ -12,19 +12,20 @@ function getPaymentStatus(payment, minConfirmations, remainingBalance) {
   console.log('Payment Confirmations: ' + payment.confirmations);
   console.log('Min Confirmations: ' + minConfirmations);
   console.log('Confirmations Met: ' + confirmationsMet);
-  console.log('Remaining Balance: ' + remainingBalance);
-
-  if (payment.amount_paid > 0 && !confirmationsMet) {
+  console.log('Remaining Balance: ' + amountDue);
+  amountDue = Number(amountDue);
+  var amountPaid = Number(payment.amount_paid);
+  if (amountPaid > 0 && !confirmationsMet) {
     status = 'pending';
   }
   else if (confirmationsMet) {
-    if(remainingBalance === 0) {
+    if(amountPaid === amountDue) {
       status = 'paid';
     }
-    else if (remainingBalance > 0) {
+    else if (amountPaid < amountDue) {
       status = 'partial';
     }
-    else if (remainingBalance < 0) {
+    else if (amountPaid > amountDue) {
       status = 'overpaid';
     }
   }
@@ -48,21 +49,16 @@ function getReceiveDetail(details) {
 
 // Case 1: Found payment by ntx_id so were just updating confirmations
 function updateConfirmations(payment, transaction, cb) {
-    db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
+    db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, false, function(err, remainingBalance) {
-        if (!err) {
-          // Update confirmations and status
-          payment.confirmations = transaction.confirmations;
-          console.log('Updating Confirmations:');
-          payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance);
+      // Update confirmations and status
+      payment.confirmations = transaction.confirmations;
+      console.log('Updating Confirmations:');
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
 
-          // Update payment stored in couch
-          db.update(payment, function(err, doc) {
-            return cb(err, doc);
-          });
-        }
-        return cb(err, undefined);
+      // Update payment stored in couch
+      db.update(payment, function(err, doc) {
+        return cb(err, doc);
       });
     }
     return cb(err, undefined);
@@ -72,27 +68,21 @@ function updateConfirmations(payment, transaction, cb) {
 // Case 2: Found payment by address and ntx_id wasnt populated yet. This is the
 // first walletnotify for this payment object.
 function initialPaymentUpdate(payment, transaction, cb) {
-    db.findInvoiceAndPayments(payment.invoice_id, function(err, invoice, paymentsArr) {
+    db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, true, function(err, remainingBalance) {
-        if (!err) {
-          // Update payment object
-          payment.amount_paid = transaction.amount;
-          payment.confirmations = transaction.confirmations;
-          payment.tx_id = transaction.txid;
-          payment.ntx_id = transaction.normtxid;
-          payment.paid_timestamp = transaction.time * 1000;
-          // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
-          // isn't aware of the incoming payment amount    
-          console.log('Initial Payment Walletnotify:');       
-          payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
+      // Update payment object
+      payment.amount_paid = transaction.amount;
+      payment.confirmations = transaction.confirmations;
+      payment.tx_id = transaction.txid;
+      payment.ntx_id = transaction.normtxid;
+      payment.paid_timestamp = transaction.time * 1000;
+      console.log('Initial Payment Walletnotify:');
+      payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
 
-          // Update payment stored in couch
-          db.update(payment, cb);
-        }
-        return cb(err, undefined);
-      });
+      // Update payment stored in couch
+      db.update(payment, cb);
     }
+
     return cb(err, undefined);
   });
 }
@@ -103,37 +93,30 @@ function initialPaymentUpdate(payment, transaction, cb) {
 // but different ntx_id's
 function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   var paidTime = transaction.time * 1000;
-  db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+  db.findInvoice(invoiceId, function(err, invoice) {
     if (!err) {
-      calculateRemainingBalance(invoice, paymentsArr, true, function(err, remainingBalance) {
-        if (!err) {
-          bitstamped.getTicker(paidTime, function(err, docs) {
-            if (!err && docs.rows && docs.rows.length > 0) {
-              var tickerData = docs.rows[0].value; // Get ticker object
-              var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+      bitstamped.getTicker(paidTime, function(err, docs) {
+        if (!err && docs.rows && docs.rows.length > 0) {
+          var tickerData = docs.rows[0].value; // Get ticker object
+          var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
 
-              // Create payment object
-              var payment = {};
-              payment.invoice_id = invoiceId;
-              payment.address = getReceiveDetail(transaction.details).address;
-              payment.amount_paid = transaction.amount; // Always stored in BTC
-              payment.confirmations = transaction.confirmations;
-              payment.spot_rate = rate; // Exchange rate at time of payment
-              // Subtract transaction.amount from remainingBalance, since calculateRemainingBalance
-              // isn't aware of the incoming payment amount 
-              console.log('Creating Duplicate Address Payment:');
-              payment.status = getPaymentStatus(payment, invoice.min_confirmations, remainingBalance - transaction.amount);
-              payment.created = new Date().getTime();
-              payment.paid_timestamp = paidTime;
-              payment.tx_id = transaction.txid; // Bitcoind txid for transaction
-              payment.ntx_id = transaction.normtxid; // Normalized txId
-              payment.type = 'payment';
+          // Create payment object
+          var payment = {};
+          payment.invoice_id = invoiceId;
+          payment.address = getReceiveDetail(transaction.details).address;
+          payment.amount_paid = transaction.amount; // Always stored in BTC
+          payment.confirmations = transaction.confirmations;
+          payment.spot_rate = rate; // Exchange rate at time of payment
+          console.log('Creating Duplicate Address Payment:');
+          payment.status = getPaymentStatus(payment, invoice.min_confirmations, invoice.balance_due);
+          payment.created = new Date().getTime();
+          payment.paid_timestamp = paidTime;
+          payment.tx_id = transaction.txid; // Bitcoind txid for transaction
+          payment.ntx_id = transaction.normtxid; // Normalized txId
+          payment.type = 'payment';
 
-              // Add payment object to database
-              db.createPayment(payment, cb);
-            }
-            return cb(err, undefined);
-          });
+          // Add payment object to database
+          db.createPayment(payment, cb);
         }
         return cb(err, undefined);
       });
@@ -171,11 +154,10 @@ var getActivePayment = function(paymentsArr) {
   return activePayment;
 };
 
-var getTotalPaid = function(invoice, paymentsArr, includePending) {
+var getTotalPaid = function(invoice, paymentsArr) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = 0;
   paymentsArr.forEach(function(payment) {
-    if (!includePending && payment.status === 'pending') { return; }
       var paidAmount = payment.amount_paid;
       if (paidAmount) {
         // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
@@ -194,9 +176,9 @@ var getTotalPaid = function(invoice, paymentsArr, includePending) {
   return totalPaid;
 };
 
-var calculateRemainingBalance = function(invoice, paymentsArr, includePending, cb) {
+var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = getTotalPaid(invoice, paymentsArr, includePending);
+  var totalPaid = getTotalPaid(invoice, paymentsArr);
   var remainingBalance = invoice.balance_due - totalPaid;
   if (isUSD) {
     remainingBalance = helper.roundToDecimal(remainingBalance, 2); // Round to 2 places for USD

@@ -19,7 +19,7 @@ var invoices = function(app) {
 
       // Get the total paid amount for invoice
       var isUSD = invoice.currency.toUpperCase() === 'USD';
-      invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr, true);
+      invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
 
       // Round balance due to 2 decimals if USD. (Ex: turns $1.5 to $1.50)
       invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;
@@ -31,6 +31,16 @@ var invoices = function(app) {
       // Get the payment history for this invoice
       var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr); // Should the invoice display payment history
       invoice.payment_history = paymentHistory;
+
+      // Is the invoice paid in full?
+      var hasPending = false;
+      paymentHistory.forEach(function(payment) {
+        console.log(payment.status);
+        if (payment.status.toLowerCase() === 'pending') {
+          hasPending = true;
+        }
+      });
+      invoice.is_paid = !hasPending && invoice.remaining_balance <= 0;
 
       // Show the invoice
       res.render('invoice', { invoice: invoice });

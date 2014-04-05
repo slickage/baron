@@ -16,7 +16,7 @@
         <h1>Basic Pay</h1>
       </div>
     </div>
-      <% if (invoice.remaining_balance <= 0) { %>
+      <% if (invoice.is_paid) { %>
       <div class="row ">
         <div class="col-sm-12 alert alert-success xsmall-text alert-box"> Invoice has been paid in full.</div>
       </div>
