@@ -1,7 +1,7 @@
-Basic Pay
+Baron
 =========
 
-Basic pay is a bitcoin payment processor that makes it easy to manage bitcoin transactions. 
+Baron is a bitcoin payment processor that makes it easy to manage bitcoin transactions. 
 
 * Allows for invoice creation in USD or BTC
 * Invoice balances created in USD are converted to BTC at time of payment
@@ -61,10 +61,10 @@ Invoices can be created by doing a **POST** of the newInvoice object to the foll
 http://localhost:8080/invoices
 ```
 
-Alternatively, if Basic Pay is being used as a module, invoices can be created internally using:
+Alternatively, if Baron is being used as a module, invoices can be created internally using:
 
 ```js
-basicpay.createInvoice(newInvoice, function(err, doc) {
+baron.createInvoice(newInvoice, function(err, doc) {
   if (err) {
     res.write(err);
     res.end();
@@ -77,7 +77,7 @@ basicpay.createInvoice(newInvoice, function(err, doc) {
 
 Invoices with payments can be queried by invoiceId using:
 ```js
-basicpay.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+baron.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
   if (err) {
     res.write(err);
     res.end();
@@ -126,17 +126,17 @@ Payments have the following properties:
 
 Clone the repository:
 ```sh
-$ git clone https://github.com/slickage/basicpay.git
+$ git clone https://github.com/slickage/baron.git
 ```
 
-Change directories to basicpay and install dependencies:
+Change directories to baron and install dependencies:
 ```sh
 $ npm install
 ```
 
-Create 'basicpay' database in couchdb and then push views:
+Create 'baron' database in couchdb and then push views:
 ```sh
-$ couchapp push couchapp.js http://localhost:5984/basicpay
+$ couchapp push couchapp.js http://localhost:5984/baron
 ```
 
 Create a .env file and add bitcoin username and pass:
@@ -156,21 +156,21 @@ rpcuser=username
 rpcpassword=password
 ```
 
-Run basicpay
+Run baron
 ```sh
 $ node server.js
 ```
 
-Run basicpay with [foreman](https://github.com/ddollar/foreman) and [nodemon](https://github.com/remy/nodemon)
+Run baron with [foreman](https://github.com/ddollar/foreman) and [nodemon](https://github.com/remy/nodemon)
 ```sh
 $ foreman start -f Procfile-dev
 ```
 
-## Using Basic Pay as a module
+## Using Baron as a module
 
-Basic pay can be run standalone or as a module of an existing node app. If an application is already using couchdb, basic pay can easily be added as a dependency. 
+Baron can be run standalone or as a module of an existing node app. If an application is already using couchdb, Baron can easily be added as a dependency. 
 
-Note: To use Basic Pay as an extension of an existing application, that application must be using express with the ejs view engine.
+Note: To use Baron as an extension of an existing application, that application must be using express with the ejs view engine.
 
 Add the following properties to the main application's config.js:
 ```sh
@@ -184,19 +184,19 @@ Add the following properties to the main application's config.js:
   }
 ```
 
-Require Basic Pay and initialize
+Require Baron and initialize
 ```js
 var express = require('express');
 var app = express();
 app.set('view engine', 'ejs');
 app.use(express.bodyParser());
 
-// Local config containing basic pay properties
+// Local config containing baron properties
 var config = require('./config.js');
 
-// Require basic pay and pass in your local config
-var basicpay = require('basicpay')(config);
+// Require baron and pass in your local config
+var baron = require('baron')(config);
 
-// Call basicpay init method and pass in your existing express app
-basicpay.init(app);
+// Call baron init method and pass in your existing express app
+baron.init(app);
 ```
