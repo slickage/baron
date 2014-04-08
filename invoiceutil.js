@@ -18,7 +18,9 @@ function updateConfirmations(payment, transaction, cb) {
 function initialPaymentUpdate(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, undefined); }
-    payment.amount_paid = transaction.amount;
+    var receiveDetail = helper.getReceiveDetail(transaction.details);
+
+    payment.amount_paid = receiveDetail.amount;
     payment.confirmations = transaction.confirmations;
     payment.tx_id = transaction.txid;
     payment.ntx_id = transaction.normtxid;
@@ -33,19 +35,36 @@ function initialPaymentUpdate(payment, transaction, cb) {
 function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   // TODO: Transaction time from bitcoind is not garunteed to be accurate
   var paidTime = transaction.time * 1000;
-  db.findInvoice(invoiceId, function(err, invoice) {
+  db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
     if (err) { return cb(err, undefined); }
     bitstamped.getTicker(paidTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
-        var tickerData = docs.rows[0].value; 
+        var tickerData = docs.rows[0].value;
         var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+        
+        var receiveDetail = helper.getReceiveDetail(transaction.details);
+        var totalPaid = getTotalPaid(invoice, paymentsArr);
+        var remainingBalance = invoice.balance_due - totalPaid;
+        var isUSD = invoice.currency.toUpperCase() === 'USD';
+        if (isUSD) {
+          // If fiat is within 10 cents consider it paid
+          var fiatDiff = Math.abs(receiveDetail.amount * rate - remainingBalance);
+          console.log('Fiat Diff: ' + fiatDiff);
+          if (fiatDiff < 0.1) {
+            remainingBalance = receiveDetail.amount;
+          }
+          else {
+            remainingBalance = remainingBalance / rate;
+          }
+        }
+        remainingBalance = helper.roundToDecimal(remainingBalance, 8);
+        console.log('Remaining Balance: ' + remainingBalance);
+
         var payment = {};
-  
         payment.invoice_id = invoiceId;
-        payment.address = helper.getReceiveDetail(transaction.details).address;
-        payment.amount_paid = transaction.amount;
-        // TODO: How should we treat the status of these types of payments
-        payment.expected_amount = 0; // overpaid status by default
+        payment.address = receiveDetail.address;
+        payment.amount_paid = receiveDetail.amount;
+        payment.expected_amount = remainingBalance; // overpaid status by default
         payment.confirmations = transaction.confirmations;
         payment.spot_rate = rate; // Exchange rate at time of payment
         payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
@@ -121,7 +140,6 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var totalPaid = getTotalPaid(invoice, paymentsArr);
   var remainingBalance = invoice.balance_due - totalPaid;
   if (isUSD) {
-    remainingBalance = helper.roundToDecimal(remainingBalance, 2); // Round to 2 places for USD
     var curTime = new Date().getTime();
     bitstamped.getTicker(curTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {

@@ -38,6 +38,7 @@ var getReceiveDetail = function(details) {
   return receiveDetail;
 };
 
+// Returns status of payment
 var getPaymentStatus = function(payment, minConfirmations) {
   var status = payment.status;
   var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
@@ -57,11 +58,6 @@ var getPaymentStatus = function(payment, minConfirmations) {
       status = 'overpaid';
     }
   }
-  console.log('Confirmations Met: ' + confirmationsMet);
-  console.log('amountPaid: ' + amountPaid);
-  console.log('expectedAmount: ' + expectedAmount);
-  console.log('===============');
-  console.log('Payment Obj: ' + JSON.stringify(payment) + '\n\n');
   return status;
 };
 

@@ -7,11 +7,13 @@ var notify = function(app) {
     var txId = req.body.txId;
     bitcoinUtil.getTransaction(txId, function(err, info) {
       if (err) { res.send(500); }
-      var transaction = info.result;
-      invoiceUtil.updatePayment(transaction, function(err, results) {
-        if (err) { res.write(500); }
-      });
-      res.end();
+      else {
+        var transaction = info.result;
+        invoiceUtil.updatePayment(transaction, function(err, results) {
+          if (err) { res.send(500); console.log(err); }
+          else { res.end(); }
+        });
+      }
     });
   });
 
@@ -19,9 +21,11 @@ var notify = function(app) {
     var blockHash = req.body.blockHash;
     bitcoinUtil.getBlock(blockHash, function(err, info) {
       if (err) { res.send(500); }
-      var blockinfo = info.result;
-      console.log(blockinfo);
-      res.end();
+      else {
+        var blockinfo = info.result;
+        console.log(blockinfo);
+        res.end();
+      }
     });
   });
 
