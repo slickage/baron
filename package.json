@@ -18,14 +18,13 @@
   "homepage": "https://github.com/slickage/basicpay",
   "dependencies": {
     "express": "^3.4.8",
-    "bitcoin": "slickage/node-bitcoin.git",
     "ejs": "^0.8.5",
     "qr-image": "^1.1.0",
-    "bitcoin-address": "^0.2.0",
     "request": "^2.34.0",
     "bitstamped": "slickage/bitstamped.git",
     "nano": "^5.7.1",
-    "async": "^0.6.2"
+    "async": "^0.6.2",
+    "bitcore": "^0.1.11"
   },
   "devDependencies": {
     "couchapp": "^0.11.0"

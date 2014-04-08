@@ -1,36 +1,40 @@
 var helper = require('./helper');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require('./bitcoinutil');
-var btcAddr = require('bitcoin-address');
+var Address = require('bitcore').Address;
 var db = require('./db');
 
 function getPaymentStatus(payment, minConfirmations) {
   var status = payment.status;
   var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
-  var expectedAmount = payment.expected_amount;
-  var amountPaid = payment.amount_paid;
-  console.log('PAYMENT STATUS DATA: ');
-  console.log('Initial Status: ' + status);
-  console.log('Payment Confirmations: ' + payment.confirmations);
-  console.log('Min Confirmations: ' + minConfirmations);
-  console.log('Confirmations Met: ' + confirmationsMet);
-
+  var expectedAmount = Number(payment.expected_amount);
+  var amountPaid = Number(payment.amount_paid);
+  console.log('\n\nPAYMENT STATUS DATA: ');
+  console.log('===============');
   if (amountPaid > 0 && !confirmationsMet) {
+    console.log('Pending Status');
     status = 'pending';
   }
   else if (confirmationsMet) {
     if(amountPaid === expectedAmount) {
+      console.log('Paid Status');
       status = 'paid';
     }
     else if (amountPaid < expectedAmount) {
+      console.log('Partial Status');
       status = 'partial';
     }
     else if (amountPaid > expectedAmount) {
+      console.log('Overpaid Status');
       status = 'overpaid';
     }
   }
-  console.log('End Status: ' + status);
-  console.log('Payment Obj: ' + JSON.stringify(payment));
+  console.log('Confirmations Met: ' + confirmationsMet);
+  console.log('amountPaid: ' + amountPaid);
+  console.log('expectedAmount: ' + expectedAmount);
+  console.log('===============');
+  payment.status = status;
+  console.log('Payment Obj: ' + JSON.stringify(payment) + '\n\n');
   return status;
 }
 
@@ -92,6 +96,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
 // object with the same address. Two paymment objects will now have the same address,
 // but different ntx_id's
 function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
+  // TODO: Transaction time from bitcoind is not garunteed to be accurate
   var paidTime = transaction.time * 1000;
   db.findInvoice(invoiceId, function(err, invoice) {
     if (!err) {
@@ -200,11 +205,12 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
 };
 
 var createNewPayment = function(invoiceId, cb) {
-  bitcoinUtil.getPaymentAddress(function(err, address) { // Get payment address from bitcond
+  bitcoinUtil.getPaymentAddress(function(err, info) { // Get payment address from bitcond
+    var address = info.result;
     if (err) {
       return cb(err, undefined);
     }
-    else if (!btcAddr.validate(address, 'testnet')) {
+    else if (!new Address(address).isValid()) {
       return cb('Cannot generate valid payment address.', undefined);
     }
     // Create payment object

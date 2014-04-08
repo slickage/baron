@@ -1,7 +1,9 @@
-var bitcoin = require('bitcoin');
+var bitcore = require('bitcore');
+var RpcClient = bitcore.RpcClient;
 var config = require('./config');
 
-var client = new bitcoin.Client({
+var client = new RpcClient({
+  protocol: 'http',
   host: config.bitcoind.host,
   port: config.bitcoind.port,
   user: config.bitcoind.user,
