@@ -59,7 +59,7 @@ var pay = function(app) {
         // Only update non paid payments
         if (activePayment.amount_paid <= 0.0) {
           // Update expected amount and spot rate
-          invoiceUtil.updatePaymentData(activePayment, remainingBalance, function(err, doc) {
+          invoiceUtil.refreshPaymentData(activePayment, remainingBalance, function(err, doc) {
             if (err) { return res.render('error', { errorMsg: 'Error: Cannot store exchange rate for payment.' }); }
           });
         }

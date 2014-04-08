@@ -49,14 +49,8 @@ var invoices = function(app) {
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
     db.createInvoice(req.body, function(err, invoice) {
-      if(err) {
-        res.json({ error: err });
-        res.end();
-      }
-      else {
-        res.json(invoice);
-        res.end();
-      }
+      if(err) { res.write(err); res.end(); }
+      else { res.json(invoice); }
     });
   });
 

@@ -4,16 +4,12 @@ var bitcoinUtil = require('../bitcoinutil');
 var notify = function(app) {
 
   app.post('/notify', function(req, res) {
-
     var txId = req.body.txId;
     bitcoinUtil.getTransaction(txId, function(err, info) {
-      if (err) { return console.log(err); }
+      if (err) { res.send(500); }
       var transaction = info.result;
-      console.log(transaction);
       invoiceUtil.updatePayment(transaction, function(err, results) {
-        if (err) {
-          res.send(500);
-        }
+        if (err) { res.write(500); }
       });
       res.end();
     });
@@ -21,9 +17,8 @@ var notify = function(app) {
 
   app.post('/blocknotify', function(req, res) {
     var blockHash = req.body.blockHash;
-
     bitcoinUtil.getBlock(blockHash, function(err, info) {
-      if (err) { return console.log(err); }
+      if (err) { res.send(500); }
       var blockinfo = info.result;
       console.log(blockinfo);
       res.end();

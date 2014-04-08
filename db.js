@@ -1,16 +1,16 @@
 var validate = require('./validate');
 var config = require('./config');
 var nano = require('nano')(config.dbUrl);
-var dbname = 'basicpay';
-var basicpay;
+var dbName = 'basicpay';
+var baronDb;
 
-nano.db.create(dbname, function(err, body) {
+nano.db.create(dbName, function(err, body) {
   if (!err) { console.log('Database created.'); }
-  basicpay = nano.use(dbname);
+  baronDb = nano.use(dbName);
 });
 
 var findInvoiceAndPayments = function(invoiceId, cb) {
-  basicpay.view(dbname, 'invoicesWithPayments', { key:invoiceId }, function (err, docs) {
+  baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function (err, docs) {
     if (err) { return cb(err, undefined, undefined); }
     var invoice;
     var paymentsArr = [];
@@ -27,7 +27,7 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
 };
 
 var findPayment = function(address, cb) {
-  basicpay.view(dbname, 'payments', { key:address }, function (err, docs) {
+  baronDb.view(dbName, 'payments', { key:address }, function (err, docs) {
     if (!err  && docs.rows && docs.rows.length > 0) {
       var payment = docs.rows[0].value;
       return cb(err, payment);
@@ -37,7 +37,7 @@ var findPayment = function(address, cb) {
 };
 
 var findPaymentByNormalizedTxId = function(txId, cb) {
-  basicpay.view(dbname, 'paymentsNormalizedTxId', { key:txId }, function (err, docs) {
+  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:txId }, function (err, docs) {
     if (!err && docs.rows && docs.rows.length > 0) {
       var payment = docs.rows[0].value;
       return cb(err, payment);
@@ -47,7 +47,7 @@ var findPaymentByNormalizedTxId = function(txId, cb) {
 };
 
 var findInvoice = function(invoiceId, cb) {
-  basicpay.view(dbname, 'invoices', { key:invoiceId }, function (err, docs) {
+  baronDb.view(dbName, 'invoices', { key:invoiceId }, function (err, docs) {
     if (!err && docs.rows && docs.rows.length > 0) {
       var invoice = docs.rows[0].value;
       return cb(err, invoice);
@@ -60,20 +60,16 @@ var createInvoice = function(invoice, cb) {
   if (validate.invoice(invoice)) {
     invoice.created = new Date().getTime();
     invoice.type = 'invoice';
-    basicpay.insert(invoice, cb);
+    baronDb.insert(invoice, cb);
   }
   else {
-   cb('The received invoice failed validation. Verify that ' +
-    'the invoice object being sent conforms to the specifications in the API');
+    return cb('The received invoice failed validation. Verify that the invoice' +
+      ' object being sent conforms to the specifications in the API', undefined);
   }
 };
 
-var createPayment = function(payment, cb) {
-  basicpay.insert(payment, cb);
-};
-
-var update = function(doc, cb) { // Used to update a payment or invoice
-  basicpay.insert(doc, cb);
+var insert = function(doc, cb) { // Used to update a payment or invoice
+  baronDb.insert(doc, cb);
 };
 
 module.exports = {
@@ -82,6 +78,5 @@ module.exports = {
   findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
   findInvoice: findInvoice,
   createInvoice: createInvoice,
-  createPayment: createPayment,
-  update: update
+  insert: insert
 };

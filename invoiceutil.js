@@ -1,137 +1,68 @@
 var helper = require('./helper');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require('./bitcoinutil');
-var Address = require('bitcore').Address;
 var db = require('./db');
 
-function getPaymentStatus(payment, minConfirmations) {
-  var status = payment.status;
-  var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
-  var expectedAmount = Number(payment.expected_amount);
-  var amountPaid = Number(payment.amount_paid);
-  console.log('\n\nPAYMENT STATUS DATA: ');
-  console.log('===============');
-  if (amountPaid > 0 && !confirmationsMet) {
-    console.log('Pending Status');
-    status = 'pending';
-  }
-  else if (confirmationsMet) {
-    if(amountPaid === expectedAmount) {
-      console.log('Paid Status');
-      status = 'paid';
-    }
-    else if (amountPaid < expectedAmount) {
-      console.log('Partial Status');
-      status = 'partial';
-    }
-    else if (amountPaid > expectedAmount) {
-      console.log('Overpaid Status');
-      status = 'overpaid';
-    }
-  }
-  console.log('Confirmations Met: ' + confirmationsMet);
-  console.log('amountPaid: ' + amountPaid);
-  console.log('expectedAmount: ' + expectedAmount);
-  console.log('===============');
-  payment.status = status;
-  console.log('Payment Obj: ' + JSON.stringify(payment) + '\n\n');
-  return status;
-}
-
-// TODO:
-// Currently assuming there is only one detail with the category receive
-// Possible that this will change
-function getReceiveDetail(details) {
-  var receiveDetail;
-  details.forEach(function(detail) {
-    if(detail.category === 'receive') {
-      receiveDetail = detail;
-    }
-  });
-  return receiveDetail;
-}
-
-// Case 1: Found payment by ntx_id so were just updating confirmations
+// Updates confirmations of an already tracked payment
 function updateConfirmations(payment, transaction, cb) {
-    db.findInvoice(payment.invoice_id, function(err, invoice) {
-    if (!err) {
-      // Update confirmations and status
-      payment.confirmations = transaction.confirmations;
-      console.log('Updating Confirmations:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations);
+  db.findInvoice(payment.invoice_id, function(err, invoice) {
+    if (err) { return cb(err, undefined); }
+    payment.confirmations = transaction.confirmations;
+    payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
 
-      // Update payment stored in couch
-      db.update(payment, function(err, doc) {
-        return cb(err, doc);
-      });
-    }
-    return cb(err, undefined);
+    db.insert(payment, cb);
   });
 }
 
-// Case 2: Found payment by address and ntx_id wasnt populated yet. This is the
-// first walletnotify for this payment object.
+// Intial walletnotify for payment
 function initialPaymentUpdate(payment, transaction, cb) {
-    db.findInvoice(payment.invoice_id, function(err, invoice) {
-    if (!err) {
-      // Update payment object
-      payment.amount_paid = transaction.amount;
-      payment.confirmations = transaction.confirmations;
-      payment.tx_id = transaction.txid;
-      payment.ntx_id = transaction.normtxid;
-      payment.paid_timestamp = transaction.time * 1000;
-      console.log('Initial Payment Walletnotify:');
-      payment.status = getPaymentStatus(payment, invoice.min_confirmations);
+  db.findInvoice(payment.invoice_id, function(err, invoice) {
+    if (err) { return cb(err, undefined); }
+    payment.amount_paid = transaction.amount;
+    payment.confirmations = transaction.confirmations;
+    payment.tx_id = transaction.txid;
+    payment.ntx_id = transaction.normtxid;
+    payment.paid_timestamp = transaction.time * 1000;
+    payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
 
-      // Update payment stored in couch
-      db.update(payment, cb);
-    }
-
-    return cb(err, undefined);
-  });
+    db.insert(payment, cb);
+});
 }
 
-// Case 3: Found payment by address and ntx_id is populated, this means someone 
-// sent another payment to a preexisting payment address. We need to create a new payment 
-// object with the same address. Two paymment objects will now have the same address,
-// but different ntx_id's
+// Handles case where user sends multiple payments to same address
 function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   // TODO: Transaction time from bitcoind is not garunteed to be accurate
   var paidTime = transaction.time * 1000;
   db.findInvoice(invoiceId, function(err, invoice) {
-    if (!err) {
-      bitstamped.getTicker(paidTime, function(err, docs) {
-        if (!err && docs.rows && docs.rows.length > 0) {
-          var tickerData = docs.rows[0].value; // Get ticker object
-          var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+    if (err) { return cb(err, undefined); }
+    bitstamped.getTicker(paidTime, function(err, docs) {
+      if (!err && docs.rows && docs.rows.length > 0) {
+        var tickerData = docs.rows[0].value; 
+        var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+        var payment = {};
+  
+        payment.invoice_id = invoiceId;
+        payment.address = helper.getReceiveDetail(transaction.details).address;
+        payment.amount_paid = transaction.amount;
+        // TODO: How should we treat the status of these types of payments
+        payment.expected_amount = 0; // overpaid status by default
+        payment.confirmations = transaction.confirmations;
+        payment.spot_rate = rate; // Exchange rate at time of payment
+        payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
+        payment.created = new Date().getTime();
+        payment.paid_timestamp = paidTime;
+        payment.tx_id = transaction.txid; // Bitcoind txid for transaction
+        payment.ntx_id = transaction.normtxid; // Normalized txId
+        payment.type = 'payment';
 
-          // Create payment object
-          var payment = {};
-          payment.invoice_id = invoiceId;
-          payment.address = getReceiveDetail(transaction.details).address;
-          payment.amount_paid = transaction.amount; // Always stored in BTC
-          // TODO: How should we treat the status of these types of payments
-          payment.expected_amount = 0; // overpaid status by default
-          payment.confirmations = transaction.confirmations;
-          payment.spot_rate = rate; // Exchange rate at time of payment
-          console.log('Creating Duplicate Address Payment:');
-          payment.status = getPaymentStatus(payment, invoice.min_confirmations);
-          payment.created = new Date().getTime();
-          payment.paid_timestamp = paidTime;
-          payment.tx_id = transaction.txid; // Bitcoind txid for transaction
-          payment.ntx_id = transaction.normtxid; // Normalized txId
-          payment.type = 'payment';
-
-          // Add payment object to database
-          db.createPayment(payment, cb);
-        }
-        return cb(err, undefined);
-      });
-    }
-    return cb(err, undefined);
+        db.insert(payment, cb);
+      }
+      else { return cb(err, undefined); }
+    });
   });
 }
 
+// Calculates line totals for invoice line items
 var calculateLineTotals = function(invoice) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   invoice.line_items.forEach(function (item){
@@ -147,9 +78,9 @@ var calculateLineTotals = function(invoice) {
   });
 };
 
+// Returns the latest payment object
 var getActivePayment = function(paymentsArr) {
-  var activePayment; // Will store the active payments address
-  // Loop through payments to find the latest payment object
+  var activePayment;
   paymentsArr.forEach(function(payment) {
     if (activePayment) {
       activePayment = payment.created > activePayment.created ? payment : activePayment;
@@ -161,15 +92,16 @@ var getActivePayment = function(paymentsArr) {
   return activePayment;
 };
 
+// Calculates the invoice's paid amount
 var getTotalPaid = function(invoice, paymentsArr) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = 0;
   paymentsArr.forEach(function(payment) {
-      var paidAmount = payment.amount_paid;
-      if (paidAmount) {
-        // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-        totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
-      }
+    var paidAmount = payment.amount_paid;
+    if (paidAmount) {
+      // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
+      totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
+    }
   });
   if (isUSD) {
     // If were dealing in fiat and the calculated total is within 10 cents consider it paid
@@ -183,6 +115,7 @@ var getTotalPaid = function(invoice, paymentsArr) {
   return totalPaid;
 };
 
+// Calculates the invoice's remaining balance
 var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = getTotalPaid(invoice, paymentsArr);
@@ -195,25 +128,19 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
         var tickerData = docs.rows[0].value; // Get ticker object
         var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
         remainingBalance = helper.roundToDecimal(remainingBalance / rate, 8);
+        return cb(null, remainingBalance);
       }
-      return cb(err, remainingBalance);
+      else { return cb(err, undefined); }
     });
   }
-  else {
-    return cb(null, remainingBalance);
-  }
+  else { return cb(null, remainingBalance); }
 };
 
+// Creates a new payment object associated with invoice
 var createNewPayment = function(invoiceId, cb) {
   bitcoinUtil.getPaymentAddress(function(err, info) { // Get payment address from bitcond
+    if (err) { return cb(err, undefined); }
     var address = info.result;
-    if (err) {
-      return cb(err, undefined);
-    }
-    else if (!new Address(address).isValid()) {
-      return cb('Cannot generate valid payment address.', undefined);
-    }
-    // Create payment object
     var payment = {};
     payment.invoice_id = invoiceId;
     payment.address = address;
@@ -228,17 +155,15 @@ var createNewPayment = function(invoiceId, cb) {
     payment.ntx_id = null; // Normalized txId
     payment.type = 'payment';
 
-    // Add payment object to database
-    db.createPayment(payment, cb);
-    
+    db.insert(payment, cb);
   });
 };
 
+// Returns array of payments that are not in unpaid status
 var getPaymentHistory = function(paymentsArr) {
   var history = [];
   paymentsArr.forEach(function(payment) {
     var status = payment.status;
-    // Only show history of paid payments
     if(status.toLowerCase() !== 'unpaid') {
       history.push(payment);
     }
@@ -248,41 +173,37 @@ var getPaymentHistory = function(paymentsArr) {
   return history;
 };
 
+// Updates payment with walletnotify data
 var updatePayment = function(transaction, cb) {
-  var receiveDetail = getReceiveDetail(transaction.details);
-  if (!receiveDetail) { return cb('Error'); }
+  var receiveDetail = helper.getReceiveDetail(transaction.details);
+  if (!receiveDetail) {
+   return cb('Wallet notify contained no relevant payment data.', undefined);
+  }
   var address = receiveDetail.address;
   var ntxId = transaction.normtxid;
-  // Try to look up by ntx_id first, if we find a match we are just
-  // updating that existing payments confirmations
   db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
-    if (!err && payment) { // found match for ntx_id
-      // Updating confirmations of an existing payment
+    if (!err && payment) {
+      // Updating confirmations of a watched payment
       updateConfirmations(payment, transaction, cb);
     }
-    else { // No match found, try looking up by address
+    else {
       db.findPayment(address, function(err, payment) {
-        // If payment object doesnt have ntx_id populated that means it exists
-        // but has not been updated by a walletnotify before
+        if (err) { return cb(err, undefined); }
         if (!err && !payment.ntx_id) {
           // Initial update from walletnotify
           initialPaymentUpdate(payment, transaction, cb);
         }
-        // If payment object with same address exists, but does have 
-        // ntx_id populated that means it exists and is already being 
-        // monitored by wallet notify. So this is a new transaction
-        // using the same payment address. Create new payment
-        else if (!err && payment.ntx_id) { // Payment exists and already has ntx so we need to create new payment
+        else if (!err && payment.ntx_id) {
           // Create new payment for same invoice as pre-existing payment
           createNewPaymentWithTransaction(payment.invoice_id, transaction, cb);
         }
-        return cb(err, undefined);
       });
     }
   });
 };
 
-var updatePaymentData = function(payment, remainingBalance, cb) {
+// Updates spot rate and expected amount for payment
+var refreshPaymentData = function(payment, remainingBalance, cb) {
   var status = payment.status;
   if (status === 'paid' || status === 'overpaid' || status === 'partial') { return; }
   var curTime = new Date().getTime();
@@ -291,15 +212,11 @@ var updatePaymentData = function(payment, remainingBalance, cb) {
       var tickerData = docs.rows[0].value; // Get ticker object
       var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
 
-      // Update payment spot rate then save
       payment.spot_rate = rate;
-      // Updated the payments expected payment amount
       payment.expected_amount = remainingBalance;
-      db.update(payment, function(err, doc) {
-        return cb(err, doc);
-      });
+      db.insert(payment, cb);
     }
-    return cb(err, undefined);
+    else { return cb(err, undefined); }
   });
 };
 
@@ -311,6 +228,6 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
-  updatePaymentData: updatePaymentData
+  refreshPaymentData: refreshPaymentData
 };
 
