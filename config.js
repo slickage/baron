@@ -9,11 +9,14 @@ var localConfig = {
   },
   insight: {
     host: process.env.INSIGHT_HOST || 'localhost',
-    port: process.env.INSIGHT_PORT || '3001'
+    port: process.env.INSIGHT_PORT || '3001',
+    protocol: process.env.INSIGHT_PROTOCOL || 'http'
   },
   paymentExpiration: 1440,
   paidDelta: 0.1,
-  dbName: 'baron'
+  dbName: 'baron',
+  updateWatchListInterval: 5000,
+  trackPaymentForDays: 1
 };
 
 // If config was passed in, export that. If not export local config.

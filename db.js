@@ -10,14 +10,14 @@ nano.db.create(dbName, function(err, body) {
 });
 
 var findInvoiceAndPayments = function(invoiceId, cb) {
-  baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function (err, docs) {
+  baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function (err, body) {
     if (err) { return cb(err, undefined, undefined); }
     var invoice;
     var paymentsArr = [];
-    if (docs.rows.length <= 0) {
+    if (body.rows.length <= 0) {
       return cb(new Error('Error: No invoice found.'), undefined, undefined);
     }
-    docs.rows.forEach(function (row) {
+    body.rows.forEach(function (row) {
       if (row.value.type === 'invoice') {
         invoice = row.value;
       }
@@ -30,9 +30,9 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
 };
 
 var findPayment = function(address, cb) {
-  baronDb.view(dbName, 'payments', { key:address }, function (err, docs) {
-    if (!err  && docs.rows && docs.rows.length > 0) {
-      var payment = docs.rows[0].value;
+  baronDb.view(dbName, 'payments', { key:address }, function (err, body) {
+    if (!err  && body.rows && body.rows.length > 0) {
+      var payment = body.rows[0].value;
       return cb(err, payment);
     }
     return cb(err, undefined);
@@ -40,9 +40,9 @@ var findPayment = function(address, cb) {
 };
 
 var findPaymentByNormalizedTxId = function(txId, cb) {
-  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:txId }, function (err, docs) {
-    if (!err && docs.rows && docs.rows.length > 0) {
-      var payment = docs.rows[0].value;
+  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:txId }, function (err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var payment = body.rows[0].value;
       return cb(err, payment);
     }
     return cb(err, undefined);
@@ -50,10 +50,20 @@ var findPaymentByNormalizedTxId = function(txId, cb) {
 };
 
 var findInvoice = function(invoiceId, cb) {
-  baronDb.view(dbName, 'invoices', { key:invoiceId }, function (err, docs) {
-    if (!err && docs.rows && docs.rows.length > 0) {
-      var invoice = docs.rows[0].value;
+  baronDb.view(dbName, 'invoices', { key:invoiceId }, function (err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var invoice = body.rows[0].value;
       return cb(err, invoice);
+    }
+    return cb(err, undefined);
+  });
+};
+
+var getWatchedPayments = function(cb) {
+  baronDb.view(dbName, 'watchedPayments', function (err, body) {
+     if (!err && body.rows && body.rows.length > 0) {
+      var paymentsArr = body.rows;
+      return cb(err, paymentsArr);
     }
     return cb(err, undefined);
   });
@@ -76,10 +86,12 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
 };
 
 module.exports = {
+  baronDb: baronDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPayment: findPayment,
   findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
   findInvoice: findInvoice,
+  getWatchedPayments: getWatchedPayments,
   createInvoice: createInvoice,
   insert: insert
 };

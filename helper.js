@@ -41,7 +41,7 @@ var getReceiveDetail = function(details) {
 // Returns status of payment
 var getPaymentStatus = function(payment, minConfirmations) {
   var status = payment.status;
-  var confirmationsMet = Number(payment.confirmations) === Number(minConfirmations);
+  var confirmationsMet = Number(payment.confirmations) >= Number(minConfirmations);
   var expectedAmount = Number(payment.expected_amount);
   var amountPaid = Number(payment.amount_paid);
   if (amountPaid > 0 && !confirmationsMet) {
@@ -67,5 +67,5 @@ module.exports = {
   getLastFourDecimals: getLastFourDecimals,
   roundToDecimal: roundToDecimal,
   getReceiveDetail: getReceiveDetail,
-  getPaymentStatus: getPaymentStatus
+  getPaymentStatus: getPaymentStatus,
 };
