@@ -1,5 +1,6 @@
 var invoiceUtil = require('../invoiceutil');
 var bitcoinUtil = require('../bitcoinutil');
+var job = require('../watchpaymentjob');
 
 var notify = function(app) {
 
@@ -22,8 +23,7 @@ var notify = function(app) {
     bitcoinUtil.getBlock(blockHash, function(err, info) {
       if (err) { res.send(500); }
       else {
-        var blockinfo = info.result;
-        console.log(blockinfo);
+        job.watchPaymentsJob();
         res.end();
       }
     });

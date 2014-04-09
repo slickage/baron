@@ -12,10 +12,9 @@ var localConfig = {
     port: process.env.INSIGHT_PORT || '3001',
     protocol: process.env.INSIGHT_PROTOCOL || 'http'
   },
-  paymentExpiration: 1440,
   paidDelta: 0.1,
   dbName: 'baron',
-  updateWatchListInterval: 5000,
+  updateWatchListInterval: 15000,
   trackPaymentForDays: 1
 };
 

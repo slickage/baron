@@ -10,20 +10,17 @@ function updateWatchedPayment(payment, minConfirmations, body) {
     // TODO: Should I be assuming 0?
     var transaction = body.txs[0];
     if (transaction.txid === payment.tx_id || !payment.tx_id) {
-      console.log('Updating Confirmations/TxId: ' + transaction.confirmations);
-      payment.confirmations = transaction.confirmations;
-      payment.tx_id = transaction.tx_id;
+      var newConfirmations = transaction.confirmations;
+      payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
+      payment.tx_id = transaction.txid ? transaction.txid : payment.tx_id;
       // What about ntx_id???????? Missed Wallet Notify while offline?
     }
   }
   var confsMet = Number(payment.confirmations) >= minConfirmations;
   var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
-  var stopTracking = paymentExpiration < new Date().getTime();
+  var isExpired = paymentExpiration < new Date().getTime();
 
-  if (confsMet || stopTracking) { // Stop tracking once confs met
-    console.log('No longer Tracking: ' + payment.address);
-    console.log('Payment Expired: ' + stopTracking);
-    console.log('Confirmations Met: ' + confsMet);
+  if (confsMet || isExpired) { // Stop tracking once confs met
     payment.status = confsMet ? helper.getPaymentStatus(payment, minConfirmations) : payment.status;
     console.log(payment.status);
     payment.watched = false;
@@ -34,15 +31,18 @@ function updateWatchedPayment(payment, minConfirmations, body) {
   var stopWatching = !payment.watched;
   var paymentChanged = startConfs !== endConfs || startTxId !== endTxId;
   if (stopWatching || paymentChanged) {
-    //db.insert(payment);
-    console.log('updating payment');
+    db.insert(payment);
+    console.log('Updated: { ' + payment.address + '[' + payment.watched + ']: ' + payment.confirmations + ' }');
   }
 }
 
 var watchPaymentsJob = function () {
   db.getWatchedPayments(function (err, paymentsArr) {
-    if (err) { console.log(err); return; }
+    if (err || !paymentsArr) { console.log(err); return; }
     // Proccess all watched payments
+    console.log('=========================');
+    console.log('Watch Payments Job: ' + paymentsArr.length);
+    console.log('=========================');
     paymentsArr.forEach(function(doc) {
       var payment = doc.value;
       // TODO: Do I need logic for expired invoices here?
@@ -53,9 +53,6 @@ var watchPaymentsJob = function () {
         var requestUrl = insightUrl + '/api/txs?address=' + payment.address;
         // Ask the insight api for transaction data for this payment address
         request(requestUrl, function (error, response, body) {
-          console.log('==================');
-          console.log('Watch Payments Job');
-          console.log('==================');
           updateWatchedPayment(payment, invoice.min_confirmations, JSON.parse(body));
         });
       });

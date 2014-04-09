@@ -48,7 +48,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         
         var receiveDetail = helper.getReceiveDetail(transaction.details);
         var totalPaid = getTotalPaid(invoice, paymentsArr);
-        var remainingBalance = invoice.balance_due - totalPaid;
+        var remainingBalance = helper.strip(Number(invoice.balance_due) - Number(totalPaid));
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         if (isUSD) {
           // If fiat is within 10 cents consider it paid
@@ -142,7 +142,7 @@ var getTotalPaid = function(invoice, paymentsArr) {
 var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = getTotalPaid(invoice, paymentsArr);
-  var remainingBalance = invoice.balance_due - totalPaid;
+  var remainingBalance = helper.strip(Number(invoice.balance_due) - Number(totalPaid));
   if (isUSD) {
     var curTime = new Date().getTime();
     bitstamped.getTicker(curTime, function(err, docs) {
@@ -187,7 +187,7 @@ var getPaymentHistory = function(paymentsArr) {
   var history = [];
   paymentsArr.forEach(function(payment) {
     var status = payment.status;
-    if(status.toLowerCase() !== 'unpaid') {
+    if(status.toLowerCase() !== 'unpaid' && payment.tx_id) {
       history.push(payment);
     }
     // Capitalizing first letter of payment status for display in invoice view

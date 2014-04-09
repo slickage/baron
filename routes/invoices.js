@@ -20,12 +20,12 @@ var invoices = function(app) {
       // Get the total paid amount for invoice
       var isUSD = invoice.currency.toUpperCase() === 'USD';
       invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
-
+      
       // Round balance due to 2 decimals if USD. (Ex: turns $1.5 to $1.50)
       invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;
 
       // Calculate the remaining balance using total paid and balance due
-      invoice.remaining_balance = invoice.balance_due - invoice.total_paid;
+      invoice.remaining_balance = helper.strip(Number(invoice.balance_due) - Number(invoice.total_paid));
       invoice.remaining_balance = isUSD ? helper.roundToDecimal(invoice.remaining_balance , 2) : invoice.remaining_balance;
 
       // Get the payment history for this invoice

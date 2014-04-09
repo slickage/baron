@@ -61,6 +61,10 @@ var getPaymentStatus = function(payment, minConfirmations) {
   return status;
 };
 
+var strip = function strip(number) {
+  return (parseFloat(number.toPrecision(12)));
+};
+
 module.exports = {
   decimalPlaces: decimalPlaces,
   toFourDecimals: toFourDecimals,
@@ -68,4 +72,5 @@ module.exports = {
   roundToDecimal: roundToDecimal,
   getReceiveDetail: getReceiveDetail,
   getPaymentStatus: getPaymentStatus,
+  strip: strip
 };
