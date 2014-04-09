@@ -1,7 +1,7 @@
 var validate = require('./validate');
 var config = require('./config');
 var nano = require('nano')(config.dbUrl);
-var dbName = 'basicpay';
+var dbName = config.dbName || 'baron';
 var baronDb;
 
 nano.db.create(dbName, function(err, body) {
@@ -14,6 +14,9 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
     if (err) { return cb(err, undefined, undefined); }
     var invoice;
     var paymentsArr = [];
+    if (docs.rows.length <= 0) {
+      return cb(new Error('Error: No invoice found.'), undefined, undefined);
+    }
     docs.rows.forEach(function (row) {
       if (row.value.type === 'invoice') {
         invoice = row.value;
@@ -22,7 +25,7 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
         paymentsArr.push(row.value);
       }
     });
-    cb(err, invoice, paymentsArr);
+    return cb(err, invoice, paymentsArr);
   });
 };
 

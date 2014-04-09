@@ -1,7 +1,9 @@
 var helper = require('./helper');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require('./bitcoinutil');
+var config = require('./config');
 var db = require('./db');
+
 
 // Updates confirmations of an already tracked payment
 function updateConfirmations(payment, transaction, cb) {
@@ -9,7 +11,9 @@ function updateConfirmations(payment, transaction, cb) {
     if (err) { return cb(err, undefined); }
     payment.confirmations = transaction.confirmations;
     payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
-
+    if (payment.status === 'paid' || payment.status === 'overpaid') {
+      payment.watched = false;
+    }
     db.insert(payment, cb);
   });
 }
@@ -50,7 +54,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           // If fiat is within 10 cents consider it paid
           var fiatDiff = Math.abs(receiveDetail.amount * rate - remainingBalance);
           console.log('Fiat Diff: ' + fiatDiff);
-          if (fiatDiff < 0.1) {
+          if (fiatDiff < config.paidDelta) {
             remainingBalance = receiveDetail.amount;
           }
           else {
@@ -58,7 +62,6 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           }
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
-        console.log('Remaining Balance: ' + remainingBalance);
 
         var payment = {};
         payment.invoice_id = invoiceId;
@@ -72,6 +75,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         payment.paid_timestamp = paidTime;
         payment.tx_id = transaction.txid; // Bitcoind txid for transaction
         payment.ntx_id = transaction.normtxid; // Normalized txId
+        payment.watched = true;
         payment.type = 'payment';
 
         db.insert(payment, cb);
@@ -124,7 +128,7 @@ var getTotalPaid = function(invoice, paymentsArr) {
   });
   if (isUSD) {
     // If were dealing in fiat and the calculated total is within 10 cents consider it paid
-    if (Math.abs(invoice.balance_due - totalPaid) < 0.1) {
+    if (Math.abs(invoice.balance_due - totalPaid) < config.paidDelta) {
       totalPaid = helper.roundToDecimal(invoice.balance_due, 2);
     }
     else {
@@ -171,8 +175,9 @@ var createNewPayment = function(invoiceId, cb) {
     payment.paid_timestamp = null;
     payment.tx_id = null; // Bitcoind txid for transaction
     payment.ntx_id = null; // Normalized txId
+    payment.watched = true;
     payment.type = 'payment';
-
+    
     db.insert(payment, cb);
   });
 };

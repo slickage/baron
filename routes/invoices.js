@@ -11,7 +11,7 @@ var invoices = function(app) {
     db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
       // Validate that invoice is not expired
       if (err || validate.invoiceExpired(invoice)) {
-        var errorMsg = err ? err.toString() : 'Error: Invoice is expired.';
+        var errorMsg = err ? err.message : 'Error: Invoice is expired.';
         return res.render('error', { errorMsg:errorMsg });
       }
       // Calculate Amount * Quantity for each line item's total

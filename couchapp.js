@@ -1,5 +1,7 @@
+var config = require('./config');
+
 var ddoc = {
-  _id: '_design/basicpay',
+  _id: '_design/' + (config.dbName || '/baron'),
   views: {},
   lists: {},
   shows: {}
@@ -38,6 +40,14 @@ ddoc.views.paymentsNormalizedTxId = {
   map: function(doc) {
     if (doc.type === 'payment') {
       emit(doc.ntx_id, doc);
+    }
+  }
+};
+
+ddoc.views.watchedPayments = {
+  map: function(doc) {
+    if (doc.type === 'payment' && doc.watched) {
+      emit(doc.address, doc);
     }
   }
 };

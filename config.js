@@ -6,7 +6,14 @@ var localConfig = {
     port: Number(process.env.BITCOIND_PORT) || 18332,
     user: process.env.BITCOIND_USER || 'username',
     pass: process.env.BITCOIND_PASS || 'password'
-  }
+  },
+  insight: {
+    host: process.env.INSIGHT_HOST || 'localhost',
+    port: process.env.INSIGHT_PORT || '3001'
+  },
+  paymentExpiration: 1440,
+  paidDelta: 0.1,
+  dbName: 'baron'
 };
 
 // If config was passed in, export that. If not export local config.

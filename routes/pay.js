@@ -11,7 +11,7 @@ var pay = function(app) {
     db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
       // Validate that invoice exists and is not expired
       if (err || validate.invoiceExpired(invoice)) {
-        var errorMsg = err ? err.toString() : 'Error: Invoice associated with payment is expired.';
+        var errorMsg = err ? err.message : 'Error: Invoice associated with payment is expired.';
         return res.render('error', { errorMsg:errorMsg });
       }
 
@@ -35,16 +35,17 @@ var pay = function(app) {
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
     db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+      if (err) { return res.render('error', { errorMsg: err.message }); }
+      
       var activePayment = invoiceUtil.getActivePayment(paymentsArr); // Get active payment for invoice
       var expired =  validate.invoiceExpired(invoice);
 
       var errorMsg = ''; // Set error message based on point of failure
       if (expired) { errorMsg = 'Error: Invoice associated with payment is expired.'; }
       else if (!activePayment) { errorMsg = 'Error: Invoice does not have any active payments.'; }
-      else if (err) { errorMsg = err.toString(); }
 
       // Render error view with message
-      if (err || expired || !activePayment) {
+      if (expired || !activePayment) {
         return res.render('error', { errorMsg: errorMsg });
       }
 
@@ -52,7 +53,7 @@ var pay = function(app) {
       invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
         // Error checking
         if (err || remainingBalance <= 0 && activePayment.status !=='pending') {
-          errorMsg = err ? err.toString() : 'Error: Invoice is paid in full, no payments exist.';
+          errorMsg = err ? err.message : 'Error: Invoice is paid in full, no payments exist.';
           return res.render('error', { errorMsg: errorMsg });
         }
 
