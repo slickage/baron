@@ -7,14 +7,18 @@ function updateWatchedPayment(payment, minConfirmations, body) {
   var startConfs = payment.confirmations;
   var startTxId = payment.tx_id;
   if (body.txs.length > 0) { // Updating payment with tx data
-    // TODO: Should I be assuming 0?
-    var transaction = body.txs[0];
-    if (transaction.txid === payment.tx_id || !payment.tx_id) {
-      var newConfirmations = transaction.confirmations;
-      payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
-      payment.tx_id = transaction.txid ? transaction.txid : payment.tx_id;
-      // What about ntx_id???????? Missed Wallet Notify while offline?
-    }
+    // No I shouldn't, need to handle case where watching 
+    // multiple payments with the same address, there will 
+    // be multiple txs in the body.
+    var transactions = body.txs;
+    transactions.forEach(function(transaction) {
+      if (transaction.txid === payment.tx_id || !payment.tx_id) {
+        var newConfirmations = transaction.confirmations;
+        payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
+        payment.tx_id = transaction.txid ? transaction.txid : payment.tx_id;
+        // What about ntx_id???????? Missed Wallet Notify while offline?
+      }
+    });
   }
   var confsMet = Number(payment.confirmations) >= minConfirmations;
   var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;

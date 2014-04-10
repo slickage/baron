@@ -1,4 +1,5 @@
 var helper = require('./helper');
+var BigNumber = require('bignumber.js');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require('./bitcoinutil');
 var config = require('./config');
@@ -44,21 +45,21 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
     bitstamped.getTicker(paidTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
-        var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
+        var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
         
         var receiveDetail = helper.getReceiveDetail(transaction.details);
-        var totalPaid = getTotalPaid(invoice, paymentsArr);
-        var remainingBalance = helper.strip(Number(invoice.balance_due) - Number(totalPaid));
+        var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
+        var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         if (isUSD) {
           // If fiat is within 10 cents consider it paid
-          var fiatDiff = Math.abs(receiveDetail.amount * rate - remainingBalance);
-          console.log('Fiat Diff: ' + fiatDiff);
-          if (fiatDiff < config.paidDelta) {
+          var fiatDiff = Math.abs(rate.times(receiveDetail.amount).minus(remainingBalance));
+          fiatDiff = new BigNumber(fiatDiff);
+          if (fiatDiff.lessThan(config.paidDelta)) {
             remainingBalance = receiveDetail.amount;
           }
           else {
-            remainingBalance = remainingBalance / rate;
+            remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
           }
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
@@ -66,10 +67,10 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         var payment = {};
         payment.invoice_id = invoiceId;
         payment.address = receiveDetail.address;
-        payment.amount_paid = receiveDetail.amount;
-        payment.expected_amount = remainingBalance; // overpaid status by default
+        payment.amount_paid = Number(receiveDetail.amount);
+        payment.expected_amount = Number(remainingBalance); // overpaid status by default
         payment.confirmations = transaction.confirmations;
-        payment.spot_rate = rate; // Exchange rate at time of payment
+        payment.spot_rate = Number(rate.valueOf()); // Exchange rate at time of payment
         payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
         payment.created = new Date().getTime();
         payment.paid_timestamp = paidTime;
@@ -89,7 +90,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
 var calculateLineTotals = function(invoice) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   invoice.line_items.forEach(function (item){
-    item.line_total = item.amount * item.quantity;
+    item.line_total = Number(new BigNumber(item.amount).times(item.quantity).valueOf());
     if (isUSD) { // Round USD to two decimals
       item.amount = helper.roundToDecimal(item.amount, 2);
       item.line_total = helper.roundToDecimal(item.line_total, 2);
@@ -118,17 +119,26 @@ var getActivePayment = function(paymentsArr) {
 // Calculates the invoice's paid amount
 var getTotalPaid = function(invoice, paymentsArr) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = 0;
+  var totalPaid = new BigNumber(0);
   paymentsArr.forEach(function(payment) {
     var paidAmount = payment.amount_paid;
     if (paidAmount) {
+      paidAmount = new BigNumber(paidAmount);
       // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-      totalPaid += isUSD ? paidAmount * payment.spot_rate : paidAmount;
+      if (isUSD) {
+        totalPaid = totalPaid.plus(paidAmount.times(payment.spot_rate));
+      }
+      else {
+        totalPaid = totalPaid.plus(paidAmount);
+      }
     }
   });
   if (isUSD) {
     // If were dealing in fiat and the calculated total is within 10 cents consider it paid
-    if (Math.abs(invoice.balance_due - totalPaid) < config.paidDelta) {
+    var fiatDiff = Math.abs(new BigNumber(invoice.balance_due).minus(totalPaid));
+    fiatDiff = new BigNumber(fiatDiff);
+    totalPaid = Number(totalPaid.valueOf());
+    if (fiatDiff.lt(config.paidDelta)) {
       totalPaid = helper.roundToDecimal(invoice.balance_due, 2);
     }
     else {
@@ -141,21 +151,22 @@ var getTotalPaid = function(invoice, paymentsArr) {
 // Calculates the invoice's remaining balance
 var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = getTotalPaid(invoice, paymentsArr);
-  var remainingBalance = helper.strip(Number(invoice.balance_due) - Number(totalPaid));
+  var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
+  var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
   if (isUSD) {
     var curTime = new Date().getTime();
     bitstamped.getTicker(curTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value; // Get ticker object
-        var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
-        remainingBalance = helper.roundToDecimal(remainingBalance / rate, 8);
-        return cb(null, remainingBalance);
+        var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
+        remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
+        remainingBalance = helper.roundToDecimal(remainingBalance, 8);
+        return cb(null, Number(remainingBalance));
       }
       else { return cb(err, undefined); }
     });
   }
-  else { return cb(null, remainingBalance); }
+  else { return cb(null, Number(remainingBalance.valueOf())); }
 };
 
 // Creates a new payment object associated with invoice

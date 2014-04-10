@@ -1,3 +1,4 @@
+var BigNumber = require('bignumber.js');
 // returns decimal places of provided
 var decimalPlaces = function(number) {
   if(Math.floor(number) === number) {
@@ -42,28 +43,25 @@ var getReceiveDetail = function(details) {
 var getPaymentStatus = function(payment, minConfirmations) {
   var status = payment.status;
   var confirmationsMet = Number(payment.confirmations) >= Number(minConfirmations);
-  var expectedAmount = Number(payment.expected_amount);
-  var amountPaid = Number(payment.amount_paid);
-  if (amountPaid > 0 && !confirmationsMet) {
+  var expectedAmount = new BigNumber(payment.expected_amount);
+  var amountPaid = new BigNumber(payment.amount_paid);
+  if (amountPaid.greaterThan(0) && !confirmationsMet) {
     status = 'pending';
   }
   else if (confirmationsMet) {
-    if(amountPaid === expectedAmount) {
+    if(amountPaid.equals(expectedAmount)) {
       status = 'paid';
     }
-    else if (amountPaid < expectedAmount) {
+    else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
     }
-    else if (amountPaid > expectedAmount) {
+    else if (amountPaid.greaterThan(expectedAmount)) {
       status = 'overpaid';
     }
   }
   return status;
 };
 
-var strip = function strip(number) {
-  return (parseFloat(number.toPrecision(12)));
-};
 
 module.exports = {
   decimalPlaces: decimalPlaces,
@@ -72,5 +70,4 @@ module.exports = {
   roundToDecimal: roundToDecimal,
   getReceiveDetail: getReceiveDetail,
   getPaymentStatus: getPaymentStatus,
-  strip: strip
 };
