@@ -51,3 +51,11 @@ ddoc.views.watchedPayments = {
     }
   }
 };
+
+ddoc.views.lastBlockHash = {
+  map: function(doc) {
+    if (doc.type === 'blockhash') {
+      emit(doc.hash, doc);
+    }
+  }
+};

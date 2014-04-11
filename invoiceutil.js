@@ -5,7 +5,6 @@ var bitcoinUtil = require('./bitcoinutil');
 var config = require('./config');
 var db = require('./db');
 
-
 // Updates confirmations of an already tracked payment
 function updateConfirmations(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
@@ -33,7 +32,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
     payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
 
     db.insert(payment, cb);
-});
+  });
 }
 
 // Handles case where user sends multiple payments to same address

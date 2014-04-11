@@ -15,7 +15,9 @@ var localConfig = {
   paidDelta: 0.1,
   dbName: 'baron',
   updateWatchListInterval: 15000,
-  trackPaymentForDays: 1
+  lastBlockJobInterval: 5000,
+  trackPaymentForDays: 1,
+  trackPaymentUntilConf: 100
 };
 
 // If config was passed in, export that. If not export local config.

@@ -69,6 +69,16 @@ var getWatchedPayments = function(cb) {
   });
 };
 
+var getLastKnownBlockHash = function(cb) {
+  baronDb.view(dbName, 'lastBlockHash', function (err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var lastKnownBlockHash = body.rows[0].value.hash;
+      return cb(err, lastKnownBlockHash);
+    }
+    return cb(err, undefined);
+  });
+};
+
 var createInvoice = function(invoice, cb) {
   if (validate.invoice(invoice)) {
     invoice.created = new Date().getTime();
@@ -86,12 +96,12 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
 };
 
 module.exports = {
-  baronDb: baronDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPayment: findPayment,
   findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
   findInvoice: findInvoice,
   getWatchedPayments: getWatchedPayments,
+  getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
   insert: insert
 };

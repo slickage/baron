@@ -51,7 +51,7 @@ var pay = function(app) {
 
       // Calculate the remaining balance and render the payment view
       invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
-        // Error checking
+        // TODO: Active payment could be pending and invoice could be paid
         if (err || remainingBalance <= 0 && activePayment.status !=='pending') {
           errorMsg = err ? err.message : 'Error: Invoice is paid in full, no payments exist.';
           return res.render('error', { errorMsg: errorMsg });
