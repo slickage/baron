@@ -18,5 +18,8 @@ module.exports = {
     else {
       return false;
     }
+  },
+  block: function(block) {
+    return block.isMainChain;
   }
 };
