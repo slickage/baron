@@ -22,10 +22,15 @@ var getBlock = function(txId, cb) {
   client.getBlock(txId, cb);
 };
 
+var listSinceBlock = function(blockHash, cb) {
+  client.listSinceBlock(blockHash, cb);
+};
+
 module.exports = {
   bitcoinClient: client,
   getPaymentAddress: getPaymentAddress,
   getTransaction: getTransaction,
-  getBlock: getBlock
+  getBlock: getBlock,
+  listSinceBlock: listSinceBlock
 };
 
