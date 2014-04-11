@@ -34,7 +34,14 @@ function initializeLastBlock() {
 }
 
 function lastBlockJob() {
+  // Create Initial Db value for last block if it doesnt exist
   initializeLastBlock();
+
+  // Check that the last known block is still valid
+
+  // If valid get transactions since last block (bitcore)
+
+  // If invalid get block (insight) and step back
 
 }
 
