@@ -36,7 +36,7 @@ function initialPaymentUpdate(payment, transaction, cb) {
 }
 
 // Handles case where user sends multiple payments to same address
-function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
+function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify, cb) {
   // TODO: Transaction time from bitcoind is not garunteed to be accurate
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
@@ -45,10 +45,11 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
         var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
-        
-        var receiveDetail = helper.getReceiveDetail(transaction.details);
+ 
+        var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
         var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
         var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
+
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         if (isUSD) {
           // If fiat is within 10 cents consider it paid
@@ -68,7 +69,8 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         payment.address = receiveDetail.address;
         payment.amount_paid = Number(receiveDetail.amount);
         payment.expected_amount = Number(remainingBalance); // overpaid status by default
-        payment.confirmations = transaction.confirmations;
+        payment.block_hash = transaction.blockhash;
+        payment.height = null; //TODO: Calculate and store or query using blockhash?
         payment.spot_rate = Number(rate.valueOf()); // Exchange rate at time of payment
         payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
         payment.created = new Date().getTime();
@@ -228,7 +230,7 @@ var updatePayment = function(transaction, cb) {
         }
         else if (!err && payment.ntx_id) {
           // Create new payment for same invoice as pre-existing payment
-          createNewPaymentWithTransaction(payment.invoice_id, transaction, cb);
+          createNewPaymentWithTransaction(payment.invoice_id, transaction, true, cb);
         }
       });
     }

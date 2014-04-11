@@ -2,6 +2,7 @@ var config = require('./config');
 var api = require('./insightapi');
 var validate = require('./validate');
 var bitcoinUtil = require('./bitcoinutil');
+var invoiceUtil = require('./invoiceutil');
 var db = require('./db');
 
 // Stores initial "last block hash" if it doesnt exist returns it if it does
@@ -21,6 +22,25 @@ function getLastBlockHash(cb) {
   });
 }
 
+function processPaymentsByNtxId(transactions) {
+  transactions.forEach(function(transaction) {
+    return console.log(transaction); // Remove
+    if (!transaction.normtxid || !transaction.address) { return console.log('Transaction missing ntxid or address'); }
+    var ntxId = transaction.normtxid;
+    var address = transaction.address;
+    db.findPaymentByNormalizedTxId(ntxId, function(err, paymentByNtxId){
+      if (err) { // Search by address to see if its another payment to the same address
+        invoiceUtil.createNewPaymentWithTransaction(address, transaction, false, function(err, body) {
+          if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
+        });
+      }
+      else { // Found payment by ntx_id. Update payment data with tx data if necessary.
+
+      }
+    });
+  });
+}
+
 function processBlockHash(blockHash) {
   api.getBlock(blockHash, function(err, block) {
     if (err) { return console.log(err); }
@@ -35,7 +55,7 @@ function processBlockHash(blockHash) {
         console.log(transactions);
         console.log(lastBlock);
         // Query couch for existing payments by ntxid if found update
-        // Create new payment object for tx's that dont have existing payments
+        processPaymentsByNtxId(transactions);
       });
     }
     else { // If invalid get block (insight) and step back

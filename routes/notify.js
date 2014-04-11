@@ -8,13 +8,11 @@ var notify = function(app) {
     var txId = req.body.txId;
     bitcoinUtil.getTransaction(txId, function(err, info) {
       if (err) { res.send(500); }
-      else {
-        var transaction = info.result;
-        invoiceUtil.updatePayment(transaction, function(err, results) {
-          if (err) { res.send(500); console.log(err); }
-          else { res.end(); }
-        });
-      }
+      var transaction = info.result;
+      invoiceUtil.updatePayment(transaction, function(err, body) {
+        if (err) { res.send(500); console.log(err); }
+        else { res.end(); }
+      });
     });
   });
 

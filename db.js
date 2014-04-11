@@ -39,8 +39,8 @@ var findPayment = function(address, cb) {
   });
 };
 
-var findPaymentByNormalizedTxId = function(txId, cb) {
-  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:txId }, function (err, body) {
+var findPaymentByNormalizedTxId = function(ntxId, cb) {
+  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:ntxId }, function (err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var payment = body.rows[0].value;
       return cb(err, payment);
