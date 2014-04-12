@@ -24,19 +24,32 @@ function getLastBlockHash(cb) {
 
 function processPaymentsByNtxId(transactions) {
   transactions.forEach(function(transaction) {
-    return console.log(transaction); // Remove
     if (!transaction.normtxid || !transaction.address) { return console.log('Transaction missing ntxid or address'); }
     var ntxId = transaction.normtxid;
     var address = transaction.address;
     db.findPaymentByNormalizedTxId(ntxId, function(err, paymentByNtxId){
-      if (err) { // Search by address to see if its another payment to the same address
+      if (err) { // Search by address to see if it's another payment to the same address
         // if we cant find by ntx look by address, maybe payment missed wallet notify
-        db.findPayment(address, function(err, payment) { // Needs to find all payments at that address
-          // Check that 
+        db.findPayments(address, function(err, paymentsArr) { // Needs to find all payments at that address
+          if (err) { return console.log('Error retrieving payments'); }
+          var invoiceId = null;
+          paymentsArr.forEach(function(payment) {
+            // Look for payments where !payment.ntx_id if found update it
+            if (!payment.ntx_id) { // If payment doesnt have ntxid then it hasn't been updated before
+              // Update payment with transaction data
 
-        });
-        invoiceUtil.createNewPaymentWithTransaction(address, transaction, false, function(err, body) {
-          if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
+            }
+            else { // Payment already exists, this is a transaction to an already used address
+              // set the invoice id so we know which invoice to create the new payment for
+              invoiceId = payment.invoice_id;
+            }
+          });
+          // Calling this outside forEach loop otherwise, it could possible generate duplicate payments.
+          if (invoiceId) {
+            invoiceUtil.createNewPaymentWithTransaction(invoiceId, transaction, false, function(err, body) {
+              if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
+            });
+          }
         });
       }
       else { // Found payment by ntx_id. Update payment data with tx data if necessary.
