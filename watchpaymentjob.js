@@ -99,8 +99,7 @@ var watchPaymentsJob = function () {
     console.log('=========================');
     console.log('Watch Payments Job: ' + paymentsArr.length);
     console.log('=========================');
-    paymentsArr.forEach(function(doc) {
-      var payment = doc.value;
+    paymentsArr.forEach(function(payment) {
       // TODO: Do I need logic for expired invoices here?
       db.findInvoice(payment.invoice_id, function (err, invoice) {
         if (err) { console.log(err); return; }

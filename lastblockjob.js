@@ -30,6 +30,11 @@ function processPaymentsByNtxId(transactions) {
     var address = transaction.address;
     db.findPaymentByNormalizedTxId(ntxId, function(err, paymentByNtxId){
       if (err) { // Search by address to see if its another payment to the same address
+        // if we cant find by ntx look by address, maybe payment missed wallet notify
+        db.findPayment(address, function(err, payment) { // Needs to find all payments at that address
+          // Check that 
+
+        });
         invoiceUtil.createNewPaymentWithTransaction(address, transaction, false, function(err, body) {
           if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
         });
@@ -37,6 +42,17 @@ function processPaymentsByNtxId(transactions) {
       else { // Found payment by ntx_id. Update payment data with tx data if necessary.
 
       }
+    });
+  });
+}
+
+function processReorgedPayments(blockHash) {
+  db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
+    if (err) { return console.log(err); }
+    paymentsArr.forEach(function (payment) {
+      payment.block_hash = null;
+      // payment.height TODO
+      db.insert(payment);
     });
   });
 }
@@ -58,9 +74,11 @@ function processBlockHash(blockHash) {
         processPaymentsByNtxId(transactions);
       });
     }
-    else { // If invalid get block (insight) and step back
-      // Query couch for existing payments by ntxid if found remove blockhash
+    else { // If invalid update all transactions in block and step back
+      // Update reorged transactions (set block_hash = null)
+      processReorgedPayments(block.hash);
       // Recursively check previousHash (processBlockHash(block.previousblockhash))
+      processBlockHash(block.previousblockhash);
     }
   });
 }

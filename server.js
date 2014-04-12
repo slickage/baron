@@ -12,7 +12,7 @@ require('./routes')(app);
 require('bitstamped');
 
 //job.runWatchPaymentsJob();
-lastBlock.runLastBlockJob();
+//lastBlock.runLastBlockJob();
 
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);

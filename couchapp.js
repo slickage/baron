@@ -36,6 +36,14 @@ ddoc.views.payments = {
   }
 };
 
+ddoc.views.paymentsBlockHash = {
+  map: function(doc) {
+    if (doc.type === 'payment') {
+      emit(doc.block_hash, doc);
+    }
+  }
+};
+
 ddoc.views.paymentsNormalizedTxId = {
   map: function(doc) {
     if (doc.type === 'payment') {

@@ -28,6 +28,8 @@ function initialPaymentUpdate(payment, transaction, cb) {
     payment.confirmations = transaction.confirmations;
     payment.tx_id = transaction.txid;
     payment.ntx_id = transaction.normtxid;
+    payment.block_hash = transaction.blockhash;
+    // payment.height = TODO
     payment.paid_timestamp = transaction.time * 1000;
     payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
 
