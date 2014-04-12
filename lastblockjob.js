@@ -22,6 +22,11 @@ function getLastBlockHash(cb) {
   });
 }
 
+function updatePaymentWithTxData(payment, transaction) {
+  // Check that the payment doesnt already contain the data
+
+}
+
 function processPaymentsByNtxId(transactions) {
   transactions.forEach(function(transaction) {
     if (!transaction.normtxid || !transaction.address) { return console.log('Transaction missing ntxid or address'); }
@@ -37,7 +42,7 @@ function processPaymentsByNtxId(transactions) {
             // Look for payments where !payment.ntx_id if found update it
             if (!payment.ntx_id) { // If payment doesnt have ntxid then it hasn't been updated before
               // Update payment with transaction data
-
+              updatePaymentWithTxData(payment, transaction);
             }
             else { // Payment already exists, this is a transaction to an already used address
               // set the invoice id so we know which invoice to create the new payment for
@@ -52,11 +57,13 @@ function processPaymentsByNtxId(transactions) {
           }
         });
       }
-      else { // Found payment by ntx_id. Update payment data with tx data if necessary.
-
+      // Found payment by ntx_id. Update payment data with tx data if necessary. Should this ever happen?! Reorg?
+      else {
+        updatePaymentWithTxData(payment, transaction);
       }
     });
   });
+  
 }
 
 function processReorgedPayments(blockHash) {
@@ -70,7 +77,8 @@ function processReorgedPayments(blockHash) {
   });
 }
 
-function processBlockHash(blockHash) {
+function processBlockHash(blockHashObj) {
+  var blockHash = blockHashObj.hash;
   api.getBlock(blockHash, function(err, block) {
     if (err) { return console.log(err); }
     console.log('> Block Valid: ' + validate.block(block));
@@ -85,6 +93,10 @@ function processBlockHash(blockHash) {
         console.log(lastBlock);
         // Query couch for existing payments by ntxid if found update
         processPaymentsByNtxId(transactions);
+        if (blockHash !== lastBlock) {
+          blockHashObj.hash = lastBlock; // update to latest block
+          db.insert(blockHashObj); // insert updated last block into db
+        }
       });
     }
     else { // If invalid update all transactions in block and step back
@@ -98,10 +110,10 @@ function processBlockHash(blockHash) {
 
 function lastBlockJob() {
   // Get Last Block, create it if baron isnt aware of one.
-  getLastBlockHash(function(err, lastBlockHash) {
+  getLastBlockHash(function(err, lastBlockHashObj) {
     if (err) { return console.log(err); }
-    console.log('Processing Last Block: ' + lastBlockHash);
-    processBlockHash(lastBlockHash);
+    console.log('Processing Last Block: ' + lastBlockHashObj);
+    processBlockHash(lastBlockHashObj);
   });
 }
 

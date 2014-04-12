@@ -121,7 +121,7 @@ var getPaymentByBlockHash = function(blockHash, cb) {
 var getLastKnownBlockHash = function(cb) {
   baronDb.view(dbName, 'lastBlockHash', function (err, body) {
     if (!err && body.rows && body.rows.length > 0) {
-      var lastKnownBlockHash = body.rows[0].value.hash;
+      var lastKnownBlockHash = body.rows[0].value;
       return cb(err, lastKnownBlockHash);
     }
     return cb(err, undefined);
