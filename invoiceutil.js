@@ -47,7 +47,9 @@ function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify,
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
         var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
- 
+        
+        // Transactions from wallet notify are different from transactions from listsinceblock
+        // Wallet Notify tx's have a details array listsince block tx's dont.
         var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
         var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
         var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
@@ -72,7 +74,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify,
         payment.amount_paid = Number(receiveDetail.amount);
         payment.expected_amount = Number(remainingBalance); // overpaid status by default
         payment.block_hash = transaction.blockhash;
-        payment.height = null; //TODO: Calculate and store or query using blockhash?
+        // payment.height = null; //TODO: Calculate and store or query using blockhash?
         payment.spot_rate = Number(rate.valueOf()); // Exchange rate at time of payment
         payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
         payment.created = new Date().getTime();

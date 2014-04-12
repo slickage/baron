@@ -24,7 +24,12 @@ function getLastBlockHash(cb) {
 
 function updatePaymentWithTxData(payment, transaction) {
   // Check that the payment doesnt already contain the data
-
+  if (payment.ntx_id !== transaction.normtxid) {
+    payment.block_hash = transaction.blockhash;
+    payment.ntx_id = transaction.normtxid;
+    payment.tx_id = transaction.txid;
+    db.insert(payment);
+  }
 }
 
 function processPaymentsByNtxId(transactions) {
@@ -59,7 +64,7 @@ function processPaymentsByNtxId(transactions) {
       }
       // Found payment by ntx_id. Update payment data with tx data if necessary. Should this ever happen?! Reorg?
       else {
-        updatePaymentWithTxData(payment, transaction);
+        updatePaymentWithTxData(paymentByNtxId, transaction);
       }
     });
   });
@@ -102,8 +107,9 @@ function processBlockHash(blockHashObj) {
     else { // If invalid update all transactions in block and step back
       // Update reorged transactions (set block_hash = null)
       processReorgedPayments(block.hash);
-      // Recursively check previousHash (processBlockHash(block.previousblockhash))
-      processBlockHash(block.previousblockhash);
+      // Recursively check previousHash
+      blockHashObj.hash = block.previousblockhash;
+      processBlockHash(blockHashObj);
     }
   });
 }
