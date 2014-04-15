@@ -1,42 +1,29 @@
 var helper = require('./helper');
+var validate = require('./validate');
 var BigNumber = require('bignumber.js');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require('./bitcoinutil');
 var config = require('./config');
 var db = require('./db');
 
-// Updates status of an already tracked payment
-var updatePaymentStatusAndBlockHash = function(payment, transaction, cb) {
+var updatePaymentWithTransaction = function (payment, transaction, isWalletNotify, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, undefined); }
-    var oldStatus = payment.status;
     var newStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-    payment.status = oldStatus === newStatus ? oldStatus : newStatus;
+    if(validate.paymentChanged(payment, transaction, newStatus, isWalletNotify)) {
+      var amount = isWalletNotify ? helper.getReceiveDetail(transaction.details).amount : transaction.amount;
+      payment.amount_paid = amount;
+      payment.tx_id = transaction.txid;
+      payment.ntx_id = transaction.normtxid;
+      payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
+      payment.paid_timestamp = transaction.time * 1000;
+      payment.status = newStatus;
 
-    var oldBlockHash = payment.block_hash;
-    var newBlockHash = transaction.blockhash;
-    payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
-
-    if(newStatus !== oldStatus || oldBlockHash !== newBlockHash) {
       db.insert(payment, cb);
     }
-  });
-};
-
-// Intial walletnotify for payment
-var initialPaymentUpdate = function(payment, transaction, isWalletNotify, cb) {
-  db.findInvoice(payment.invoice_id, function(err, invoice) {
-    if (err) { return cb(err, undefined); }
-    var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
-
-    payment.amount_paid = receiveDetail.amount;
-    payment.tx_id = transaction.txid;
-    payment.ntx_id = transaction.normtxid;
-    payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
-    payment.paid_timestamp = transaction.time * 1000;
-    payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-
-    db.insert(payment, cb);
+    else {
+      cb(new Error('No changes to update'), undefined);
+    }
   });
 };
 
@@ -226,14 +213,14 @@ var updatePayment = function(transaction, cb) {
   db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
-      updatePaymentStatusAndBlockHash(payment, transaction, cb);
+      updatePaymentWithTransaction(payment, transaction, true, cb);
     }
     else {
       db.findPayment(address, function(err, payment) {
         if (err) { return cb(err, undefined); }
         if (!err && !payment.ntx_id) {
           // Initial update from walletnotify
-          initialPaymentUpdate(payment, transaction, true, cb);
+          updatePaymentWithTransaction(payment, transaction, true, cb);
         }
         else if (!err && payment.ntx_id) {
           // Create new payment for same invoice as pre-existing payment
@@ -271,8 +258,7 @@ module.exports = {
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
   refreshPaymentData: refreshPaymentData,
-  updatePaymentStatusAndBlockHash: updatePaymentStatusAndBlockHash,
-  initialPaymentUpdate: initialPaymentUpdate,
-  createNewPaymentWithTransaction: createNewPaymentWithTransaction
+  createNewPaymentWithTransaction: createNewPaymentWithTransaction,
+  updatePaymentWithTransaction: updatePaymentWithTransaction
 };
 

@@ -32,33 +32,32 @@ function updatePaymentWithTxData(payment, transaction) {
         if (err) {
           console.log('Error retrieving block: ' + transaction.blockhash);
         }
-        if (validate.block(block)) {
-          if (payment.ntx_id !== transaction.normtxid) { // Initial Payment Update
-            invoiceUtil.initialPaymentUpdate(payment, transaction, false, function(err, result) {
-              if (err) { console.log('Error Initializing Payment:' + payment.address); }
-            });
-          }
-          else { // Updating Payments Status and block hash
-            invoiceUtil.updatePaymentStatusAndBlockHash(payment, transaction, function(err, result) {
-              if (err) { console.log('Error Updating Status and Blockhash for Payment:' + payment.ntx_id); }
-            });
-          }
+        if (validate.block(block)) { // update payment if anythings changed
+          invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
+            if (err) {
+              console.log('Error Initializing Payment:' + payment.address);
+              console.log(err);
+            }
+          });
         }
         // Block isnt valid and payment.block_hash === transaction.blockhash.
-        else if (payment.block_hash === transaction.blockhash) {
+        else if (transaction.blockhash && payment.block_hash === transaction.blockhash) {
           // Clear payments block_hash if it was storing the invalid one.
           payment.block_hash = null;
           // Transaction.confirmations should be 0 this should put payment back to pending
           // This is technically a reorg though. TODO.
           payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice.min_confirmations);
+          console.log('updatePaymentWithTxData >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
           db.insert(payment);
         }
       });
     }
-    else { // transaction is too new, no blockhash
-      invoiceUtil.initialPaymentUpdate(payment, transaction, false, function(err, result) {
-        if (err) { console.log('Error Initializing Payment:' + payment.ntx_id); 
-        console.log(err);}
+    else { // transaction is too new, no blockhash update other data
+      invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
+        if (err) {
+          console.log('Error Updating Payment:' + payment.ntx_id);
+          console.log(err);
+        }
       });
     }
   });
@@ -96,9 +95,11 @@ function processPaymentsByNtxId(transactions) {
           }
         });
       }
-      // Found payment by ntx_id. Update payment data with tx data if necessary. Should this ever happen?! Reorg?
+      // Found payment by ntx_id. Update payment data with tx data if necessary.
+      // This will occur if the initial tx data doesnt include blockhash
+      // The payment will be found by ntxId but not have a block hash.
       else if(paymentByNtxId) {
-        console.log('Reorg?');
+        console.log('Trying to update blockhash');
         updatePaymentWithTxData(paymentByNtxId, transaction);
       }
     });
@@ -112,6 +113,7 @@ function processReorgedPayments(blockHash) {
     if (paymentsArr) {
       paymentsArr.forEach(function (payment) {
         payment.block_hash = null;
+        console.log('processReorgedPayments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
         db.insert(payment);
       });
     }
@@ -121,7 +123,11 @@ function processReorgedPayments(blockHash) {
 function processBlockHash(blockHashObj) {
   var blockHash = blockHashObj.hash;
   api.getBlock(blockHash, function(err, block) {
-    if (err || !block) { return console.log(err); }
+    if (err || !block) {
+      // TODO: If there's an error, lastblock in db is probably corrupt.
+      // Should we update the latest block? 
+      return console.log(err);
+    }
     console.log('> Block Valid: ' + validate.block(block));
     // If valid get transactions since last block (bitcore)
     if (validate.block(block)) {
@@ -143,6 +149,7 @@ function processBlockHash(blockHashObj) {
     else { // If invalid update all transactions in block and step back
       // Update reorged transactions (set block_hash = null)
       processReorgedPayments(block.hash);
+      console.log('Handle reorg.');
       // Recursively check previousHash
       blockHashObj.hash = block.previousblockhash;
       processBlockHash(blockHashObj);
@@ -156,7 +163,7 @@ function lastBlockJob() {
     if (err) { return console.log(err); }
     console.log('===========================');
     console.log('Processing Last Block: ' + lastBlockHashObj.hash);
-    console.log('===========================');    
+    console.log('===========================');
     processBlockHash(lastBlockHashObj);
   });
 }

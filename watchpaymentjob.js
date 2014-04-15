@@ -43,47 +43,60 @@ function getTransaction(payment, transactions) {
 }
 
 function updateWatchedPayment(payment, invoice, body) {
-  var newConfirmations = null;
   var oldStatus = payment.status;
-  var newStatus = null;
   var oldBlockHash = payment.block_hash;
-  var newBlockHash = null;
-  if (body.txs.length > 0) { // Updating payment with tx data
+
+  var transactions;
+  try {
+    transactions = JSON.parse(body).txs;
+  }
+  catch (err) {
+    console.log('Error parsing transactions from body:');
+    console.log(body);
+    transactions = null;
+  }
+
+  if (transactions && transactions.length > 0) { // Updating payment with tx data
     // No I shouldn't, need to handle case where watching 
     // multiple payments with the same address, there will 
     // be multiple txs in the body.
-    console.log('Hash Transactions');
-    try {
-      var transactions = JSON.parse(body.txs);
-      var transaction = getTransaction(payment, transactions);
-      if (transaction) {
-        newConfirmations = transaction.confirmations;
-        newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
-        payment.status = oldStatus === newStatus ? oldStatus : newStatus;
+    var transaction = getTransaction(payment, transactions);
+    if (transaction) {
+      var newConfirmations = transaction.confirmations;
+      console.log('+++++Awdadawdawdaw>>>> ' + newConfirmations);
+      var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
+      payment.status = oldStatus === newStatus ? oldStatus : newStatus;
 
-        newBlockHash = transaction.blockhash;
-        payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
-        
+      var newBlockHash = transaction.blockhash;
+      payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
+      // payments confirmations have reached 100 (Default) confs stop watching.
+      var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
+      payment.watched = !stopTracking;
+
+      console.log(stopTracking);
+      console.log('oldStatus: ' + oldStatus);
+      console.log('newStatus: ' + newStatus);
+      console.log('newBlockHash: ' + newBlockHash);
+      console.log('oldBlockHash: ' + oldBlockHash);
+      if (stopTracking || (newStatus && newStatus !== oldStatus) || (newBlockHash && newBlockHash !== oldBlockHash)) {
+        db.insert(payment);
+        console.log('Updating: { ' + payment.address + '[' + payment.watched + '] }');
       }
     }
-    catch (err) {
-      console.log('Error parsing transactions from body');
-      console.log(body);
-      return console.log(err);
+  }
+  else { //Payment has no transaction data. This means it has most likely not been paid. Expire if passes trackPaymentForDays var
+    var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
+    var isExpired = paymentExpiration < new Date().getTime();
+    console.log('Checking expiration');
+    // If newConfirmations is null, there were no transactions for this payment
+    if (isExpired) { // Stop tracking once confs met
+      payment.watched = false;
     }
-  }
 
-  var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
-  var isExpired = paymentExpiration < new Date().getTime();
-  var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
-  // If newConfirmations is null, there were no transactions for this payment
-  if ((isExpired && !newConfirmations) || stopTracking) { // Stop tracking once confs met
-    payment.watched = false;
-  }
-
-  if (!payment.watched || newStatus !== oldStatus || newBlockHash !== oldBlockHash) {
-    db.insert(payment);
-    console.log('Updated: { ' + payment.address + '[' + payment.watched + ']: ' + newConfirmations + ' }');
+    if (!payment.watched) {
+      db.insert(payment);
+      console.log('Stopped Watching: { ' + payment.address + '[' + payment.watched + '] }');
+    }
   }
 }
 
@@ -104,7 +117,7 @@ var watchPaymentsJob = function () {
         // Ask the insight api for transaction data for this payment address
         request(requestUrl, function (error, response, body) {
           console.log(payment);
-          updateWatchedPayment(payment, invoice, JSON.parse(body));
+          updateWatchedPayment(payment, invoice, body);
         });
       });
     });
