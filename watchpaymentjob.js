@@ -9,17 +9,14 @@ function getTransaction(payment, transactions) {
   var paymentAddress = payment.address;
   var paymentAmount = new BigNumber(payment.amount_paid);
   var matchingTransaction;
-  console.log('starting');
   if (transactions.length === 1){
     matchingTransaction = transactions[0];
   }
   else {
-    console.log(transactions.length);
     transactions.forEach(function(transaction) {
       // First match by tx, if not then by address and amount
       // If txids exist and match, then use this transaction, dont have ntxid to compare
       if (transaction.txid && paymentTxId && transaction.txid === paymentTxId) {
-        console.log('Found matching Txids');
         matchingTransaction = transaction;
       }
       else { // Match by Address and amount
@@ -28,11 +25,8 @@ function getTransaction(payment, transactions) {
           var addresses = output.scriptPubKey.addresses;
           addresses.forEach(function(address) {
             var outputAmount = new BigNumber(output.value);
-            console.log('payment address: ' + paymentAddress + ' ' + paymentAmount.valueOf());
-            console.log(address + ': ' + outputAmount);
             if (address === paymentAddress && outputAmount.equals(paymentAmount)) {
               matchingTransaction = transaction;
-              console.log(matchingTransaction);
             }
           });
         });
@@ -63,21 +57,15 @@ function updateWatchedPayment(payment, invoice, body) {
     var transaction = getTransaction(payment, transactions);
     if (transaction) {
       var newConfirmations = transaction.confirmations;
-      console.log('+++++Awdadawdawdaw>>>> ' + newConfirmations);
       var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
       payment.status = oldStatus === newStatus ? oldStatus : newStatus;
 
-      var newBlockHash = transaction.blockhash;
+      var newBlockHash = transaction.blockhash ? transaction.blockhash : null;
       payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
       // payments confirmations have reached 100 (Default) confs stop watching.
       var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
       payment.watched = !stopTracking;
 
-      console.log(stopTracking);
-      console.log('oldStatus: ' + oldStatus);
-      console.log('newStatus: ' + newStatus);
-      console.log('newBlockHash: ' + newBlockHash);
-      console.log('oldBlockHash: ' + oldBlockHash);
       if (stopTracking || (newStatus && newStatus !== oldStatus) || (newBlockHash && newBlockHash !== oldBlockHash)) {
         db.insert(payment);
         console.log('Updating: { ' + payment.address + '[' + payment.watched + '] }');
@@ -87,7 +75,6 @@ function updateWatchedPayment(payment, invoice, body) {
   else { //Payment has no transaction data. This means it has most likely not been paid. Expire if passes trackPaymentForDays var
     var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
     var isExpired = paymentExpiration < new Date().getTime();
-    console.log('Checking expiration');
     // If newConfirmations is null, there were no transactions for this payment
     if (isExpired) { // Stop tracking once confs met
       payment.watched = false;
@@ -116,7 +103,6 @@ var watchPaymentsJob = function () {
         var requestUrl = insightUrl + '/api/txs?address=' + payment.address;
         // Ask the insight api for transaction data for this payment address
         request(requestUrl, function (error, response, body) {
-          console.log(payment);
           updateWatchedPayment(payment, invoice, body);
         });
       });

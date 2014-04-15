@@ -41,6 +41,7 @@ var getReceiveDetail = function(details) {
 
 // Returns status of payment
 var getPaymentStatus = function(payment, confirmations, invoice) {
+  confirmations = confirmations ? confirmations : 0; // Pending if there are no confs
   var minConfirmations = invoice.min_confirmations;
   var status = payment.status;
   var confirmationsMet = Number(confirmations) >= Number(minConfirmations);

@@ -24,7 +24,6 @@ function getLastBlockHash(cb) {
 }
 
 function updatePaymentWithTxData(payment, transaction) {
-  console.log(payment);
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { console.log('Error retrieving invoice: ' + payment.invoice_id); }
     if (transaction.blockhash) {
@@ -35,19 +34,23 @@ function updatePaymentWithTxData(payment, transaction) {
         if (validate.block(block)) { // update payment if anythings changed
           invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
             if (err) {
-              console.log('Error Initializing Payment:' + payment.address);
-              console.log(err);
+              console.log('Error Updating Payment:' + payment.ntx_id);
             }
           });
         }
         // Block isnt valid and payment.block_hash === transaction.blockhash.
-        else if (transaction.blockhash && payment.block_hash === transaction.blockhash) {
+        else if (payment.block_hash === transaction.blockhash) {
           // Clear payments block_hash if it was storing the invalid one.
           payment.block_hash = null;
           // Transaction.confirmations should be 0 this should put payment back to pending
           // This is technically a reorg though. TODO.
+          // payment.reorg = true; Should we add this?
           payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice.min_confirmations);
-          console.log('updatePaymentWithTxData >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+          console.log('REORG: Payment Reorged. Clearing blockhash.');
+          db.insert(payment);
+        }
+        else { // Payment has a different blockhash than transaction TODO
+          payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice.min_confirmations);
           db.insert(payment);
         }
       });
@@ -56,7 +59,6 @@ function updatePaymentWithTxData(payment, transaction) {
       invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
         if (err) {
           console.log('Error Updating Payment:' + payment.ntx_id);
-          console.log(err);
         }
       });
     }
@@ -72,7 +74,7 @@ function processPaymentsByNtxId(transactions) {
     db.findPaymentByNormalizedTxId(ntxId, function(err, paymentByNtxId){
       if (err) { // Search by address to see if it's another payment to the same address
         // if we cant find by ntx look by address, maybe payment missed wallet notify
-        console.log('Didnt find by ntxid, try address');
+        console.log('Didnt find by ntxid, try address: ' + address);
         db.findPayments(address, function(err, paymentsArr) { // Needs to find all payments at that address
           if (err) { return console.log('Error retrieving payments'); }
           var invoiceId = null;
@@ -113,7 +115,8 @@ function processReorgedPayments(blockHash) {
     if (paymentsArr) {
       paymentsArr.forEach(function (payment) {
         payment.block_hash = null;
-        console.log('processReorgedPayments >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        console.log('REORG: Payment Reorged. Clearing blockhash.');
+        // payment.reorg = true; Should we add this?
         db.insert(payment);
       });
     }
@@ -136,8 +139,6 @@ function processBlockHash(blockHashObj) {
         if (err) { return console.log(err); }
         var transactions = info.result.transactions;
         var lastBlockHash = info.result.lastblock;
-        console.log(transactions);
-        console.log(lastBlockHash);
         // Query couch for existing payments by ntxid if found update
         processPaymentsByNtxId(transactions);
         if (blockHash !== lastBlockHash) {
@@ -149,7 +150,7 @@ function processBlockHash(blockHashObj) {
     else { // If invalid update all transactions in block and step back
       // Update reorged transactions (set block_hash = null)
       processReorgedPayments(block.hash);
-      console.log('Handle reorg.');
+      console.log('REORG: Recursively handling processing previous block.');
       // Recursively check previousHash
       blockHashObj.hash = block.previousblockhash;
       processBlockHash(blockHashObj);
@@ -157,7 +158,7 @@ function processBlockHash(blockHashObj) {
   });
 }
 
-function lastBlockJob() {
+var lastBlockJob = function() {
   // Get Last Block, create it if baron isnt aware of one.
   getLastBlockHash(function(err, lastBlockHashObj) {
     if (err) { return console.log(err); }
@@ -166,7 +167,7 @@ function lastBlockJob() {
     console.log('===========================');
     processBlockHash(lastBlockHashObj);
   });
-}
+};
 
 var runLastBlockJob = function () {
   setInterval(function(){
@@ -175,5 +176,6 @@ var runLastBlockJob = function () {
 };
 
 module.exports = {
-  runLastBlockJob:runLastBlockJob,
+  runLastBlockJob: runLastBlockJob,
+  lastBlockJob: lastBlockJob
 };
