@@ -1,6 +1,8 @@
 var invoiceUtil = require('../invoiceutil');
 var helper = require('../helper');
 var validate = require('../validate');
+var api = require('../insightapi');
+var config = require('../config');
 var db = require('../db');
 
 var pay = function(app) {
@@ -52,7 +54,7 @@ var pay = function(app) {
       // Calculate the remaining balance and render the payment view
       invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
         // TODO: Active payment could be pending and invoice could be paid
-        if (err || remainingBalance <= 0 && activePayment.status !=='pending') {
+        if (err || remainingBalance <= 0 && activePayment.status !=='pending' && activePayment.block_hash) {
           errorMsg = err ? err.message : 'Error: Invoice is paid in full, no payments exist.';
           return res.render('error', { errorMsg: errorMsg });
         }
@@ -65,22 +67,30 @@ var pay = function(app) {
           });
         }
 
-        var isUSD = invoice.currency.toUpperCase() === 'USD';
-        var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : remainingBalance;
-        res.render('pay', {
-          showRefresh: isUSD, // Refresh is only needed for invoices in USD
-          invoice_id: invoiceId,
-          status: activePayment.status,
-          address: activePayment.address,
-          confirmations: activePayment.confirmations ? activePayment.confirmations : 0,
-          ntxId: activePayment.ntx_id,
-          amount: amountToDisplay,
-          amountFirstFour: helper.toFourDecimals(amountToDisplay),
-          amountLastFour: helper.getLastFourDecimals(amountToDisplay),
-          qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay
+        // Get Confirmations
+        api.getBlock(activePayment.block_hash, function(err, block) {
+          var confirmations = 0;
+          if (err || !block) { confirmations = 0;}
+          else if (block) {
+            confirmations = block.confirmations;
+          }
+          var isUSD = invoice.currency.toUpperCase() === 'USD';
+          var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : remainingBalance;
+          res.render('pay', {
+            showRefresh: isUSD, // Refresh is only needed for invoices in USD
+            invoice_id: invoiceId,
+            url: config.chainExplorerUrl + '/' + activePayment.tx_id,
+            status: activePayment.status,
+            address: activePayment.address,
+            confirmations: confirmations,
+            ntxId: activePayment.ntx_id,
+            amount: amountToDisplay,
+            amountFirstFour: helper.toFourDecimals(amountToDisplay),
+            amountLastFour: helper.getLastFourDecimals(amountToDisplay),
+            qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay
+          });
         });
       });
-      
     });
   });
 

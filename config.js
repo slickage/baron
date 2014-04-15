@@ -1,6 +1,7 @@
 var localConfig = {
   port: process.env.PORT || 8080,
   dbUrl: process.env.DB_URL || 'http://localhost:5984',
+  chainExplorerUrl: 'http://tbtc.blockr.io/tx/info',
   bitcoind:  {
     host: process.env.BITCOIND_HOST || 'localhost',
     port: Number(process.env.BITCOIND_PORT) || 18332,

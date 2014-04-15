@@ -76,7 +76,7 @@ function processPaymentsByNtxId(transactions) {
         // if we cant find by ntx look by address, maybe payment missed wallet notify
         console.log('Didnt find by ntxid, try address: ' + address);
         db.findPayments(address, function(err, paymentsArr) { // Needs to find all payments at that address
-          if (err) { return console.log('Error retrieving payments'); }
+          if (err || !paymentsArr) { return console.log('Error retrieving payments'); }
           var invoiceId = null;
           paymentsArr.forEach(function(payment) {
             // Look for payments where !payment.ntx_id if found update it

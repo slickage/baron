@@ -17,14 +17,8 @@ var notify = function(app) {
   });
 
   app.post('/blocknotify', function(req, res) {
-    var blockHash = req.body.blockHash;
-    bitcoinUtil.getBlock(blockHash, function(err, info) {
-      if (err) { res.send(500); }
-      else {
-        blockJob.lastBlockJob();
-        res.end();
-      }
-    });
+    blockJob.lastBlockJob();
+    res.end();
   });
 
 };

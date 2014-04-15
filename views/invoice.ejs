@@ -114,22 +114,31 @@
 
       <% invoice.payment_history.forEach(function(payment) { %>
         <div class="row line-item thin-underline">
-          <div class="col-xs-12 col-sm-6 col-md-6">
+          <div class="col-xs-12 col-sm-5 col-md-4">
             <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= payment.tx_id.substring(0, 25) %>...</a></span>
-            <span class="hidden-xs address-text"><a href="#BlockChainInfo"><%= payment.tx_id.substring(0, 25) %>...</a></span>
+            <span class="hidden-xs address-text">
+              <a href="<%= payment.url %>">
+                <%= payment.tx_id.substring(0, 25) %>...
+              </a>
+            </span>
           </div>
           <div class="col-xs-3 visible-xs mobile-lbl-text">Status</div>
           <div class="col-xs-9 col-sm-2 col-md-3 right <%= payment.status.toLowerCase() %>">
             <%= payment.status %>
           </div>
           <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
-          <div class="col-xs-9 col-sm-4 col-md-3 right">
-            <% if (!payment.amount_paid) { %>
-              0
+          <div class="col-xs-9 col-sm-5 col-md-5 right">
+            <% if (payment.amount_usd) { %>
+              <%= payment.amount_usd %> USD
+              <br />
+              (<%= payment.amount_paid %> BTC)
             <% } else { %>
-              <%= payment.amount_paid %>
+              <% if (!payment.amount_paid) { %>
+                0
+              <% } else { %>
+                <%= payment.amount_paid %> BTC
+              <% } %> 
             <% } %>
-            BTC
           </div> 
         </div>
       <% }); %>
