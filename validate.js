@@ -20,6 +20,6 @@ module.exports = {
     }
   },
   block: function(block) {
-    return block.isMainChain;
+    return block.confirmations ? Number(block.confirmations) !== -1 : true;
   }
 };

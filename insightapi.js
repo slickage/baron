@@ -23,8 +23,16 @@ var getBlock = function(blockHash, cb){
   var requestUrl = insightUrl + '/api/block/' + blockHash;
   request(requestUrl, function(error, response, body) {
     if (error) { return cb(error, undefined); }
-    var block = JSON.parse(body);
-    return cb(null, block);
+    try {
+      var block = JSON.parse(body);
+      return cb(null, block);
+    }
+    catch (err) {
+      console.log(err);
+      console.log(body);
+      console.log(blockHash);
+      return cb(err, undefined);
+    }
   });
 };
 

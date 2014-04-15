@@ -1,18 +1,22 @@
 var db;
 var config;
-var job;
+var watchJob;
+var blockJob;
 
 var init = function(app) {
+  require('./db').instantiateDb();
   require('./routes')(app);
   require('bitstamped');
-  job.runWatchPaymentsJob();
+  watchJob.runWatchPaymentsJob();
+  blockJob.runLastBlockJob();
 };
 
 module.exports = function (externalConfig) {
   global.externalConfig = externalConfig;
   config = require('./config');
   db =  require('./db');
-  job = require('./watchpaymentjob');
+  watchJob = require('./watchpaymentjob');
+  blockJob = require('./lastblockjob');
   var externalMethods = {
     init: init,
     createInvoice: db.createInvoice,

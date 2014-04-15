@@ -6,22 +6,23 @@ var nano = require('nano')(config.dbUrl);
 var dbName = config.dbName || 'baron';
 var baronDb;
 
-nano.db.get(dbName, function(err, body) {
-  if (err) {
-    nano.db.create(dbName, function(err, body) {
-      if (err) { return process.exit(1); }
-      console.log('Database created.');
-      baronDb = nano.use(dbName);
-      var dbUrl = config.dbUrl + '/' + config.dbName;
-      couchapp.createApp(ddoc, dbUrl, function(app) {
-        app.push();
+var instantiateDb = function () {
+  nano.db.get(dbName, function(err, body) {
+    if (err) {
+      nano.db.create(dbName, function(err, body) {
+        if (err) { return process.exit(1); }
+        console.log('Database created.');
+        baronDb = nano.use(dbName);
+        var dbUrl = config.dbUrl + '/' + config.dbName;
+        couchapp.createApp(ddoc, dbUrl, function(app) {
+          app.push();
+        });
+        return;
       });
-      return;
-    });
-  }
-  baronDb = nano.use(dbName);
-});
-
+    }
+    baronDb = nano.use(dbName);
+  });
+};
 
 var findInvoiceAndPayments = function(invoiceId, cb) {
   baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function (err, body) {
@@ -70,11 +71,18 @@ var findPayments = function(address, cb) {
 
 var findPaymentByNormalizedTxId = function(ntxId, cb) {
   baronDb.view(dbName, 'paymentsNormalizedTxId', { key:ntxId }, function (err, body) {
+    var payment = null;
     if (!err && body.rows && body.rows.length > 0) {
-      var payment = body.rows[0].value;
-      return cb(err, payment);
+      payment = body.rows[0].value;
     }
-    return cb(err, undefined);
+    if (payment) {
+      return cb(null, payment);
+    }
+    else if (!payment)  {
+      return cb(new Error('No invoice matching ntx_id: ' + ntxId), undefined);
+    } else {
+      return cb(err, undefined);
+    }
   });
 };
 
@@ -145,6 +153,7 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
 };
 
 module.exports = {
+  instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPayment: findPayment,
   findPayments: findPayments,

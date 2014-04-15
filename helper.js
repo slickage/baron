@@ -40,9 +40,10 @@ var getReceiveDetail = function(details) {
 };
 
 // Returns status of payment
-var getPaymentStatus = function(payment, minConfirmations) {
+var getPaymentStatus = function(payment, confirmations, invoice) {
+  var minConfirmations = invoice.min_confirmations;
   var status = payment.status;
-  var confirmationsMet = Number(payment.confirmations) >= Number(minConfirmations);
+  var confirmationsMet = Number(confirmations) >= Number(minConfirmations);
   var expectedAmount = new BigNumber(payment.expected_amount);
   var amountPaid = new BigNumber(payment.amount_paid);
   if (amountPaid.greaterThan(0) && !confirmationsMet) {
@@ -50,7 +51,10 @@ var getPaymentStatus = function(payment, minConfirmations) {
   }
   else if (confirmationsMet) {
     if(amountPaid.equals(expectedAmount)) {
-      status = 'paid';
+      if (status !== 'paid') {
+        // Webhook here
+        status = 'paid';
+      }
     }
     else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
@@ -62,12 +66,11 @@ var getPaymentStatus = function(payment, minConfirmations) {
   return status;
 };
 
-
 module.exports = {
   decimalPlaces: decimalPlaces,
   toFourDecimals: toFourDecimals,
   getLastFourDecimals: getLastFourDecimals,
   roundToDecimal: roundToDecimal,
   getReceiveDetail: getReceiveDetail,
-  getPaymentStatus: getPaymentStatus,
+  getPaymentStatus: getPaymentStatus
 };

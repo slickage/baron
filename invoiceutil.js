@@ -5,40 +5,43 @@ var bitcoinUtil = require('./bitcoinutil');
 var config = require('./config');
 var db = require('./db');
 
-// Updates confirmations of an already tracked payment
-function updateConfirmations(payment, transaction, cb) {
+// Updates status of an already tracked payment
+var updatePaymentStatusAndBlockHash = function(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, undefined); }
-    payment.confirmations = transaction.confirmations;
-    payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
-    if (payment.status === 'paid' || payment.status === 'overpaid') {
-      payment.watched = false;
+    var oldStatus = payment.status;
+    var newStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+    payment.status = oldStatus === newStatus ? oldStatus : newStatus;
+
+    var oldBlockHash = payment.block_hash;
+    var newBlockHash = transaction.blockhash;
+    payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
+
+    if(newStatus !== oldStatus || oldBlockHash !== newBlockHash) {
+      db.insert(payment, cb);
     }
-    db.insert(payment, cb);
   });
-}
+};
 
 // Intial walletnotify for payment
-function initialPaymentUpdate(payment, transaction, cb) {
+var initialPaymentUpdate = function(payment, transaction, isWalletNotify, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, undefined); }
-    var receiveDetail = helper.getReceiveDetail(transaction.details);
+    var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
 
     payment.amount_paid = receiveDetail.amount;
-    payment.confirmations = transaction.confirmations;
     payment.tx_id = transaction.txid;
     payment.ntx_id = transaction.normtxid;
-    payment.block_hash = transaction.blockhash;
-    // payment.height = TODO
+    payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
     payment.paid_timestamp = transaction.time * 1000;
-    payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
+    payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
 
     db.insert(payment, cb);
   });
-}
+};
 
 // Handles case where user sends multiple payments to same address
-function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify, cb) {
+var createNewPaymentWithTransaction = function(invoiceId, transaction, isWalletNotify, cb) {
   // TODO: Transaction time from bitcoind is not garunteed to be accurate
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
@@ -73,10 +76,10 @@ function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify,
         payment.address = receiveDetail.address;
         payment.amount_paid = Number(receiveDetail.amount);
         payment.expected_amount = Number(remainingBalance); // overpaid status by default
-        payment.block_hash = transaction.blockhash;
+        payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
         // payment.height = null; //TODO: Calculate and store or query using blockhash?
         payment.spot_rate = Number(rate.valueOf()); // Exchange rate at time of payment
-        payment.status = helper.getPaymentStatus(payment, invoice.min_confirmations);
+        payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
         payment.created = new Date().getTime();
         payment.paid_timestamp = paidTime;
         payment.tx_id = transaction.txid; // Bitcoind txid for transaction
@@ -89,7 +92,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify,
       else { return cb(err, undefined); }
     });
   });
-}
+};
 
 // Calculates line totals for invoice line items
 var calculateLineTotals = function(invoice) {
@@ -184,7 +187,7 @@ var createNewPayment = function(invoiceId, cb) {
     payment.address = address;
     payment.amount_paid = 0; // Always stored in BTC
     payment.expected_amount = null;
-    payment.confirmations = null;
+    payment.block_hash = null;
     payment.spot_rate = null; // Exchange rate at time of payment
     payment.status = 'unpaid';
     payment.created = new Date().getTime();
@@ -223,14 +226,14 @@ var updatePayment = function(transaction, cb) {
   db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
-      updateConfirmations(payment, transaction, cb);
+      updatePaymentStatusAndBlockHash(payment, transaction, cb);
     }
     else {
       db.findPayment(address, function(err, payment) {
         if (err) { return cb(err, undefined); }
         if (!err && !payment.ntx_id) {
           // Initial update from walletnotify
-          initialPaymentUpdate(payment, transaction, cb);
+          initialPaymentUpdate(payment, transaction, true, cb);
         }
         else if (!err && payment.ntx_id) {
           // Create new payment for same invoice as pre-existing payment
@@ -267,6 +270,9 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
-  refreshPaymentData: refreshPaymentData
+  refreshPaymentData: refreshPaymentData,
+  updatePaymentStatusAndBlockHash: updatePaymentStatusAndBlockHash,
+  initialPaymentUpdate: initialPaymentUpdate,
+  createNewPaymentWithTransaction: createNewPaymentWithTransaction
 };
 

@@ -14,16 +14,15 @@ function getTransaction(payment, transactions) {
     matchingTransaction = transactions[0];
   }
   else {
-    var i = 0;
     console.log(transactions.length);
     transactions.forEach(function(transaction) {
       // First match by tx, if not then by address and amount
-      // If txids exist and match, then use this transaction
+      // If txids exist and match, then use this transaction, dont have ntxid to compare
       if (transaction.txid && paymentTxId && transaction.txid === paymentTxId) {
         console.log('Found matching Txids');
         matchingTransaction = transaction;
       }
-      else { // Match by Address and created time
+      else { // Match by Address and amount
         var vouts = transaction.vout;
         vouts.forEach(function(output) {
           var addresses = output.scriptPubKey.addresses;
@@ -39,56 +38,52 @@ function getTransaction(payment, transactions) {
         });
       }
     });
-    console.log('Loops: ' + i);
   }
   return matchingTransaction;
 }
 
-function updateWatchedPayment(payment, minConfirmations, body) {
-  var startConfs = payment.confirmations;
-  var startTxId = payment.tx_id;
+function updateWatchedPayment(payment, invoice, body) {
+  var newConfirmations = null;
+  var oldStatus = payment.status;
+  var newStatus = null;
+  var oldBlockHash = payment.block_hash;
+  var newBlockHash = null;
   if (body.txs.length > 0) { // Updating payment with tx data
     // No I shouldn't, need to handle case where watching 
     // multiple payments with the same address, there will 
     // be multiple txs in the body.
-    var transactions = body.txs;
-    if(transactions.length > 1) {
+    console.log('Hash Transactions');
+    try {
+      var transactions = JSON.parse(body.txs);
       var transaction = getTransaction(payment, transactions);
-      var newConfirmations = transaction.confirmations;
-      // txid's dont match but payment has ntx_id
-      // this means txid has mutated. What to do here?
-      if (transaction.txid !== payment.tx_id && payment.ntx_id) {
-        payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
-        // TODO: Handle tx mutation
-      }
-      else if (transaction.txid === payment.tx_id) { // Transaction matches payment
-        payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
-        // What about ntx_id???????? Missed Wallet Notify while offline?
-      }
-      else if (!payment.tx_id) { // Payment hasn't been updated before
-        payment.confirmations = newConfirmations ? newConfirmations : payment.confirmations;
-        payment.tx_id = transaction.txid ? transaction.txid : payment.tx_id;
+      if (transaction) {
+        newConfirmations = transaction.confirmations;
+        newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
+        payment.status = oldStatus === newStatus ? oldStatus : newStatus;
+
+        newBlockHash = transaction.blockhash;
+        payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
+        
       }
     }
+    catch (err) {
+      console.log('Error parsing transactions from body');
+      console.log(body);
+      return console.log(err);
+    }
   }
-  var confsMet = Number(payment.confirmations) >= minConfirmations;
+
   var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
   var isExpired = paymentExpiration < new Date().getTime();
-
-  if (isExpired && config.trackPaymentUntilConf) { // Stop tracking once confs met
+  var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
+  // If newConfirmations is null, there were no transactions for this payment
+  if ((isExpired && !newConfirmations) || stopTracking) { // Stop tracking once confs met
     payment.watched = false;
   }
-  else if (confsMet) {
-    payment.status = confsMet ? helper.getPaymentStatus(payment, minConfirmations) : payment.status;
-  }
 
-  var endConfs = payment.confirmations;
-  var endTxId = payment.tx_id;
-  var stopWatching = !payment.watched;
-  var paymentChanged = startConfs !== endConfs || startTxId !== endTxId;
-  if (stopWatching || paymentChanged) {
+  if (!payment.watched || newStatus !== oldStatus || newBlockHash !== oldBlockHash) {
     db.insert(payment);
-    console.log('Updated: { ' + payment.address + '[' + payment.watched + ']: ' + payment.confirmations + ' }');
+    console.log('Updated: { ' + payment.address + '[' + payment.watched + ']: ' + newConfirmations + ' }');
   }
 }
 
@@ -108,7 +103,8 @@ var watchPaymentsJob = function () {
         var requestUrl = insightUrl + '/api/txs?address=' + payment.address;
         // Ask the insight api for transaction data for this payment address
         request(requestUrl, function (error, response, body) {
-          updateWatchedPayment(payment, invoice.min_confirmations, JSON.parse(body));
+          console.log(payment);
+          updateWatchedPayment(payment, invoice, JSON.parse(body));
         });
       });
     });
