@@ -1,7 +1,7 @@
 var config = require('./config');
 
 var ddoc = {
-  _id: '_design/' + (config.dbName || '/baron'),
+  _id: '_design/' + (config.couchdb.name || 'baron'),
   views: {},
   lists: {},
   shows: {}

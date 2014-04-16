@@ -2,8 +2,8 @@ var validate = require('./validate');
 var config = require('./config');
 var couchapp = require('couchapp');
 var ddoc = require('./couchapp');
-var nano = require('nano')(config.dbUrl);
-var dbName = config.dbName || 'baron';
+var nano = require('nano')(config.couchdb.url);
+var dbName = config.couchdb.name || 'baron';
 var baronDb;
 
 var instantiateDb = function () {
@@ -13,7 +13,7 @@ var instantiateDb = function () {
         if (err) { return process.exit(1); }
         console.log('Database created.');
         baronDb = nano.use(dbName);
-        var dbUrl = config.dbUrl + '/' + config.dbName;
+        var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
         couchapp.createApp(ddoc, dbUrl, function(app) {
           app.push();
         });
