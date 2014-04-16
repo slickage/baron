@@ -1,4 +1,4 @@
-var _ = require('undescore');
+var _ = require('underscore');
 var localConfig = {
   port: process.env.PORT || 8080,
   couchdb: {
