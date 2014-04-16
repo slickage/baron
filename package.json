@@ -25,7 +25,8 @@
     "nano": "^5.7.1",
     "async": "^0.6.2",
     "bitcore": "^0.1.11",
-    "bignumber.js": "^1.3.0"
+    "bignumber.js": "^1.3.0",
+    "underscore": "^1.6.0"
   },
   "devDependencies": {
     "couchapp": "^0.11.0"

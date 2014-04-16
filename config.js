@@ -1,3 +1,4 @@
+var _ = require('undescore');
 var localConfig = {
   port: process.env.PORT || 8080,
   couchdb: {
@@ -24,4 +25,4 @@ var localConfig = {
 };
 
 // If config was passed in, export that. If not export local config.
-module.exports = global.externalConfig ? global.externalConfig : localConfig;
+module.exports = global.externalConfig ? _.extend(localConfig, global.externalConfig) : localConfig;
