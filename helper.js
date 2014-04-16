@@ -1,4 +1,5 @@
 var BigNumber = require('bignumber.js');
+var request = require('request');
 // returns decimal places of provided
 var decimalPlaces = function(number) {
   if(Math.floor(number) === number) {
@@ -44,6 +45,7 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   confirmations = confirmations ? confirmations : 0; // Pending if there are no confs
   var minConfirmations = invoice.min_confirmations;
   var status = payment.status;
+  var origStatus = status;
   var confirmationsMet = Number(confirmations) >= Number(minConfirmations);
   var expectedAmount = new BigNumber(payment.expected_amount);
   var amountPaid = new BigNumber(payment.amount_paid);
@@ -52,10 +54,7 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   }
   else if (confirmationsMet) {
     if(amountPaid.equals(expectedAmount)) {
-      if (status !== 'paid') {
-        // Webhook here
-        status = 'paid';
-      }
+      status = 'paid';
     }
     else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
@@ -63,6 +62,13 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     else if (amountPaid.greaterThan(expectedAmount)) {
       status = 'overpaid';
     }
+  }
+
+  // Notify webhook if paid
+  if (invoice.webhooks && (status === 'paid' || status === 'overpaid') && origStatus !== status) {
+    var webhookUrl = invoice.webhooks.paid.url;
+    var webhookToken = invoice.webhooks.paid.token;
+    request.post(webhookUrl).form({token: webhookToken});
   }
   return status;
 };

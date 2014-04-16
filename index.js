@@ -7,8 +7,8 @@ var init = function(app) {
   require('./db').instantiateDb();
   require('./routes')(app);
   require('bitstamped');
-  watchJob.runWatchPaymentsJob();
   blockJob.runLastBlockJob();
+  watchJob.runWatchPaymentsJob();
 };
 
 module.exports = function (externalConfig) {

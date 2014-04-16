@@ -1,6 +1,6 @@
 var config = require('./config');
-var job = require('./watchpaymentjob');
-var lastBlock = require('./lastblockjob');
+var watchJob = require('./watchpaymentjob');
+var blockJob = require('./lastblockjob');
 var path = require('path');
 var express = require('express');
 var app = express();
@@ -11,8 +11,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 require('./db').instantiateDb();
 require('./routes')(app);
 require('bitstamped');
-job.runWatchPaymentsJob();
-lastBlock.runLastBlockJob();
+watchJob.runWatchPaymentsJob();
+blockJob.runLastBlockJob();
 
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);
