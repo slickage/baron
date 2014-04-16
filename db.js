@@ -6,6 +6,13 @@ var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name || 'baron';
 var baronDb;
 
+var pushViews = function () {
+  var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
+  couchapp.createApp(ddoc, dbUrl, function(app) {
+    app.push();
+  });
+};
+
 var instantiateDb = function () {
   nano.db.get(dbName, function(err, body) {
     if (err) {
@@ -13,10 +20,7 @@ var instantiateDb = function () {
         if (err) { return process.exit(1); }
         console.log('Database created.');
         baronDb = nano.use(dbName);
-        var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
-        couchapp.createApp(ddoc, dbUrl, function(app) {
-          app.push();
-        });
+        pushViews();
         return;
       });
     }
@@ -153,6 +157,7 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
 };
 
 module.exports = {
+  pushViews: pushViews,
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPayment: findPayment,

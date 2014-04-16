@@ -4,7 +4,8 @@ var watchJob;
 var blockJob;
 
 var init = function(app) {
-  require('./db').instantiateDb();
+  db.instantiateDb();
+  db.pushViews();
   require('./routes')(app);
   require('bitstamped');
   blockJob.runLastBlockJob();
