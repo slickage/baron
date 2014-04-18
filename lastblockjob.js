@@ -161,7 +161,7 @@ function processBlockHash(blockHashObj) {
 var lastBlockJob = function() {
   // Get Last Block, create it if baron isnt aware of one.
   getLastBlockHash(function(err, lastBlockHashObj) {
-    if (err) { return console.log(err); }
+    if (err || !lastBlockHashObj.hash) { return console.log(err); }
     console.log('===========================');
     console.log('Processing Last Block: ' + lastBlockHashObj.hash);
     console.log('===========================');

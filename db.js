@@ -17,7 +17,10 @@ var instantiateDb = function () {
   nano.db.get(dbName, function(err, body) {
     if (err) {
       nano.db.create(dbName, function(err, body) {
-        if (err) { return process.exit(1); }
+        if (err) {
+          console.log('Pleases ensure that couchdb is running.');
+          return process.exit(1);
+        }
         console.log('Database created.');
         baronDb = nano.use(dbName);
         pushViews();

@@ -20,6 +20,7 @@ var getLastBlockHash = function(cb) {
 };
 
 var getBlock = function(blockHash, cb){
+  if (!blockHash) { return cb(new Error('No blockhash provided'), undefined); }
   var requestUrl = insightUrl + '/api/block/' + blockHash;
   request(requestUrl, function(error, response, body) {
     if (error) { return cb(error, undefined); }
