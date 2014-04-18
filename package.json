@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tap ./tests"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
     "underscore": "^1.6.0"
   },
   "devDependencies": {
-    "couchapp": "^0.11.0"
+    "couchapp": "^0.11.0",
+    "tap": "^0.4.8"
   }
 }
