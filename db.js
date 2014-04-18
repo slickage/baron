@@ -14,9 +14,9 @@ var pushViews = function () {
 };
 
 var instantiateDb = function () {
-  nano.db.get(dbName, function(err, body) {
+  nano.db.get(dbName, function(err) {
     if (err) {
-      nano.db.create(dbName, function(err, body) {
+      nano.db.create(dbName, function(err) {
         if (err) {
           console.log('Pleases ensure that couchdb is running.');
           return process.exit(1);
@@ -144,14 +144,20 @@ var getLastKnownBlockHash = function(cb) {
 };
 
 var createInvoice = function(invoice, cb) {
-  if (validate.invoice(invoice)) {
+  if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.postAccessToken) {
+    var err = new Error('Access Denied: Invalid access token.');
+    return cb(err, undefined);
+  }
+  else if (validate.invoice(invoice)) {
+    invoice.access_token = undefined;
     invoice.created = new Date().getTime();
     invoice.type = 'invoice';
     baronDb.insert(invoice, cb);
   }
   else {
-    return cb('The received invoice failed validation. Verify that the invoice' +
-      ' object being sent conforms to the specifications in the API', undefined);
+    var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
+      ' object being sent conforms to the specifications in the API');
+    return cb(invalidErr, undefined);
   }
 };
 

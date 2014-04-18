@@ -77,7 +77,7 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
   });
 }
 
-function createPaymentDataForVew(invoiceId, cb) {
+function createPaymentDataForView(invoiceId, cb) {
   findOrCreatePayment(invoiceId, function(err, result) {
     if (err) {
       return cb(err, null);
@@ -95,7 +95,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     findOrCreatePayment(invoiceId, function (err) {
       if (err) {
-        return res.render('error', {errorMsg: err.message });
+        return res.render('error', { ßerrorMsg: err.message });
       }
       else {
         return res.redirect('/pay/' + invoiceId);
@@ -106,9 +106,9 @@ var pay = function(app) {
   // Displays payment for given invoiceId
   app.get('/pay/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
-    createPaymentDataForVew(invoiceId, function(err, paymentData) {
+    createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
-        return res.render('error', {errorMsg: err.message });
+        return res.render('error', { errorMsg: err.message });
       }
       else {
         return res.render('pay', paymentData);

@@ -16,6 +16,7 @@ var localConfig = {
     port: process.env.INSIGHT_PORT || '3001',
     protocol: process.env.INSIGHT_PROTOCOL || 'http'
   },
+  postAccessToken: process.env.POST_ACCESS_TOKEN || 'youshouldreallychangethis',
   chainExplorerUrl: 'http://tbtc.blockr.io/tx/info',
   paidDelta: 0.1,
   updateWatchListInterval: 15000,
