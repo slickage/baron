@@ -1,6 +1,8 @@
 Baron
 =========
 
+[![Build Status](https://travis-ci.org/slickage/baron.svg)](https://travis-ci.org/slickage/baron)
+
 Baron is a bitcoin payment processor that makes it easy to manage bitcoin transactions. 
 
 * Allows for invoice creation in USD or BTC
