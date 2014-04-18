@@ -2,7 +2,7 @@
   "name": "baron",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "tap ./tests"
   },
