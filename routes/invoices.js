@@ -40,7 +40,6 @@ var invoices = function(app) {
       paymentHistory.forEach(function(payment) {
         payment.url = config.chainExplorerUrl + '/' + payment.tx_id;
         if(isUSD) {
-          console.log();
           var amountUSD = new BigNumber(payment.amount_paid).times(payment.spot_rate);
           amountUSD = helper.roundToDecimal(amountUSD, 2);
           payment.amount_usd = amountUSD;

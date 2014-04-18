@@ -16,6 +16,20 @@
         <h1>Baron</h1>
       </div>
     </div>
+    <% if (invoicePaid) { %>
+      <div class="row ">
+        <div class="col-sm-12 alert alert-success xsmall-text alert-box"> 
+          <% if (remainingBalance < 0) { %>
+              Invoice has been <strong>overpaid</strong>.
+          <% } else { %>
+              Invoice has been paid in full. 
+              <a href="/invoices/<%= invoiceId %>">
+                View Invoice
+              </a>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
 
     <!-- Payment Info -->
     <div class="row spacer">
@@ -32,44 +46,48 @@
 
       <!-- Data for xsmall screens -->
       <div class="col-md-7 col-sm-6 col-lg-8 center-margin-data visible-xs no-padding">
-          <span class="<%= status %>">
-            <% if (status === 'pending') { %>
-              Payment is Pending
-            <% } else if (status === 'unpaid') { %>
-              Balance is Unpaid
-            <% } else if (status === 'paid') { %>
-              Balance is Paid
-            <% } else if (status === 'partial') { %>
-              Balance is Underpaid
-            <% } else if (status === 'overpaid') { %>
-              Balance is Overpaid
-            <% } else if (status === 'expired') { %>
-              Payment is Expired
-            <% } else { %>
-              Payment status is Unknown
-            <% } %>
-          </span>
-          <br />
-          <% if (amountLastFour === '0000') { %>
-            <%= amountFirstFour %> BTC 
+        <span class="<%= status %>">
+          <% if (status === 'pending') { %>
+            Payment is Pending
+          <% } else if (status === 'unpaid') { %>
+            Balance is Unpaid
+          <% } else if (status === 'paid') { %>
+            Balance is Paid
+          <% } else if (status === 'partial') { %>
+            Balance is Underpaid
+          <% } else if (status === 'overpaid') { %>
+            Balance is Overpaid
+          <% } else if (status === 'expired') { %>
+            Payment is Expired
           <% } else { %>
-           <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+            Payment status is Unknown
           <% } %>
-          <% if (ntxId) { %>
-            <span class="green"> Sent</span>
-          <% } %>
-          <% if (status === 'unpaid' && showRefresh) { %>
-            <a href="<%= invoice_id %>">
-              <img class="right-icon" src="/images/refresh.png" />
-            </a>
-          <% } %>
-          <br />
-          <span class="green"><%= confirmations %></span> Confirmations
+        </span>
+        <br />
+        <% if (amountLastFour === '0000') { %>
+          <%= amountFirstFour %> BTC 
+        <% } else { %>
+         <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+        <% } %>
+        <% if (ntxId) { %>
+          <span class="green"> Sent</span>
+        <% } %>
+        <% if (!ntxId && showRefresh) { %>
+          <a href="<%= invoiceId %>">
+            <img class="right-icon" src="/images/refresh.png" />
+          </a>
+        <% } %>
+        <br />
+        <span class="green"><%= confirmations %></span> Confirmations
+        <% if (url) { %>
           <a href="<%= url %>">
             <img class="right-icon" src="/images/info.png" />
           </a>
-          <input type="text" class="form-control address-spacer" value="<%= address %>" />
-          <span class="red">This address is only valid for the next 15 minutes.</span>
+        <% } %>
+        <input type="text" class="form-control address-spacer" value="<%= address %>" />
+        <% if (!ntxId) { %>
+          <span class="red">Payment address invalid after <%= validFor %> minutes.</span>
+        <% } %>
       </div>
 
       <!-- Data for non mobile -->
@@ -101,19 +119,23 @@
             <% if (ntxId) { %>
               <span class="green"> Sent</span>
             <% } %>
-            <% if (status === 'unpaid' && showRefresh) { %>
-              <a href="<%= invoice_id %>">
+            <% if (!ntxId  && showRefresh) { %>
+              <a href="<%= invoiceId %>">
                 <img class="right-icon" src="/images/refresh.png" />
               </a>
             <% } %>
             <br />
             <span class="green"><%= confirmations %></span> Confirmations
-            <a href="<%= url %>">
-              <img class="right-icon" src="/images/info.png" />
-            </a>
+            <% if (url) { %>
+              <a href="<%= url %>">
+                <img class="right-icon" src="/images/info.png" />
+              </a>
+            <% } %>
             <input type="text" class="form-control address-spacer" value="<%= address %>" />
           </div>
-          <span class="red">This address is only valid for the next 15 minutes.</span>
+          <% if (!ntxId) { %>
+            <span class="red">Payment address invalid after <%= validFor %> minutes.</span>
+          <% } %>
       </div>
 
       <!-- QR Code for non mobile -->

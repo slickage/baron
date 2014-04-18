@@ -1,40 +1,11 @@
 var config = require('./config');
 var request = require('request');
 var helper = require('./helper');
-var BigNumber = require('bignumber.js');
 var db = require('./db');
 
-// function getTransaction(payment, transactions) {
-//   var paymentTxId = payment.tx_id;
-//   var paymentAddress = payment.address;
-//   var paymentAmount = new BigNumber(payment.amount_paid);
-//   var matchingTransaction;
-//   if (transactions.length === 1){
-//     matchingTransaction = transactions[0];
-//   }
-//   else {
-//     transactions.forEach(function(transaction) {
-//       // First match by tx, if not then by address and amount
-//       // If txids exist and match, then use this transaction, dont have ntxid to compare
-//       if (transaction.txid && paymentTxId && transaction.txid === paymentTxId) {
-//         matchingTransaction = transaction;
-//       }
-//       else { // Match by Address and amount
-//         var vouts = transaction.vout;
-//         vouts.forEach(function(output) {
-//           var addresses = output.scriptPubKey.addresses;
-//           addresses.forEach(function(address) {
-//             var outputAmount = new BigNumber(output.value);
-//             if (address === paymentAddress && outputAmount.equals(paymentAmount)) {
-//               matchingTransaction = transaction;
-//             }
-//           });
-//         });
-//       }
-//     });
-//   }
-//   return matchingTransaction;
-// }
+// TODO: This job can be removed in the future, we can calculate
+// The confirmations of our watched payments based on our stored
+// last known block. Remove in the future.
 
 function updateWatchedPayment(payment, invoice, body) {
   var oldStatus = payment.status;
@@ -45,8 +16,7 @@ function updateWatchedPayment(payment, invoice, body) {
     transaction = JSON.parse(body);
   }
   catch (err) {
-    console.log('Error parsing transaction from body:');
-    console.log(body);
+    console.log('Error parsing transaction from body: ' + body);
     transaction = null;
   }
 
@@ -66,16 +36,15 @@ function updateWatchedPayment(payment, invoice, body) {
     }
   }
   else { //Payment has no transaction data. This means it has most likely not been paid. Expire if passes trackPaymentForDays var
-    var paymentExpiration = Number(payment.created) + config.trackPaymentForDays * 24 * 60 * 60 * 1000;
-    var isExpired = paymentExpiration < new Date().getTime();
+    var curTime = new Date().getTime();
+    var expirationTime = Number(payment.created) + config.paymentValidForMinutes * 60 * 1000;
     // If newConfirmations is null, there were no transactions for this payment
-    if (isExpired) { // Stop tracking once confs met
-      payment.watched = false;
-    }
-
-    if (!payment.watched) {
-      db.insert(payment);
-      console.log('Stopped Watching: { ' + payment.address + '[' + payment.watched + '] }');
+    if(payment.status ==='unpaid' && expirationTime < curTime) {
+      db.deleteDoc(payment, function(err) {
+        if (err) {
+          console.log('Error deleting expired payment: ' + payment.ntx_id);
+        }
+      });
     }
   }
 }

@@ -14,7 +14,7 @@ function getLastBlockHash(cb) {
     else {
       api.getLastBlockHash(function (err, lastBlockHash) {
         if (err) { return cb(err, undefined); }
-        db.insert(lastBlockHash, function(err, body) {
+        db.insert(lastBlockHash, function(err) {
           if (err) { return cb(err, undefined); }
           return cb(undefined, lastBlockHash);
         });
@@ -32,7 +32,7 @@ function updatePaymentWithTxData(payment, transaction) {
           console.log('Error retrieving block: ' + transaction.blockhash);
         }
         if (validate.block(block)) { // update payment if anythings changed
-          invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
+          invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err) {
             if (err) {
               console.log('Error Updating Payment:' + payment.ntx_id);
             }
@@ -56,7 +56,7 @@ function updatePaymentWithTxData(payment, transaction) {
       });
     }
     else { // transaction is too new, no blockhash update other data
-      invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err, result) {
+      invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err) {
         if (err) {
           console.log('Error Updating Payment:' + payment.ntx_id);
         }
@@ -76,7 +76,7 @@ function processPaymentsByNtxId(transactions) {
         // if we cant find by ntx look by address, maybe payment missed wallet notify
         console.log('Didnt find by ntxid, try address: ' + address);
         db.findPayments(address, function(err, paymentsArr) { // Needs to find all payments at that address
-          if (err || !paymentsArr) { return console.log('Error retrieving payments'); }
+          if (err || !paymentsArr) { return console.log('No matching payment for transaction.'); }
           var invoiceId = null;
           paymentsArr.forEach(function(payment) {
             // Look for payments where !payment.ntx_id if found update it
@@ -91,7 +91,7 @@ function processPaymentsByNtxId(transactions) {
           });
           // Calling this outside forEach loop otherwise, it could possible generate duplicate payments.
           if (invoiceId) {
-            invoiceUtil.createNewPaymentWithTransaction(invoiceId, transaction, false, function(err, body) {
+            invoiceUtil.createNewPaymentWithTransaction(invoiceId, transaction, false, function(err) {
               if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
             });
           }
@@ -106,7 +106,6 @@ function processPaymentsByNtxId(transactions) {
       }
     });
   });
-  
 }
 
 function processReorgedPayments(blockHash) {

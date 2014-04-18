@@ -22,7 +22,8 @@ var updatePaymentWithTransaction = function (payment, transaction, isWalletNotif
       db.insert(payment, cb);
     }
     else {
-      cb(new Error('No changes to update'), undefined);
+      var error = new Error('No changes to update');
+      cb(error, undefined);
     }
   });
 };
@@ -165,26 +166,39 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
 };
 
 // Creates a new payment object associated with invoice
-var createNewPayment = function(invoiceId, cb) {
+var createNewPayment = function(invoiceId, expectedAmount, cb) {
   bitcoinUtil.getPaymentAddress(function(err, info) { // Get payment address from bitcond
     if (err) { return cb(err, undefined); }
-    var address = info.result;
-    var payment = {};
-    payment.invoice_id = invoiceId;
-    payment.address = address;
-    payment.amount_paid = 0; // Always stored in BTC
-    payment.expected_amount = null;
-    payment.block_hash = null;
-    payment.spot_rate = null; // Exchange rate at time of payment
-    payment.status = 'unpaid';
-    payment.created = new Date().getTime();
-    payment.paid_timestamp = null;
-    payment.tx_id = null; // Bitcoind txid for transaction
-    payment.ntx_id = null; // Normalized txId
-    payment.watched = true;
-    payment.type = 'payment';
-    
-    db.insert(payment, cb);
+    var curTime = new Date().getTime();
+    bitstamped.getTicker(curTime, function(err, docs) {
+      if (!err && docs.rows && docs.rows.length > 0) {
+        var tickerData = docs.rows[0].value; // Get ticker object
+        var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price      
+        var address = info.result;
+        var payment = {};
+        payment.invoice_id = invoiceId;
+        payment.address = address;
+        payment.amount_paid = 0; // Always stored in BTC
+        payment.expected_amount = expectedAmount; // TODO: populate this
+        payment.block_hash = null;
+        payment.spot_rate = rate; // Exchange rate at time of payment TODO: populate this
+        payment.status = 'unpaid';
+        payment.created = new Date().getTime();
+        payment.paid_timestamp = null;
+        payment.tx_id = null; // Bitcoind txid for transaction
+        payment.ntx_id = null; // Normalized txId
+        payment.watched = true;
+        payment.type = 'payment';
+
+        db.insert(payment, function(err) {
+          if (err) { return cb(err, null); }
+          else { return cb(null, payment); }
+        });
+      }
+      else {
+        return cb(err, null);
+      }
+    });
   });
 };
 
@@ -217,7 +231,7 @@ var updatePayment = function(transaction, cb) {
     }
     else {
       db.findPayment(address, function(err, payment) {
-        if (err) { return cb(err, undefined); }
+        if (err || !payment) { return cb(err, undefined); }
         if (!err && !payment.ntx_id) {
           // Initial update from walletnotify
           updatePaymentWithTransaction(payment, transaction, true, cb);
@@ -231,24 +245,6 @@ var updatePayment = function(transaction, cb) {
   });
 };
 
-// Updates spot rate and expected amount for payment
-var refreshPaymentData = function(payment, remainingBalance, cb) {
-  var status = payment.status;
-  if (status === 'paid' || status === 'overpaid' || status === 'partial') { return; }
-  var curTime = new Date().getTime();
-  bitstamped.getTicker(curTime, function(err, docs) {
-    if (!err && docs.rows && docs.rows.length > 0) {
-      var tickerData = docs.rows[0].value; // Get ticker object
-      var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
-
-      payment.spot_rate = rate;
-      payment.expected_amount = remainingBalance;
-      db.insert(payment, cb);
-    }
-    else { return cb(err, undefined); }
-  });
-};
-
 module.exports = {
   calculateLineTotals: calculateLineTotals,
   getTotalPaid: getTotalPaid,
@@ -257,7 +253,6 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
-  refreshPaymentData: refreshPaymentData,
   createNewPaymentWithTransaction: createNewPaymentWithTransaction,
   updatePaymentWithTransaction: updatePaymentWithTransaction
 };

@@ -20,7 +20,7 @@ var localConfig = {
   paidDelta: 0.1,
   updateWatchListInterval: 15000,
   lastBlockJobInterval: 15000,
-  trackPaymentForDays: 1,
+  paymentValidForMinutes: 15,
   trackPaymentUntilConf: 100
 };
 

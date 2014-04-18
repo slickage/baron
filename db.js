@@ -155,6 +155,17 @@ var createInvoice = function(invoice, cb) {
   }
 };
 
+var deleteDoc = function(doc, cb) {
+   baronDb.destroy(doc._id, doc._rev, function(err) {
+    if (err) {
+      return cb(err);
+    }
+    else {
+      return cb(null);
+    }
+  });
+};
+
 var insert = function(doc, cb) { // Used to update a payment or invoice
   baronDb.insert(doc, cb);
 };
@@ -171,5 +182,6 @@ module.exports = {
   getPaymentByBlockHash: getPaymentByBlockHash,
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
-  insert: insert
+  insert: insert,
+  deleteDoc: deleteDoc
 };
