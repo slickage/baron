@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/slickage/basicpay.git"
+    "url": "git://github.com/slickage/baron.git"
   },
   "author": "James Wang <jw@slickage.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/slickage/basicpay/issues"
+    "url": "https://github.com/slickage/baron/issues"
   },
-  "homepage": "https://github.com/slickage/basicpay",
+  "homepage": "https://github.com/slickage/baron",
   "dependencies": {
     "express": "^3.4.8",
     "ejs": "^0.8.5",
