@@ -9,13 +9,9 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
     if (err) { return cb(err, null); }
     
-    if (validate.invoiceExpired(invoice)) {
-      var expiredErr = new Error('Error: Invoice is expired.');
-      return cb(expiredErr, null);
-    }
+    var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr);
 
     var isUSD = invoice.currency.toUpperCase() === 'USD';
-    var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr);
 
     invoiceUtil.calculateLineTotals(invoice);
     invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
@@ -24,6 +20,11 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
     invoice.remaining_balance = Number(invoice.remaining_balance.valueOf());
     invoice.remaining_balance = isUSD ? helper.roundToDecimal(invoice.remaining_balance , 2) : invoice.remaining_balance;
     invoice.payment_history = paymentHistory;
+
+    if (validate.invoiceExpired(invoice) && invoice.remaining_balance > 0) {
+      var expiredErr = new Error('Error: Invoice is expired.');
+      return cb(expiredErr, null);
+    }
 
     // Is the invoice paid in full?
     var hasPending = false;
@@ -38,8 +39,10 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
         hasPending = true;
       }
     });
+
     invoice.is_paid = !hasPending && invoice.remaining_balance <= 0;
     invoice.is_overpaid = !hasPending && invoice.remaining_balance < 0;
+
     return cb(null, invoice);
   });
 }
