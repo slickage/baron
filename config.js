@@ -18,7 +18,6 @@ var localConfig = {
   },
   postAccessToken: process.env.POST_ACCESS_TOKEN || 'youshouldreallychangethis',
   chainExplorerUrl: 'http://tbtc.blockr.io/tx/info',
-  paidDelta: 0.01,
   updateWatchListInterval: 15000,
   lastBlockJobInterval: 15000,
   paymentValidForMinutes: 1,
