@@ -19,11 +19,26 @@ function findOrCreatePayment(invoiceId, cb) {
     // If active payment is partially paid, need to create new payment
     var activePayment = invoiceUtil.getActivePayment(paymentsArr);
     if (activePayment) {
-      var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
-      var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
-      if (invoiceIsPaid || invoiceIsUnpaid) {
-        var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
-        return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
+      var curTime = new Date().getTime();
+      var expirationTime = Number(activePayment.created) + config.paymentValidForMinutes * 60 * 1000;
+      // handles case where user refreshes page before watch payment job deletes expired payment
+      console.log(activePayment);
+      if(activePayment && activePayment.status === 'unpaid' && Number(activePayment.amount_paid) !== 0 && expirationTime < curTime) {
+        console.log('A');
+        invoiceUtil.storeAddressForReuse(invoiceId, activePayment.address);
+        db.deleteDoc(activePayment, function (err) {
+          if (err) { console.log ('Error deleting expired payment'); }
+        });
+      }
+      else {
+        console.log(activePayment.amount_paid);
+        console.log(activePayment.expected_amount);
+        var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
+        var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
+        if (invoiceIsPaid || invoiceIsUnpaid) {
+          var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
+          return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
+        }
       }
     }
 
@@ -53,11 +68,15 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
     else if (block) {
       confirmations = block.confirmations;
     }
+
+    var validMins = config.paymentValidForMinutes * 60 * 1000;
+    var expiration = activePayment.created + validMins;
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
     var url = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
     var paymentData = {
       validFor: config.paymentValidForMinutes,
+      expires: helper.getExpirationCountDown(expiration),
       remainingBalance: remainingBalance,
       invoicePaid: invoicePaid,
       invoiceId: invoice._id,

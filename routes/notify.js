@@ -6,10 +6,11 @@ var notify = function(app) {
 
   app.post('/notify', function(req, res) {
     var txId = req.body.txId;
+    console.log('wallet notify: ' + txId);
     bitcoinUtil.getTransaction(txId, function(err, info) {
       if (err) { res.send(500); }
       var transaction = info.result;
-      invoiceUtil.updatePayment(transaction, function(err, body) {
+      invoiceUtil.updatePayment(transaction, function(err) {
         if (err) { res.send(500); console.log(err); }
         else { res.end(); }
       });

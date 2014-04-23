@@ -60,6 +60,14 @@ ddoc.views.watchedPayments = {
   }
 };
 
+ddoc.views.savedAddresses = {
+  map: function(doc) {
+    if (doc.type === 'address') {
+      emit(doc.invoice_id, doc);
+    }
+  }
+};
+
 ddoc.views.lastBlockHash = {
   map: function(doc) {
     if (doc.type === 'blockhash') {

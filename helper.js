@@ -40,6 +40,35 @@ var getReceiveDetail = function(details) {
   return receiveDetail;
 };
 
+var getExpirationCountDown = function (expiration) {
+  var curTime = new Date().getTime();
+  var diff = expiration - curTime;
+
+  var days = Math.floor(diff / 1000 / 60 / 60 / 24);
+  diff -= days * 1000 * 60 * 60 * 24;
+
+  var hours = Math.floor(diff / 1000 / 60 / 60);
+  diff -= hours * 1000 * 60 * 60;
+
+  var mins = Math.floor(diff / 1000 / 60);
+  diff -= mins * 1000 * 60;
+
+  var secs = Math.floor(diff / 1000);
+
+  var result;
+  if (days === 0 && hours !== 0) {
+    result = hours + 'h ' + mins + 'm ' + secs + 's';
+  }
+  else if (days === 0 && hours === 0) {
+    result = mins + 'm ' + secs + 's';
+  }
+  else {
+    result = days + 'd ' + hours + 'h ' + mins + 'm ' + secs + 's';
+  }
+
+  return result;
+};
+
 // Returns status of payment
 var getPaymentStatus = function(payment, confirmations, invoice) {
   confirmations = confirmations ? confirmations : 0; // Pending if there are no confs
@@ -53,7 +82,16 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     status = 'pending';
   }
   else if (confirmationsMet) {
-    if(amountPaid.equals(expectedAmount)) {
+    var isUSD = invoice.currency.toUpperCase() === 'USD';
+    var closeEnough = false;
+    if (isUSD) {
+      var actualPaid = new BigNumber(payment.amount_paid).times(payment.spot_rate);
+      var expectedPaid = new BigNumber(payment.expected_amount).times(payment.spot_rate);
+      actualPaid = roundToDecimal(actualPaid.valueOf(), 2);
+      expectedPaid = roundToDecimal(expectedPaid.valueOf(), 2);
+      closeEnough = new BigNumber(actualPaid).equals(expectedPaid);
+    }
+    if(amountPaid.equals(expectedAmount) || closeEnough) {
       status = 'paid';
     }
     else if (amountPaid.lessThan(expectedAmount)) {
@@ -79,5 +117,6 @@ module.exports = {
   getLastFourDecimals: getLastFourDecimals,
   roundToDecimal: roundToDecimal,
   getReceiveDetail: getReceiveDetail,
+  getExpirationCountDown: getExpirationCountDown,
   getPaymentStatus: getPaymentStatus
 };

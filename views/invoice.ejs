@@ -29,13 +29,26 @@
     <% } %>
 
     <!-- Invoice Info -->
-    <div class="row spacer">
-      <div class="col-sm-12">
-        Invoice 
-        <span class="green hidden-xs"> <%= invoice._id %></span>
-        <span class="green visible-xs mobile-text"><%= invoice._id %></span>
+    <% if (invoice.expiration_msg) { %>
+      <div class="row spacer">
+        <div class="col-sm-12 col-md-8">
+          Invoice 
+          <span class="green hidden-xs"> <%= invoice._id %></span>
+          <span class="green visible-xs mobile-text"><%= invoice._id %></span>
+          <span class="mobile-text red right">
+            <%= invoice.expiration_msg %>
+          </span>
+        </div>
       </div>
-    </div>
+    <% } else { %>
+      <div class="row spacer">
+        <div class="col-sm-12">
+          Invoice 
+          <span class="green hidden-xs"> <%= invoice._id %></span>
+          <span class="green visible-xs mobile-text"><%= invoice._id %></span>
+        </div>
+      </div>
+    <% } %>
 
     <% invoice.line_items.forEach(function(item){ %>
       <div class="row line-item thin-underline">

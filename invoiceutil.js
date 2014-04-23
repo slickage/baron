@@ -6,6 +6,54 @@ var bitcoinUtil = require('./bitcoinutil');
 var config = require('./config');
 var db = require('./db');
 
+function getSavedAddress(invoiceId, cb) {
+  db.findSavedAddress(invoiceId, function(err, savedAddressObj) {
+    if (!err && savedAddressObj) {
+      console.log('found');
+      db.deleteDoc(savedAddressObj, function(err) {
+        if (err) { return cb(err, null); }
+        return cb(null, savedAddressObj.address);
+      });
+    }
+    else {
+      console.log('not found');
+      return cb(err, null);
+    }
+  });
+}
+
+function insertPayment(invoiceId, address, expectedAmount, cb) {
+  var curTime = new Date().getTime();
+  bitstamped.getTicker(curTime, function(err, docs) {
+    if (!err && docs.rows && docs.rows.length > 0) {
+      var tickerData = docs.rows[0].value; // Get ticker object
+      var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price      
+      var payment = {};
+      payment.invoice_id = invoiceId;
+      payment.address = address;
+      payment.amount_paid = 0; // Always stored in BTC
+      payment.expected_amount = expectedAmount; // TODO: populate this
+      payment.block_hash = null;
+      payment.spot_rate = rate; // Exchange rate at time of payment TODO: populate this
+      payment.status = 'unpaid';
+      payment.created = new Date().getTime();
+      payment.paid_timestamp = null;
+      payment.tx_id = null; // Bitcoind txid for transaction
+      payment.ntx_id = null; // Normalized txId
+      payment.watched = true;
+      payment.type = 'payment';
+
+      db.insert(payment, function(err) {
+        if (err) { return cb(err, null); }
+        else { return cb(null, payment); }
+      });
+    }
+    else {
+      return cb(err, null);
+    }
+  });
+}
+
 var updatePaymentWithTransaction = function (payment, transaction, isWalletNotify, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, undefined); }
@@ -18,6 +66,18 @@ var updatePaymentWithTransaction = function (payment, transaction, isWalletNotif
       payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
       payment.paid_timestamp = transaction.time * 1000;
       payment.status = newStatus;
+
+      var isUSD = invoice.currency.toUpperCase() === 'USD';
+      if (isUSD) {
+        var actualPaid = new BigNumber(amount).times(payment.spot_rate);
+        var expectedPaid = new BigNumber(payment.expected_amount).times(payment.spot_rate);
+        actualPaid = helper.roundToDecimal(actualPaid.valueOf(), 2);
+        expectedPaid = helper.roundToDecimal(expectedPaid.valueOf(), 2);
+        var closeEnough = new BigNumber(actualPaid).equals(expectedPaid);
+        if (closeEnough) {
+          payment.expected_amount = amount;
+        }
+      }
 
       db.insert(payment, cb);
     }
@@ -44,20 +104,23 @@ var createNewPaymentWithTransaction = function(invoiceId, transaction, isWalletN
         var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
         var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
         var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
-
+        console.log('before: ' + remainingBalance);
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         if (isUSD) {
-          // If fiat is within 10 cents consider it paid
-          var fiatDiff = Math.abs(rate.times(receiveDetail.amount).minus(remainingBalance));
-          fiatDiff = new BigNumber(fiatDiff);
-          if (fiatDiff.lessThan(config.paidDelta)) {
+
+          var actualPaid = helper.roundToDecimal(rate.times(receiveDetail.amount).valueOf(), 2);
+          var closeEnough = new BigNumber(actualPaid).equals(helper.roundToDecimal(remainingBalance, 2));
+          if (closeEnough) {
+            console.log('1');
             remainingBalance = receiveDetail.amount;
           }
           else {
+            console.log('2');
             remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
           }
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
+        console.log('after: ' + remainingBalance);
 
         var payment = {};
         payment.invoice_id = invoiceId;
@@ -122,7 +185,8 @@ var getTotalPaid = function(invoice, paymentsArr) {
       paidAmount = new BigNumber(paidAmount);
       // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
       if (isUSD) {
-        totalPaid = totalPaid.plus(paidAmount.times(payment.spot_rate));
+        var usdAmount = helper.roundToDecimal(paidAmount.times(payment.spot_rate).valueOf(), 2);
+        totalPaid = totalPaid.plus(usdAmount);
       }
       else {
         totalPaid = totalPaid.plus(paidAmount);
@@ -130,16 +194,7 @@ var getTotalPaid = function(invoice, paymentsArr) {
     }
   });
   if (isUSD) {
-    // If were dealing in fiat and the calculated total is within 10 cents consider it paid
-    var fiatDiff = Math.abs(new BigNumber(invoice.balance_due).minus(totalPaid));
-    fiatDiff = new BigNumber(fiatDiff);
-    totalPaid = Number(totalPaid.valueOf());
-    if (fiatDiff.lt(config.paidDelta)) {
-      totalPaid = helper.roundToDecimal(invoice.balance_due, 2);
-    }
-    else {
-      totalPaid = helper.roundToDecimal(totalPaid, 2);
-    }
+    totalPaid = helper.roundToDecimal(Number(totalPaid.valueOf()), 2);
   }
   return totalPaid;
 };
@@ -167,38 +222,21 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
 
 // Creates a new payment object associated with invoice
 var createNewPayment = function(invoiceId, expectedAmount, cb) {
-  bitcoinUtil.getPaymentAddress(function(err, info) { // Get payment address from bitcond
-    if (err) { return cb(err, undefined); }
-    var curTime = new Date().getTime();
-    bitstamped.getTicker(curTime, function(err, docs) {
-      if (!err && docs.rows && docs.rows.length > 0) {
-        var tickerData = docs.rows[0].value; // Get ticker object
-        var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price      
-        var address = info.result;
-        var payment = {};
-        payment.invoice_id = invoiceId;
-        payment.address = address;
-        payment.amount_paid = 0; // Always stored in BTC
-        payment.expected_amount = expectedAmount; // TODO: populate this
-        payment.block_hash = null;
-        payment.spot_rate = rate; // Exchange rate at time of payment TODO: populate this
-        payment.status = 'unpaid';
-        payment.created = new Date().getTime();
-        payment.paid_timestamp = null;
-        payment.tx_id = null; // Bitcoind txid for transaction
-        payment.ntx_id = null; // Normalized txId
-        payment.watched = true;
-        payment.type = 'payment';
-
-        db.insert(payment, function(err) {
-          if (err) { return cb(err, null); }
-          else { return cb(null, payment); }
-        });
-      }
-      else {
-        return cb(err, null);
-      }
-    });
+  getSavedAddress(invoiceId, function(err, address) {
+    if (!err && address) {
+      console.log('found address');
+      insertPayment(invoiceId, address, expectedAmount, cb);
+    }
+    else {
+      console.log('generating new address');
+      bitcoinUtil.getPaymentAddress(function(err, info) { // Get payment address from bitcond
+        if (err) { return cb(err, undefined); }
+        else {
+          console.log(info);
+          insertPayment(invoiceId, info.result, expectedAmount, cb);
+        }
+      });
+    }
   });
 };
 
@@ -226,6 +264,7 @@ var updatePayment = function(transaction, cb) {
   var ntxId = transaction.normtxid;
   db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
     if (!err && payment) {
+      console.log('Updating watched Payment');
       // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, true, cb);
     }
@@ -234,15 +273,26 @@ var updatePayment = function(transaction, cb) {
         if (err || !payment) { return cb(err, undefined); }
         if (!err && !payment.ntx_id) {
           // Initial update from walletnotify
+          console.log('Creating watched Payment');
           updatePaymentWithTransaction(payment, transaction, true, cb);
         }
         else if (!err && payment.ntx_id) {
           // Create new payment for same invoice as pre-existing payment
+          console.log('Creating duplicate watched Payment');
           createNewPaymentWithTransaction(payment.invoice_id, transaction, true, cb);
         }
       });
     }
   });
+};
+
+var storeAddressForReuse = function(invoiceId, address) {
+  var savedAddress = {
+    invoice_id: invoiceId,
+    address: address,
+    type: 'address'
+  };
+  db.insert(savedAddress);
 };
 
 module.exports = {
@@ -254,6 +304,7 @@ module.exports = {
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
   createNewPaymentWithTransaction: createNewPaymentWithTransaction,
-  updatePaymentWithTransaction: updatePaymentWithTransaction
+  updatePaymentWithTransaction: updatePaymentWithTransaction,
+  storeAddressForReuse: storeAddressForReuse
 };
 

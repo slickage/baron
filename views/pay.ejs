@@ -86,7 +86,7 @@
         <% } %>
         <input type="text" class="form-control address-spacer" value="<%= address %>" />
         <% if (!ntxId) { %>
-          <span class="red">Payment address invalid after <%= validFor %> minutes.</span>
+          <span class="red">Payment address is valid for the next <%= expires %>.</span>
         <% } %>
       </div>
 
@@ -134,7 +134,7 @@
             <input type="text" class="form-control address-spacer" value="<%= address %>" />
           </div>
           <% if (!ntxId) { %>
-            <span class="red">Payment address invalid after <%= validFor %> minutes.</span>
+            <span class="red">Payment address is valid for the next <%= expires %>.</span>
           <% } %>
       </div>
 

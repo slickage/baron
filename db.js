@@ -32,7 +32,7 @@ var instantiateDb = function () {
 };
 
 var findInvoiceAndPayments = function(invoiceId, cb) {
-  baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function (err, body) {
+  baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function(err, body) {
     if (err) { return cb(err, undefined, undefined); }
     var invoice;
     var paymentsArr = [];
@@ -52,7 +52,7 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
 };
 
 var findPayment = function(address, cb) {
-  baronDb.view(dbName, 'payments', { key:address }, function (err, body) {
+  baronDb.view(dbName, 'payments', { key:address }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var payment = body.rows[0].value;
       return cb(err, payment);
@@ -62,7 +62,7 @@ var findPayment = function(address, cb) {
 };
 
 var findPayments = function(address, cb) {
-  baronDb.view(dbName, 'payments', { key:address }, function (err, body) {
+  baronDb.view(dbName, 'payments', { key:address }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var paymentsArr = [];
       body.rows.forEach(function(row) {
@@ -77,7 +77,7 @@ var findPayments = function(address, cb) {
 };
 
 var findPaymentByNormalizedTxId = function(ntxId, cb) {
-  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:ntxId }, function (err, body) {
+  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:ntxId }, function(err, body) {
     var payment = null;
     if (!err && body.rows && body.rows.length > 0) {
       payment = body.rows[0].value;
@@ -94,10 +94,20 @@ var findPaymentByNormalizedTxId = function(ntxId, cb) {
 };
 
 var findInvoice = function(invoiceId, cb) {
-  baronDb.view(dbName, 'invoices', { key:invoiceId }, function (err, body) {
+  baronDb.view(dbName, 'invoices', { key:invoiceId }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var invoice = body.rows[0].value;
       return cb(err, invoice);
+    }
+    return cb(err, undefined);
+  });
+};
+
+var findSavedAddress = function(invoiceId, cb) {
+  baronDb.view(dbName, 'savedAddresses', { key:invoiceId }, function(err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var savedAddressObj = body.rows[0].value;
+      return cb(err, savedAddressObj);
     }
     return cb(err, undefined);
   });
@@ -184,6 +194,7 @@ module.exports = {
   findPayments: findPayments,
   findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
   findInvoice: findInvoice,
+  findSavedAddress: findSavedAddress,
   getWatchedPayments: getWatchedPayments,
   getPaymentByBlockHash: getPaymentByBlockHash,
   getLastKnownBlockHash: getLastKnownBlockHash,

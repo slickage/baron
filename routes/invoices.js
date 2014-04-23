@@ -10,20 +10,23 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
     if (err) { return cb(err, null); }
     
     var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr);
+    invoice.payment_history = paymentHistory;
 
     var isUSD = invoice.currency.toUpperCase() === 'USD';
-
     invoiceUtil.calculateLineTotals(invoice);
     invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
     invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;
     invoice.remaining_balance = new BigNumber(invoice.balance_due).minus(invoice.total_paid);
-    invoice.remaining_balance = Number(invoice.remaining_balance.valueOf());
+    invoice.remaining_balance = invoice.remaining_balance.toFixed(Math.abs(invoice.remaining_balance.e));
     invoice.remaining_balance = isUSD ? helper.roundToDecimal(invoice.remaining_balance , 2) : invoice.remaining_balance;
-    invoice.payment_history = paymentHistory;
-
-    if (validate.invoiceExpired(invoice) && invoice.remaining_balance > 0) {
+    
+    var invoiceExpired = validate.invoiceExpired(invoice);
+    if (invoiceExpired && invoice.remaining_balance > 0) {
       var expiredErr = new Error('Error: Invoice is expired.');
       return cb(expiredErr, null);
+    }
+    else if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
+      invoice.expiration_msg = 'Expires: ' + helper.getExpirationCountDown(invoice.expiration);
     }
 
     // Is the invoice paid in full?
