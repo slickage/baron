@@ -291,11 +291,9 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
       }
     }
 
-    console.log('b');
     bitcoinUtil.getPaymentAddress(function(err, info) {
       if (err) { return cb(err, null); }
       else {
-        console.log(info);
         insertPayment(invoiceId, info.result, expectedAmount, cb);
       }
     });
@@ -323,41 +321,30 @@ var updatePayment = function(transaction, isWalletNotify, cb) {
   if (!receiveDetail) {
    return cb('Wallet notify contained no relevant payment data.', undefined);
   }
-  console.log('Updating Payments');
   var address = receiveDetail.address;
   var ntxId = transaction.normtxid;
   db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
     if (!err && payment) {
-      console.log('Updating watched Payment');
       // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, isWalletNotify, cb);
     }
     else {
-      console.log('looking by address');
+      // look up payment by address, should al
       db.findPayments(address, function(err, paymentsArr) {
-        if (err) { return cb(err, undefined); }
+        if (err || !paymentsArr) { return cb(err, undefined); }
         var invoiceId = null;
-        if (paymentsArr) {
-          paymentsArr.forEach(function(payment) {
-            console.log('testing2');
-            if (!payment.ntx_id) {
-              // Initial update from walletnotify
-              console.log('Creating watched Payment');
-              updatePaymentWithTransaction(payment, transaction, isWalletNotify, cb);
-            }
-            else {
-              invoiceId = payment.invoice_id;
-            }
-          });
-          if (invoiceId) {
-            // Create new payment for same invoice as pre-existing payment
-            console.log('Creating duplicate watched Payment');
-            createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify, cb);
+        paymentsArr.forEach(function(payment) {
+          if (!payment.ntx_id) {
+            // Initial update from walletnotify
+            updatePaymentWithTransaction(payment, transaction, isWalletNotify, cb);
           }
-        }
-        else {
-          console.log('testing');
-          createNewPaymentWithTransaction(payment, transaction, isWalletNotify, cb);
+          else {
+            invoiceId = payment.invoice_id;
+          }
+        });
+        if (invoiceId) {
+          // Create new payment for same invoice as pre-existing payment
+          createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify, cb);
         }
       });
     }
