@@ -15,8 +15,7 @@ function updateWatchedPayment(payment, invoice, body) {
     transaction = JSON.parse(body);
   }
   catch (err) {
-    console.log('Error parsing transaction from body: ' + body);
-    transaction = null;
+    return console.log('Error parsing transaction from body: ' + body);
   }
   if (transaction) {
     var newConfirmations = transaction.confirmations;

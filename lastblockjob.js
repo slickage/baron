@@ -8,13 +8,21 @@ var db = require('./db');
 // Stores initial "last block hash" if it doesnt exist returns it if it does
 function getLastBlockHash(cb) {
   db.getLastKnownBlockHash(function(err, lastBlockHash) {
-    if (err) { return cb(err, null); }
-    if (lastBlockHash) { return cb(null, lastBlockHash); }
+    if (err) {
+      return cb(err, null);
+    }
+    if (lastBlockHash) {
+      return cb(null, lastBlockHash);
+    }
     else {
       api.getLastBlockHash(function (err, lastBlockHash) {
-        if (err) { return cb(err, null); }
+        if (err) {
+          return cb(err, null);
+        }
         db.insert(lastBlockHash, function(err) {
-          if (err) { return cb(err, null); }
+          if (err) {
+            return cb(err, null);
+          }
           return cb(null, lastBlockHash);
         });
       });

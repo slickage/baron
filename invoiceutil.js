@@ -68,7 +68,7 @@ var getTotalPaid = function(invoice, paymentsArr) {
 // Calculates the invoice's remaining balance
 var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
+  var totalPaid = getTotalPaid(invoice, paymentsArr);
   var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
   if (isUSD) {
     var curTime = new Date().getTime();
@@ -191,19 +191,18 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
       var activePayment = getActivePayment(paymentsArr);
       if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
         resetPayment(activePayment, expectedAmount, cb);
-        return;
       }
     }
-
-    bitcoinUtil.getPaymentAddress(function(err, info) {
-      if (err) {
-        return cb(err, null);
-      }
-      else {
-        insertPayment(invoiceId, info.result, expectedAmount, cb);
-      }
-    });
-  
+    else {
+      bitcoinUtil.getPaymentAddress(function(err, info) {
+        if (err) {
+          return cb(err, null);
+        }
+        else {
+          insertPayment(invoiceId, info.result, expectedAmount, cb);
+        }
+      });
+    }
   });
 };
 
@@ -214,7 +213,9 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
 function validateTransactionBlock(payment, transaction, cb) {
   if (transaction.blockhash) {
     api.getBlock(transaction.blockhash, function(err, block) {
-      if (err) { return cb(err, false, false); }
+      if (err) {
+        return cb(err, false, false);
+      }
       var blockIsValid = validate.block(block);
       var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;
       // Block isnt valid and payment.block_hash === transaction.blockhash.
