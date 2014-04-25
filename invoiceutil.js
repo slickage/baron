@@ -80,10 +80,14 @@ var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
         return cb(null, Number(remainingBalance));
       }
-      else { return cb(err, null); }
+      else {
+        return cb(err, null);
+      }
     });
   }
-  else { return cb(null, Number(remainingBalance.valueOf())); }
+  else {
+    return cb(null, Number(remainingBalance.valueOf()));
+  }
 };
 
 // Returns array of payments that are not in unpaid status
@@ -106,7 +110,9 @@ var getPaymentHistory = function(paymentsArr) {
 
 function stopWatchingPayment(paymentId) {
   db.findPaymentById(paymentId, function(err, payment) {
-    if (err || !payment) { return console.log('Error retrieving payment by id'); }
+    if (err || !payment) {
+      return console.log('Error retrieving payment by id');
+    }
     if (payment.watched && Number(payment.amount_paid) === 0) {
       payment.watched = false;
       db.insert(payment);
@@ -125,7 +131,9 @@ function resetPayment(payment, expectedAmount, cb) {
       payment.watched = true;
       payment.created = new Date().getTime();
       db.insert(payment, function(err, result) {
-        if (err) { return cb(err, null); }
+        if (err) {
+          return cb(err, null);
+        }
         else {
           setTimeout(stopWatchingPayment, config.paymentValidForMinutes * 60 * 1000, result.id);
           return cb(null, payment);
@@ -161,7 +169,9 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
         type: 'payment'
       };
       db.insert(payment, function(err, result) {
-        if (err) { return cb(err, null); }
+        if (err) {
+          return cb(err, null);
+        }
         else {
           setTimeout(stopWatchingPayment, config.paymentValidForMinutes * 60 * 1000, result.id);
           return cb(null, payment);
@@ -186,7 +196,9 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
     }
 
     bitcoinUtil.getPaymentAddress(function(err, info) {
-      if (err) { return cb(err, null); }
+      if (err) {
+        return cb(err, null);
+      }
       else {
         insertPayment(invoiceId, info.result, expectedAmount, cb);
       }
@@ -221,9 +233,13 @@ function validateTransactionBlock(payment, transaction, cb) {
 // Updates payment with transaction data from listsinceblock or walletnotify
 function updatePaymentWithTransaction(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
-    if (err) { return cb(err, null); }
+    if (err) {
+      return cb(err, null);
+    }
     validateTransactionBlock(payment, transaction, function(err, blockIsValid, isReorg) {
-      if (err) { return cb(err, null); }
+      if (err) {
+        return cb(err, null);
+      }
       if (blockIsValid) {
         var newStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
         if(validate.paymentChanged(payment, transaction, newStatus)) {
@@ -274,7 +290,9 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
 function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
-    if (err) { return cb(err, null); }
+    if (err) {
+      return cb(err, null);
+    }
     bitstamped.getTicker(paidTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
@@ -310,7 +328,9 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
         db.insert(payment, cb);
       }
-      else { return cb(err, null); }
+      else {
+        return cb(err, null);
+      }
     });
   });
 }
@@ -325,7 +345,9 @@ var updatePayment = function(transaction, cb) {
     else {
       // look up payment by address, should al
       db.findPayments(transaction.address, function(err, paymentsArr) {
-        if (err || !paymentsArr) { return cb(err, undefined); }
+        if (err || !paymentsArr) {
+          return cb(err, undefined);
+        }
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
           if (!payment.ntx_id) {

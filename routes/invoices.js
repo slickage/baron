@@ -7,7 +7,9 @@ var BigNumber = require('bignumber.js');
 
 function findInvoiceAndPaymentHistory(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
-    if (err) { return cb(err, null); }
+    if (err) {
+      return cb(err, null);
+    }
     
     var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr);
     invoice.payment_history = paymentHistory;
@@ -68,8 +70,13 @@ var invoices = function(app) {
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
     db.createInvoice(req.body, function(err, invoice) {
-      if(err) { res.write(err.message); res.end(); }
-      else { res.json(invoice); }
+      if(err) {
+        res.write(err.message);
+        res.end();
+      }
+      else {
+        res.json(invoice);
+      }
     });
   });
 

@@ -29,7 +29,6 @@ function updateWatchedPayment(payment, invoice, body) {
     payment.watched = !stopTracking;
     if (stopTracking || (newStatus && newStatus !== oldStatus) || (newBlockHash && newBlockHash !== oldBlockHash)) {
       db.insert(payment);
-      console.log('Updating: { ' + payment.address + '[' + payment.watched + '] }');
     }
   }
 }
@@ -44,15 +43,12 @@ var watchPaymentsJob = function () {
     var paidCount = 0;
     var unpaidCount = 0;
     paymentsArr.forEach(function(payment) {
-      // TODO: Do I need logic for expired invoices here?
       if (payment.tx_id) { // payment received, now watching
         paidCount++;
         db.findInvoice(payment.invoice_id, function (err, invoice) {
           if (err) { console.log(err); return; }
-          // Build insight url from config
           var insightUrl = config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port;
           var requestUrl = insightUrl + '/api/tx/' + payment.tx_id;
-          // Ask the insight api for transaction data for this payment address
           request(requestUrl, function (error, response, body) {
             updateWatchedPayment(payment, invoice, body);
           });

@@ -5,7 +5,9 @@ var insightUrl = config.insight.protocol + '://' + config.insight.host + ':' + c
 var getLastBlockHash = function(cb) {
   var requestUrl = insightUrl + '/api/status?q=getLastBlockHash';
   request(requestUrl, function(error, response, body) {
-    if (error) { return cb(error, undefined); }
+    if (error) {
+      return cb(error, undefined);
+    }
     body = JSON.parse(body);
     if (!body.lastblockhash) {
       var err = new Error('Error retrieving last block from insight.');
@@ -20,10 +22,15 @@ var getLastBlockHash = function(cb) {
 };
 
 var getBlock = function(blockHash, cb){
-  if (!blockHash) { return cb(new Error('No blockhash provided'), undefined); }
+  if (!blockHash) {
+    var err = new Error('No blockhash provided.');
+    return cb(err, null);
+  }
   var requestUrl = insightUrl + '/api/block/' + blockHash;
   request(requestUrl, function(error, response, body) {
-    if (error) { return cb(error, undefined); }
+    if (error) {
+      return cb(error, undefined);
+    }
     try {
       var block = JSON.parse(body);
       return cb(null, block);

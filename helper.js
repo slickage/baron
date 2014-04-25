@@ -1,5 +1,6 @@
 var BigNumber = require('bignumber.js');
 var request = require('request');
+
 // returns decimal places of provided
 var decimalPlaces = function(number) {
   if(Math.floor(number) === number) {
@@ -27,9 +28,7 @@ var roundToDecimal = function(number, decimalPlaces) {
   return (Math.round(number * offset) / offset).toFixed(decimalPlaces);
 };
 
-// TODO:
-// Currently assuming there is only one detail with the category receive
-// Possible that this will change
+// Returns receiveDetail portion of transaction json from wallet notify
 var getReceiveDetail = function(details) {
   var receiveDetail;
   details.forEach(function(detail) {
@@ -40,6 +39,7 @@ var getReceiveDetail = function(details) {
   return receiveDetail;
 };
 
+// Returns the difference in days, hours, mins, and secs between parameter
 var getExpirationCountDown = function (expiration) {
   var curTime = new Date().getTime();
   var diff = expiration - curTime;
@@ -94,11 +94,11 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     }
   }
 
-  // Notify webhook if paid
+  // TODO: Better place to put this? Notify webhook if paid
   if (invoice.webhooks && (status === 'paid' || status === 'overpaid') && origStatus !== status) {
     var webhookUrl = invoice.webhooks.paid.url;
     var webhookToken = invoice.webhooks.paid.token;
-    request.post(webhookUrl).form({token: webhookToken});
+    request.post(webhookUrl).form({ token: webhookToken });
   }
   return status;
 };

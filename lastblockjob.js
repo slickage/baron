@@ -24,12 +24,14 @@ function getLastBlockHash(cb) {
 
 function processReorgedPayments(blockHash) {
   db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
-    if (err) { return console.log(err); }
+    if (err) {
+      return console.log(err);
+    }
     if (paymentsArr) {
       paymentsArr.forEach(function (payment) {
         payment.block_hash = null;
         console.log('REORG: Payment Reorged. Clearing blockhash.');
-        // payment.reorg = true; Should we add this?
+        // payment.reorg = true; TODO: Should we add this?
         db.insert(payment);
       });
     }
@@ -42,6 +44,7 @@ function processBlockHash(blockHashObj) {
     if (err || !block) {
       // TODO: If there's an error, lastblock in db is probably corrupt.
       // Should we update the latest block? 
+      console.log('Error: Last block may have been corrupted. Bitcoind may be out of sync with network.');
       return console.log(err);
     }
     console.log('> Block Valid: ' + validate.block(block));
@@ -54,9 +57,13 @@ function processBlockHash(blockHashObj) {
         var lastBlockHash = info.result.lastblock;
         // Query couch for existing payments by ntxid if found update
         transactions.forEach(function(transaction) {
-          if (!transaction.normtxid || !transaction.address || transaction.amount < 0) { return console.log('Ignoring irrelevant transaction data.'); }
+          if (!transaction.normtxid || !transaction.address || transaction.amount < 0) {
+            return console.log('Ignoring irrelevant transaction data.');
+          }
           invoiceUtil.updatePayment(transaction, function(err) {
-            if (err) { console.log('Error updating payment with ntxid: ' + transaction.normtxid); }
+            if (err) {
+              console.log('Error updating payment with ntxid: ' + transaction.normtxid);
+            }
           });
         });
         if (blockHash !== lastBlockHash) {

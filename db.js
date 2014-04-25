@@ -6,13 +6,6 @@ var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name || 'baron';
 var baronDb;
 
-var pushViews = function () {
-  var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
-  couchapp.createApp(ddoc, dbUrl, function(app) {
-    app.push();
-  });
-};
-
 var instantiateDb = function () {
   nano.db.get(dbName, function(err) {
     if (err) {
@@ -23,7 +16,10 @@ var instantiateDb = function () {
         }
         console.log('Database created.');
         baronDb = nano.use(dbName);
-        pushViews();
+        var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
+        couchapp.createApp(ddoc, dbUrl, function(app) {
+          app.push();
+        });
         return;
       });
     }
@@ -33,11 +29,12 @@ var instantiateDb = function () {
 
 var findInvoiceAndPayments = function(invoiceId, cb) {
   baronDb.view(dbName, 'invoicesWithPayments', { key:invoiceId }, function(err, body) {
-    if (err) { return cb(err, undefined, undefined); }
+    if (err) { return cb(err, null, null); }
     var invoice;
     var paymentsArr = [];
     if (body.rows.length <= 0) {
-      return cb(new Error('Error: No invoice found.'), undefined, undefined);
+      var error = new Error('Error: No invoice found.');
+      return cb(error, null, null);
     }
     body.rows.forEach(function (row) {
       if (row.value.type === 'invoice') {
@@ -51,23 +48,13 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
   });
 };
 
-var findPayment = function(address, cb) {
-  baronDb.view(dbName, 'payments', { key:address }, function(err, body) {
-    if (!err && body.rows && body.rows.length > 0) {
-      var payment = body.rows[0].value;
-      return cb(err, payment);
-    }
-    return cb(err, undefined);
-  });
-};
-
 var findPaymentById = function(paymentId, cb) {
   baronDb.view(dbName, 'paymentsById', { key:paymentId }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var payment = body.rows[0].value;
       return cb(err, payment);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
@@ -82,7 +69,7 @@ var findPayments = function(address, cb) {
       });
       return cb(err, paymentsArr);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
@@ -96,9 +83,10 @@ var findPaymentByNormalizedTxId = function(ntxId, cb) {
       return cb(null, payment);
     }
     else if (!payment)  {
-      return cb(new Error('No invoice matching ntx_id: ' + ntxId), undefined);
+      var error = new Error('No invoice matching ntx_id: ' + ntxId);
+      return cb(error, null);
     } else {
-      return cb(err, undefined);
+      return cb(err, null);
     }
   });
 };
@@ -109,7 +97,7 @@ var findInvoice = function(invoiceId, cb) {
       var invoice = body.rows[0].value;
       return cb(err, invoice);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
@@ -124,7 +112,7 @@ var getWatchedPayments = function(cb) {
       });
       return cb(err, paymentsArr);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
@@ -139,7 +127,7 @@ var getPaymentByBlockHash = function(blockHash, cb) {
       });
       return cb(err, paymentsArr);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
@@ -149,14 +137,14 @@ var getLastKnownBlockHash = function(cb) {
       var lastKnownBlockHash = body.rows[0].value;
       return cb(err, lastKnownBlockHash);
     }
-    return cb(err, undefined);
+    return cb(err, null);
   });
 };
 
 var createInvoice = function(invoice, cb) {
   if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.postAccessToken) {
     var err = new Error('Access Denied: Invalid access token.');
-    return cb(err, undefined);
+    return cb(err, null);
   }
   else if (validate.invoice(invoice)) {
     invoice.access_token = undefined;
@@ -167,19 +155,8 @@ var createInvoice = function(invoice, cb) {
   else {
     var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
       ' object being sent conforms to the specifications in the API');
-    return cb(invalidErr, undefined);
+    return cb(invalidErr, null);
   }
-};
-
-var deleteDoc = function(doc, cb) {
-   baronDb.destroy(doc._id, doc._rev, function(err) {
-    if (err) {
-      return cb(err);
-    }
-    else {
-      return cb(null);
-    }
-  });
 };
 
 var insert = function(doc, cb) { // Used to update a payment or invoice
@@ -187,10 +164,8 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
 };
 
 module.exports = {
-  pushViews: pushViews,
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
-  findPayment: findPayment,
   findPaymentById: findPaymentById,
   findPayments: findPayments,
   findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
@@ -199,6 +174,5 @@ module.exports = {
   getPaymentByBlockHash: getPaymentByBlockHash,
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
-  insert: insert,
-  deleteDoc: deleteDoc
+  insert: insert
 };

@@ -1,4 +1,5 @@
 var lodash = require('lodash');
+
 var localConfig = {
   port: process.env.PORT || 8080,
   couchdb: {
@@ -24,5 +25,5 @@ var localConfig = {
   trackPaymentUntilConf: 100
 };
 
-// If config was passed in, export that. If not export local config.
+// Do a union on local config and passed in config
 module.exports = global.externalConfig ? lodash.extend(localConfig, global.externalConfig) : localConfig;

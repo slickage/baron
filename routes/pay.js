@@ -8,32 +8,46 @@ var db = require('../db');
 
 function findOrCreatePayment(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
-    if (err) { return cb(err, null); }
+    if (err) {
+      return cb(err, null);
+    }
+    var activePayment = invoiceUtil.getActivePayment(paymentsArr);
 
-    // Check if invoice is expired.
-    if (validate.invoiceExpired(invoice)) {
+    // Invoice is expired and unpaid
+    if (validate.invoiceExpired(invoice) && activePayment && activePayment.status === 'unpaid') {
       var expiredErr = new Error('Error: Invoice associated with payment is expired.');
       return cb(expiredErr, null);
     }
-    // If active payment is partially paid, need to create new payment
-    var activePayment = invoiceUtil.getActivePayment(paymentsArr);
-        console.log(activePayment);
 
     if (activePayment && activePayment.watched) {
       var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
       var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
       if (invoiceIsPaid || invoiceIsUnpaid) {
         var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
-        return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
+        var result = {
+          payment: activePayment,
+          invoice: invoice,
+          remainingBalance: remainingBalance
+        };
+        return cb(null, result);
       }
     }
 
     // Create a new payment object for invoices without a payment or with a partial payment
     invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
-      if (err) { return cb(err, null); }
+      if (err) {
+        return cb(err, null);
+      }
       invoiceUtil.createNewPayment(invoiceId, remainingBalance, function(err, newPayment) {
-        if (err) { return cb(err, null); }
-        return cb(null, { payment: newPayment, invoice: invoice, remainingBalance: remainingBalance });
+        if (err) {
+          return cb(err, null);
+        }
+        var result = {
+          payment: newPayment,
+          invoice: invoice,
+          remainingBalance: remainingBalance
+        };
+        return cb(null, result);
       });
     });
   });
@@ -50,7 +64,9 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
   // Get Confirmations
   api.getBlock(activePayment.block_hash, function(err, block) {
     var confirmations = 0;
-    if (err || !block) { confirmations = 0; }
+    if (err || !block) {
+      confirmations = 0;
+    }
     else if (block) {
       confirmations = block.confirmations;
     }
