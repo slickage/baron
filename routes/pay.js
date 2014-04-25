@@ -15,28 +15,21 @@ function findOrCreatePayment(invoiceId, cb) {
       var expiredErr = new Error('Error: Invoice associated with payment is expired.');
       return cb(expiredErr, null);
     }
-
     // If active payment is partially paid, need to create new payment
     var activePayment = invoiceUtil.getActivePayment(paymentsArr);
-    if (activePayment) {
-      var curTime = new Date().getTime();
-      var expirationTime = Number(activePayment.created) + config.paymentValidForMinutes * 60 * 1000;
-      // handles case where user refreshes page before watch payment job deletes expired payment
-      if(activePayment && activePayment.status === 'unpaid' && Number(activePayment.amount_paid) !== 0 && expirationTime < curTime) {
-        invoiceUtil.storeAddressForReuse(invoiceId, activePayment.address);
-        db.deleteDoc(activePayment, function (err) {
-          if (err) { console.log ('Error deleting expired payment'); }
-        });
-      }
-      else {
-        var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
-        var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
-        if (invoiceIsPaid || invoiceIsUnpaid) {
-          var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
-          return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
-        }
+        console.log(activePayment);
+
+    if (activePayment && activePayment.watched) {
+      var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
+      var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
+      console.log('1');
+      if (invoiceIsPaid || invoiceIsUnpaid) {
+        console.log('2');
+        var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
+        return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
       }
     }
+        console.log('3');
 
     // Create a new payment object for invoices without a payment or with a partial payment
     invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {

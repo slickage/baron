@@ -3,108 +3,22 @@ var api = require('./insightapi');
 var validate = require('./validate');
 var bitcoinUtil = require('./bitcoinutil');
 var invoiceUtil = require('./invoiceutil');
-var helper = require('./helper');
 var db = require('./db');
 
 // Stores initial "last block hash" if it doesnt exist returns it if it does
 function getLastBlockHash(cb) {
   db.getLastKnownBlockHash(function(err, lastBlockHash) {
-    if (err) { return cb(err, undefined); }
-    if (lastBlockHash) { return cb(undefined, lastBlockHash); }
+    if (err) { return cb(err, null); }
+    if (lastBlockHash) { return cb(null, lastBlockHash); }
     else {
       api.getLastBlockHash(function (err, lastBlockHash) {
-        if (err) { return cb(err, undefined); }
+        if (err) { return cb(err, null); }
         db.insert(lastBlockHash, function(err) {
-          if (err) { return cb(err, undefined); }
-          return cb(undefined, lastBlockHash);
+          if (err) { return cb(err, null); }
+          return cb(null, lastBlockHash);
         });
       });
     }
-  });
-}
-
-function updatePaymentWithTxData(payment, transaction) {
-  db.findInvoice(payment.invoice_id, function(err, invoice) {
-    if (err) { console.log('Error retrieving invoice: ' + payment.invoice_id); }
-    if (transaction.blockhash) {
-      api.getBlock(transaction.blockhash, function(err, block) {
-        if (err) {
-          console.log('Error retrieving block: ' + transaction.blockhash);
-        }
-        if (validate.block(block)) { // update payment if anythings changed
-          invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err) {
-            if (err) {
-              console.log('Error Updating Payment:' + payment.ntx_id);
-            }
-          });
-        }
-        // Block isnt valid and payment.block_hash === transaction.blockhash.
-        else if (payment.block_hash === transaction.blockhash) {
-          // Clear payments block_hash if it was storing the invalid one.
-          payment.block_hash = null;
-          // Transaction.confirmations should be 0 this should put payment back to pending
-          // This is technically a reorg though. TODO.
-          // payment.reorg = true; Should we add this?
-          payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice.min_confirmations);
-          console.log('REORG: Payment Reorged. Clearing blockhash.');
-          db.insert(payment);
-        }
-        else { // Payment has a different blockhash than transaction TODO
-          payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice.min_confirmations);
-          db.insert(payment);
-        }
-      });
-    }
-    else { // transaction is too new, no blockhash update other data
-      invoiceUtil.updatePaymentWithTransaction(payment, transaction, false, function(err) {
-        if (err) {
-          console.log('Error Updating Payment:' + payment.ntx_id);
-        }
-      });
-    }
-  });
-}
-
-function processPaymentsByNtxId(transactions) {
-  transactions.forEach(function(transaction) {
-    if (!transaction.normtxid || !transaction.address) { return console.log('Transaction missing ntxid or address'); }
-    var ntxId = transaction.normtxid;
-    var address = transaction.address;
-    console.log('Searching for payment by: ' + ntxId);
-    db.findPaymentByNormalizedTxId(ntxId, function(err, paymentByNtxId){
-      if (err) { // Search by address to see if it's another payment to the same address
-        // if we cant find by ntx look by address, maybe payment missed wallet notify
-        console.log('Didnt find by ntxid, try address: ' + address);
-        db.findPayments(address, function(err, paymentsArr) { // Needs to find all payments at that address
-          if (err || !paymentsArr) { return console.log('No matching payment for transaction.'); }
-          var invoiceId = null;
-          paymentsArr.forEach(function(payment) {
-            // Look for payments where !payment.ntx_id if found update it
-            if (!payment.ntx_id) { // If payment doesnt have ntxid then it hasn't been updated before
-              // Update payment with transaction data
-              updatePaymentWithTxData(payment, transaction);
-            }
-            else { // Payment already exists, this is a transaction to an already used address
-              // set the invoice id so we know which invoice to create the new payment for
-              invoiceId = payment.invoice_id;
-            }
-          });
-          // Calling this outside forEach loop otherwise, it could possible generate duplicate payments.
-          if (invoiceId) {
-            invoiceUtil.createNewPaymentWithTransaction(invoiceId, transaction, false, function(err) {
-              if (err) { return console.log('Error creating payment for txid: ' + transaction.txid); }
-            });
-          }
-        });
-      }
-      // Found payment by ntx_id. Update payment data with tx data if necessary.
-      // This will occur if the initial tx data doesnt include blockhash
-      // The payment will be found by ntxId but not have a block hash.
-      else if(paymentByNtxId) {
-        console.log('Trying to update blockhash');
-        updatePaymentWithTxData(paymentByNtxId, transaction);
-      }
-    });
   });
 }
 
@@ -139,7 +53,13 @@ function processBlockHash(blockHashObj) {
         var transactions = info.result.transactions;
         var lastBlockHash = info.result.lastblock;
         // Query couch for existing payments by ntxid if found update
-        processPaymentsByNtxId(transactions);
+        transactions.forEach(function(transaction) {
+          if (!transaction.normtxid || !transaction.address || transaction.amount < 0) { return console.log('Ignoring irrelevant transaction data.'); }
+          console.log(transaction);
+          invoiceUtil.updatePayment(transaction, false, function(err) {
+            if (err) { console.log('Error updating payment with ntxid: ' + transaction.normtxid); }
+          });
+        });
         if (blockHash !== lastBlockHash) {
           blockHashObj.hash = lastBlockHash; // update to latest block
           db.insert(blockHashObj); // insert updated last block into db
@@ -176,5 +96,5 @@ var runLastBlockJob = function () {
 
 module.exports = {
   runLastBlockJob: runLastBlockJob,
-  lastBlockJob: lastBlockJob
+  lastBlockJob: lastBlockJob,
 };

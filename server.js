@@ -12,8 +12,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 require('./db').instantiateDb();
 require('./routes')(app);
 require('bitstamped');
-watchJob.runWatchPaymentsJob();
 blockJob.runLastBlockJob();
+setTimeout(watchJob.runWatchPaymentsJob(), config.lastBlockJobInterval / 2);
 
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);

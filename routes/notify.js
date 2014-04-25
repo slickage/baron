@@ -10,7 +10,7 @@ var notify = function(app) {
     bitcoinUtil.getTransaction(txId, function(err, info) {
       if (err) { res.send(500); }
       var transaction = info.result;
-      invoiceUtil.updatePayment(transaction, function(err) {
+      invoiceUtil.updatePayment(transaction, true, function(err) {
         if (err) { res.send(500); console.log(err); }
         else { res.end(); }
       });

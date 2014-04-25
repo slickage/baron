@@ -1,7 +1,6 @@
 var config = require('./config');
 var request = require('request');
 var helper = require('./helper');
-var invoiceUtil = require('./invoiceutil');
 var db = require('./db');
 
 // TODO: This job can be removed in the future, we can calculate
@@ -41,12 +40,8 @@ function updateWatchedPayment(payment, invoice, body) {
     var expirationTime = Number(payment.created) + config.paymentValidForMinutes * 60 * 1000;
     // If newConfirmations is null, there were no transactions for this payment
     if(payment.status === 'unpaid' && expirationTime < curTime) {
-      invoiceUtil.storeAddressForReuse(payment.invoice_id, payment.address);
-      db.deleteDoc(payment, function(err) {
-        if (err) {
-          console.log('Error deleting expired payment: ' + payment.ntx_id);
-        }
-      });
+      payment.watched = false;
+      db.insert(payment);
     }
   }
 }

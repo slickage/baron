@@ -36,6 +36,14 @@ ddoc.views.payments = {
   }
 };
 
+ddoc.views.paymentsById = {
+  map: function(doc) {
+    if (doc.type === 'payment') {
+      emit(doc._id, doc);
+    }
+  }
+};
+
 ddoc.views.paymentsBlockHash = {
   map: function(doc) {
     if (doc.type === 'payment') {
@@ -56,14 +64,6 @@ ddoc.views.watchedPayments = {
   map: function(doc) {
     if (doc.type === 'payment' && doc.watched) {
       emit(doc.address, doc);
-    }
-  }
-};
-
-ddoc.views.savedAddresses = {
-  map: function(doc) {
-    if (doc.type === 'address') {
-      emit(doc.invoice_id, doc);
     }
   }
 };

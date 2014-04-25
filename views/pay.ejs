@@ -21,6 +21,9 @@
         <div class="col-sm-12 alert alert-success xsmall-text alert-box"> 
           <% if (remainingBalance < 0) { %>
               Invoice has been <strong>overpaid</strong>.
+              <a href="/invoices/<%= invoiceId %>">
+                View Invoice
+              </a>
           <% } else { %>
               Invoice has been paid in full. 
               <a href="/invoices/<%= invoiceId %>">
