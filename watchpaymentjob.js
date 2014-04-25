@@ -35,7 +35,9 @@ function updateWatchedPayment(payment, invoice, body) {
 
 var watchPaymentsJob = function () {
   db.getWatchedPayments(function (err, paymentsArr) {
-    if (err || !paymentsArr) { console.log(err); return; }
+    if (err || !paymentsArr) {
+      return console.log(err);
+    }
     // Proccess all watched payments
     console.log('===========================');
     console.log('Watch Payments Job: ' + paymentsArr.length);
@@ -46,7 +48,9 @@ var watchPaymentsJob = function () {
       if (payment.tx_id) { // payment received, now watching
         paidCount++;
         db.findInvoice(payment.invoice_id, function (err, invoice) {
-          if (err) { console.log(err); return; }
+          if (err) {
+            return console.log(err);
+          }
           var insightUrl = config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port;
           var requestUrl = insightUrl + '/api/tx/' + payment.tx_id;
           request(requestUrl, function (error, response, body) {
