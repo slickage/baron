@@ -1,6 +1,7 @@
 var invoiceUtil = require('../invoiceutil');
 var bitcoinUtil = require('../bitcoinutil');
 var blockJob = require('../lastblockjob');
+var helper = require('../helper');
 
 var notify = function(app) {
 
@@ -10,7 +11,11 @@ var notify = function(app) {
     bitcoinUtil.getTransaction(txId, function(err, info) {
       if (err) { res.send(500); }
       var transaction = info.result;
-      invoiceUtil.updatePayment(transaction, true, function(err) {
+      var receiveDetail = helper.getReceiveDetail(transaction.details);
+      transaction.address = receiveDetail.address;
+      transaction.amount = receiveDetail.amount;
+      console.log(transaction);
+      invoiceUtil.updatePayment(transaction, function(err) {
         if (err) { res.send(500); console.log(err); }
         else { res.end(); }
       });

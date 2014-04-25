@@ -22,14 +22,11 @@ function findOrCreatePayment(invoiceId, cb) {
     if (activePayment && activePayment.watched) {
       var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
       var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
-      console.log('1');
       if (invoiceIsPaid || invoiceIsUnpaid) {
-        console.log('2');
         var remainingBalance = new BigNumber(activePayment.expected_amount).minus(activePayment.amount_paid);
         return cb(null, { payment: activePayment, invoice: invoice, remainingBalance: remainingBalance });
       }
     }
-        console.log('3');
 
     // Create a new payment object for invoices without a payment or with a partial payment
     invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {

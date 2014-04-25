@@ -10,7 +10,6 @@ var db = require('./db');
 function updateWatchedPayment(payment, invoice, body) {
   var oldStatus = payment.status;
   var oldBlockHash = payment.block_hash;
-
   var transaction;
   try {
     transaction = JSON.parse(body);
@@ -19,12 +18,10 @@ function updateWatchedPayment(payment, invoice, body) {
     console.log('Error parsing transaction from body: ' + body);
     transaction = null;
   }
-
   if (transaction) {
     var newConfirmations = transaction.confirmations;
     var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
     payment.status = oldStatus === newStatus ? oldStatus : newStatus;
-
     var newBlockHash = transaction.blockhash ? transaction.blockhash : null;
     payment.block_hash = oldBlockHash === newBlockHash ? oldBlockHash : newBlockHash;
     // payments confirmations have reached 100 (Default) confs stop watching.
@@ -33,15 +30,6 @@ function updateWatchedPayment(payment, invoice, body) {
     if (stopTracking || (newStatus && newStatus !== oldStatus) || (newBlockHash && newBlockHash !== oldBlockHash)) {
       db.insert(payment);
       console.log('Updating: { ' + payment.address + '[' + payment.watched + '] }');
-    }
-  }
-  else { //Payment has no transaction data. This means it has most likely not been paid. Expire if passes paymentValidForMinutes var
-    var curTime = new Date().getTime();
-    var expirationTime = Number(payment.created) + config.paymentValidForMinutes * 60 * 1000;
-    // If newConfirmations is null, there were no transactions for this payment
-    if(payment.status === 'unpaid' && expirationTime < curTime) {
-      payment.watched = false;
-      db.insert(payment);
     }
   }
 }

@@ -1,5 +1,3 @@
-var helper = require('./helper');
-
 module.exports = {
   invoice: function(invoice) {
     var curTime = new Date().getTime();
@@ -24,11 +22,9 @@ module.exports = {
   block: function(block) {
     return block.confirmations ? Number(block.confirmations) !== -1 : true;
   },
-  paymentChanged: function(payment, transaction, newStatus, isWalletNotify) {
-    var amount = isWalletNotify ? helper.getReceiveDetail(transaction.details).amount : transaction.amount;
-
+  paymentChanged: function(payment, transaction, newStatus) {
     var oldAmount = payment.amount_paid;
-    var newAmount = amount;
+    var newAmount = transaction.amount;
     var oldTxId = payment.tx_id;
     var newTxId = transaction.txid;
     var oldNtxId = payment.ntx_id;

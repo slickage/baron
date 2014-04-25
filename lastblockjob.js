@@ -55,8 +55,7 @@ function processBlockHash(blockHashObj) {
         // Query couch for existing payments by ntxid if found update
         transactions.forEach(function(transaction) {
           if (!transaction.normtxid || !transaction.address || transaction.amount < 0) { return console.log('Ignoring irrelevant transaction data.'); }
-          console.log(transaction);
-          invoiceUtil.updatePayment(transaction, false, function(err) {
+          invoiceUtil.updatePayment(transaction, function(err) {
             if (err) { console.log('Error updating payment with ntxid: ' + transaction.normtxid); }
           });
         });

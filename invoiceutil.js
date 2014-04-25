@@ -7,8 +7,104 @@ var db = require('./db');
 var api = require('./insightapi');
 var config = require('./config');
 
+// ===============================================
+// Miscellaneous Invoice Utilities
+// ===============================================
+
+// Calculates line totals for invoice line items
+var calculateLineTotals = function(invoice) {
+  var isUSD = invoice.currency.toUpperCase() === 'USD';
+  invoice.line_items.forEach(function (item){
+    item.line_total = Number(new BigNumber(item.amount).times(item.quantity).valueOf());
+    if (isUSD) { // Round USD to two decimals
+      item.amount = helper.roundToDecimal(item.amount, 2);
+      item.line_total = helper.roundToDecimal(item.line_total, 2);
+    }
+    // If our calculated line total has more than 8 decimals round to 8
+    else if (helper.decimalPlaces(item.line_total) > 8) {
+      item.line_total = helper.roundToDecimal(item.line_total, 8);
+    }
+  });
+};
+
+// Returns the latest payment object
+var getActivePayment = function(paymentsArr) {
+  var activePayment;
+  paymentsArr.forEach(function(payment) {
+    if (activePayment) {
+      activePayment = payment.created > activePayment.created ? payment : activePayment;
+    }
+    else {
+      activePayment = payment;
+    }
+  });
+  return activePayment;
+};
+
+// Calculates the invoice's paid amount
+var getTotalPaid = function(invoice, paymentsArr) {
+  var isUSD = invoice.currency.toUpperCase() === 'USD';
+  var totalPaid = new BigNumber(0);
+  paymentsArr.forEach(function(payment) {
+    var paidAmount = payment.amount_paid;
+    if (paidAmount) {
+      paidAmount = new BigNumber(paidAmount);
+      // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
+      if (isUSD) {
+        var usdAmount = helper.roundToDecimal(paidAmount.times(payment.spot_rate).valueOf(), 2);
+        totalPaid = totalPaid.plus(usdAmount);
+      }
+      else {
+        totalPaid = totalPaid.plus(paidAmount);
+      }
+    }
+  });
+  if (isUSD) {
+    totalPaid = helper.roundToDecimal(Number(totalPaid.valueOf()), 2);
+  }
+  return totalPaid;
+};
+
+// Calculates the invoice's remaining balance
+var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
+  var isUSD = invoice.currency.toUpperCase() === 'USD';
+  var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
+  var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
+  if (isUSD) {
+    var curTime = new Date().getTime();
+    bitstamped.getTicker(curTime, function(err, docs) {
+      if (!err && docs.rows && docs.rows.length > 0) {
+        var tickerData = docs.rows[0].value; // Get ticker object
+        var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
+        remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
+        remainingBalance = helper.roundToDecimal(remainingBalance, 8);
+        return cb(null, Number(remainingBalance));
+      }
+      else { return cb(err, null); }
+    });
+  }
+  else { return cb(null, Number(remainingBalance.valueOf())); }
+};
+
+// Returns array of payments that are not in unpaid status
+var getPaymentHistory = function(paymentsArr) {
+  var history = [];
+  paymentsArr.forEach(function(payment) {
+    var status = payment.status;
+    if(status.toLowerCase() !== 'unpaid' && payment.tx_id) {
+      history.push(payment);
+    }
+    // Capitalizing first letter of payment status for display in invoice view
+    payment.status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  });
+  return history;
+};
+
+// ===============================================
+// Creating New Payments with Transaction Data
+// ===============================================
+
 function stopWatchingPayment(paymentId) {
-  console.log('stoping payment');
   db.findPaymentById(paymentId, function(err, payment) {
     if (err || !payment) { return console.log('Error retrieving payment by id'); }
     if (payment.watched && Number(payment.amount_paid) === 0) {
@@ -78,38 +174,60 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
   });
 }
 
+// Creates a new payment object associated with invoice
+var createNewPayment = function(invoiceId, expectedAmount, cb) {
+  db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
+    if (!err && invoice && paymentsArr.length > 0) {
+      var activePayment = getActivePayment(paymentsArr);
+      if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
+        resetPayment(activePayment, expectedAmount, cb);
+        return;
+      }
+    }
+
+    bitcoinUtil.getPaymentAddress(function(err, info) {
+      if (err) { return cb(err, null); }
+      else {
+        insertPayment(invoiceId, info.result, expectedAmount, cb);
+      }
+    });
+  
+  });
+};
+
+// ===============================================
+// Updating Payments with Transaction Data
+// ===============================================
+
 function validateTransactionBlock(payment, transaction, cb) {
   if (transaction.blockhash) {
     api.getBlock(transaction.blockhash, function(err, block) {
-      console.log('found block' + block);
       if (err) { return cb(err, false, false); }
       var blockIsValid = validate.block(block);
       var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;
-      console.log('Valid Block: ' + blockIsValid);
-      console.log('IsReorg: ' + isReorg);
       // Block isnt valid and payment.block_hash === transaction.blockhash.
       return cb(null, blockIsValid, isReorg);
     });
   }
-  else {
-    console.log('meatloaf');
+  else if (!transaction.blockhash && payment.block_hash) { // Reorg
+    // No tx blockhash but payment used to have one. Indicates reorg.
+    return cb(null, false, true);
+  }
+  else { // If transaction doesnt have blockhash it is initial notification
     return cb(null, true, false);
   }
 }
 
 // Updates payment with transaction data from listsinceblock or walletnotify
-var updatePaymentWithTransaction = function (payment, transaction, isWalletNotify, cb) {
+function updatePaymentWithTransaction(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) { return cb(err, null); }
-    console.log('found invoice');
     validateTransactionBlock(payment, transaction, function(err, blockIsValid, isReorg) {
       if (err) { return cb(err, null); }
       if (blockIsValid) {
-        console.log('block valid');
         var newStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-        if(validate.paymentChanged(payment, transaction, newStatus, isWalletNotify)) {
-          console.log('updating payment');
-          var amount = isWalletNotify ? helper.getReceiveDetail(transaction.details).amount : transaction.amount;
+        if(validate.paymentChanged(payment, transaction, newStatus)) {
+          var amount = transaction.amount;
           payment.amount_paid = amount;
           payment.tx_id = transaction.txid;
           payment.ntx_id = transaction.normtxid;
@@ -149,65 +267,11 @@ var updatePaymentWithTransaction = function (payment, transaction, isWalletNotif
       }
     });
   });
-};
-
-// Calculates line totals for invoice line items
-var calculateLineTotals = function(invoice) {
-  var isUSD = invoice.currency.toUpperCase() === 'USD';
-  invoice.line_items.forEach(function (item){
-    item.line_total = Number(new BigNumber(item.amount).times(item.quantity).valueOf());
-    if (isUSD) { // Round USD to two decimals
-      item.amount = helper.roundToDecimal(item.amount, 2);
-      item.line_total = helper.roundToDecimal(item.line_total, 2);
-    }
-    // If our calculated line total has more than 8 decimals round to 8
-    else if (helper.decimalPlaces(item.line_total) > 8) {
-      item.line_total = helper.roundToDecimal(item.line_total, 8);
-    }
-  });
-};
-
-// Returns the latest payment object
-var getActivePayment = function(paymentsArr) {
-  var activePayment;
-  paymentsArr.forEach(function(payment) {
-    if (activePayment) {
-      activePayment = payment.created > activePayment.created ? payment : activePayment;
-    }
-    else {
-      activePayment = payment;
-    }
-  });
-  return activePayment;
-};
-
-// Calculates the invoice's paid amount
-var getTotalPaid = function(invoice, paymentsArr) {
-  var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = new BigNumber(0);
-  paymentsArr.forEach(function(payment) {
-    var paidAmount = payment.amount_paid;
-    if (paidAmount) {
-      paidAmount = new BigNumber(paidAmount);
-      // If invoice is in USD then we must multiply the amount paid (BTC) by the spot rate (USD)
-      if (isUSD) {
-        var usdAmount = helper.roundToDecimal(paidAmount.times(payment.spot_rate).valueOf(), 2);
-        totalPaid = totalPaid.plus(usdAmount);
-      }
-      else {
-        totalPaid = totalPaid.plus(paidAmount);
-      }
-    }
-  });
-  if (isUSD) {
-    totalPaid = helper.roundToDecimal(Number(totalPaid.valueOf()), 2);
-  }
-  return totalPaid;
-};
+}
 
 // Handles case where user sends multiple payments to same address
 // Creates payment with transaction data from listsinceblock or walletnotify
-var createNewPaymentWithTransaction = function(invoiceId, transaction, isWalletNotify, cb) {
+function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
     if (err) { return cb(err, null); }
@@ -215,30 +279,24 @@ var createNewPaymentWithTransaction = function(invoiceId, transaction, isWalletN
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
         var rate = new BigNumber(tickerData.vwap);
-        
-        // Transactions from wallet notify are different from transactions from insight
-        // Wallet Notify tx's have a details array and insight tx's dont.
-        var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
         var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
         var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
-
         var isUSD = invoice.currency.toUpperCase() === 'USD';
         if (isUSD) {
-          var actualPaid = helper.roundToDecimal(rate.times(receiveDetail.amount).valueOf(), 2);
+          var actualPaid = helper.roundToDecimal(rate.times(transaction.amount).valueOf(), 2);
           var closeEnough = new BigNumber(actualPaid).equals(helper.roundToDecimal(remainingBalance, 2));
           if (closeEnough) {
-            remainingBalance = receiveDetail.amount;
+            remainingBalance = transaction.amount;
           }
           else {
             remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
           }
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
-
         var payment = {
           invoice_id: invoiceId,
-          address: receiveDetail.address,
-          amount_paid: Number(receiveDetail.amount),
+          address: transaction.address,
+          amount_paid: Number(transaction.amount),
           expected_amount: Number(remainingBalance),
           block_hash: transaction.blockhash ? transaction.blockhash : null,
           spot_rate: Number(rate.valueOf()), // Exchange rate at time of payment
@@ -249,94 +307,30 @@ var createNewPaymentWithTransaction = function(invoiceId, transaction, isWalletN
           watched: true,
           type: 'payment'
         };
-
         payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-
         db.insert(payment, cb);
       }
       else { return cb(err, null); }
     });
   });
-};
-
-// Calculates the invoice's remaining balance
-var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
-  var isUSD = invoice.currency.toUpperCase() === 'USD';
-  var totalPaid = new BigNumber(getTotalPaid(invoice, paymentsArr));
-  var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
-  if (isUSD) {
-    var curTime = new Date().getTime();
-    bitstamped.getTicker(curTime, function(err, docs) {
-      if (!err && docs.rows && docs.rows.length > 0) {
-        var tickerData = docs.rows[0].value; // Get ticker object
-        var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price
-        remainingBalance = Number(remainingBalance.dividedBy(rate).valueOf());
-        remainingBalance = helper.roundToDecimal(remainingBalance, 8);
-        return cb(null, Number(remainingBalance));
-      }
-      else { return cb(err, null); }
-    });
-  }
-  else { return cb(null, Number(remainingBalance.valueOf())); }
-};
-
-// Creates a new payment object associated with invoice
-var createNewPayment = function(invoiceId, expectedAmount, cb) {
-  db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
-    if (!err && invoice && paymentsArr.length > 0) {
-      var activePayment = getActivePayment(paymentsArr);
-      if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
-        resetPayment(activePayment, expectedAmount, cb);
-        return;
-      }
-    }
-
-    bitcoinUtil.getPaymentAddress(function(err, info) {
-      if (err) { return cb(err, null); }
-      else {
-        insertPayment(invoiceId, info.result, expectedAmount, cb);
-      }
-    });
-  
-  });
-};
-
-// Returns array of payments that are not in unpaid status
-var getPaymentHistory = function(paymentsArr) {
-  var history = [];
-  paymentsArr.forEach(function(payment) {
-    var status = payment.status;
-    if(status.toLowerCase() !== 'unpaid' && payment.tx_id) {
-      history.push(payment);
-    }
-    // Capitalizing first letter of payment status for display in invoice view
-    payment.status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  });
-  return history;
-};
+}
 
 // Updates payment with walletnotify data
-var updatePayment = function(transaction, isWalletNotify, cb) {
-  var receiveDetail = isWalletNotify ? helper.getReceiveDetail(transaction.details) : transaction;
-  if (!receiveDetail) {
-   return cb('Wallet notify contained no relevant payment data.', undefined);
-  }
-  var address = receiveDetail.address;
-  var ntxId = transaction.normtxid;
-  db.findPaymentByNormalizedTxId(ntxId, function(err, payment) {
+var updatePayment = function(transaction, cb) {
+  db.findPaymentByNormalizedTxId(transaction.normtxid, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
-      updatePaymentWithTransaction(payment, transaction, isWalletNotify, cb);
+      updatePaymentWithTransaction(payment, transaction, cb);
     }
     else {
       // look up payment by address, should al
-      db.findPayments(address, function(err, paymentsArr) {
+      db.findPayments(transaction.address, function(err, paymentsArr) {
         if (err || !paymentsArr) { return cb(err, undefined); }
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
           if (!payment.ntx_id) {
             // Initial update from walletnotify
-            updatePaymentWithTransaction(payment, transaction, isWalletNotify, cb);
+            updatePaymentWithTransaction(payment, transaction, cb);
           }
           else {
             invoiceId = payment.invoice_id;
@@ -344,7 +338,7 @@ var updatePayment = function(transaction, isWalletNotify, cb) {
         });
         if (invoiceId) {
           // Create new payment for same invoice as pre-existing payment
-          createNewPaymentWithTransaction(invoiceId, transaction, isWalletNotify, cb);
+          createNewPaymentWithTransaction(invoiceId, transaction, cb);
         }
       });
     }
@@ -359,7 +353,5 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
-  createNewPaymentWithTransaction: createNewPaymentWithTransaction,
-  updatePaymentWithTransaction: updatePaymentWithTransaction,
 };
 

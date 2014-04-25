@@ -30,8 +30,6 @@ var getBlock = function(blockHash, cb){
     }
     catch (err) {
       console.log(err);
-      console.log(body);
-      console.log(blockHash);
       return cb(err, undefined);
     }
   });

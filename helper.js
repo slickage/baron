@@ -43,30 +43,22 @@ var getReceiveDetail = function(details) {
 var getExpirationCountDown = function (expiration) {
   var curTime = new Date().getTime();
   var diff = expiration - curTime;
-
   var days = Math.floor(diff / 1000 / 60 / 60 / 24);
   diff -= days * 1000 * 60 * 60 * 24;
-
   var hours = Math.floor(diff / 1000 / 60 / 60);
   diff -= hours * 1000 * 60 * 60;
-
   var mins = Math.floor(diff / 1000 / 60);
   diff -= mins * 1000 * 60;
-
   var secs = Math.floor(diff / 1000);
-
-  var result;
   if (days === 0 && hours !== 0) {
-    result = hours + 'h ' + mins + 'm ' + secs + 's';
+    return hours + 'h ' + mins + 'm ' + secs + 's';
   }
   else if (days === 0 && hours === 0) {
-    result = mins + 'm ' + secs + 's';
+    return mins + 'm ' + secs + 's';
   }
   else {
-    result = days + 'd ' + hours + 'h ' + mins + 'm ' + secs + 's';
+    return days + 'd ' + hours + 'h ' + mins + 'm ' + secs + 's';
   }
-
-  return result;
 };
 
 // Returns status of payment
