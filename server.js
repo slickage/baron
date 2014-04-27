@@ -13,7 +13,7 @@ require('./db').instantiateDb();
 require('./routes')(app);
 require('bitstamped');
 blockJob.runLastBlockJob();
-setTimeout(watchJob.runWatchPaymentsJob(), config.lastBlockJobInterval / 2);
+watchJob.runWatchPaymentsJob();
 
 app.listen(config.port);
 console.log('HTTP Server on port: ' + config.port);

@@ -62,7 +62,6 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
   }
 
   // Get Confirmations
-  console.log(activePayment.block_hash);
   api.getBlock(activePayment.block_hash, function(err, block) {
     var confirmations = 0;
     if (err || !block) {
