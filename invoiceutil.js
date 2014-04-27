@@ -234,7 +234,7 @@ function validateTransactionBlock(payment, transaction, cb) {
   }
 }
 
-function processReorgedPayment(payment, blockHash) {
+var processReorgedPayment = function(payment, blockHash) {
   payment.block_hash = null;
   var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
   if (!lodash.contains(reorgHistory, blockHash)) {
@@ -242,7 +242,7 @@ function processReorgedPayment(payment, blockHash) {
   }
   payment.reorg_history = reorgHistory;
   payment.status = 'pending'; // set status back to pending
-}
+};
 
 var processReorgedPayments = function (blockHash) {
   db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
@@ -433,6 +433,7 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
+  processReorgedPayment: processReorgedPayment,
   processReorgedPayments: processReorgedPayments,
   processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent
 };

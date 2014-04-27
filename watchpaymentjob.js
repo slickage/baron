@@ -3,6 +3,7 @@ var request = require('request');
 var helper = require('./helper');
 var db = require('./db');
 var lodash = require('lodash');
+var invoiceUtil = require('./invoiceutil');
 
 // TODO: This job can be removed in the future, we can calculate
 // The confirmations of our watched payments based on our stored
@@ -12,6 +13,7 @@ function updateWatchedPayment(payment, invoice, body) {
   var oldStatus = payment.status;
   var oldBlockHash = payment.block_hash;
   var oldDoubleSpent = payment.double_spent_history;
+  var oldReorgHist = payment.reorg_history;
   var transaction;
   try {
     transaction = JSON.parse(body);
@@ -21,12 +23,18 @@ function updateWatchedPayment(payment, invoice, body) {
     transaction = null;
   }
   if (transaction) {
+    var reorgedHash;
+    if (!transaction.blocktime) {
+      reorgedHash = transaction.blockhash;
+      transaction.blockhash = null;
+    }
     var newConfirmations = transaction.confirmations;
     var newBlockHash = transaction.blockhash ? transaction.blockhash : null;
     payment.block_hash = newBlockHash;
-    // Dont update block_hash for reorged payments until reconfirmed into new block
-    if (payment.reorg_history && transaction.confirmations === 0) {
-      payment.block_hash = null;
+    // If our payment was in a block and tx doesnt have a blocktime now
+    // that means the block was reorged. blocktime is removed when tx is orphaned
+    if (reorgedHash) {
+      invoiceUtil.processReorgedPayment(payment, reorgedHash);
     }
     if (payment.reorg_history) {
       // Check for double spends
@@ -48,11 +56,14 @@ function updateWatchedPayment(payment, invoice, body) {
     if (lodash.contains(payment.reorg_history, newBlockHash) && !payment.block_hash) {
       blockHashChanged = false;
     }
+    var reorgHistChanged = (payment.reorg_history && oldReorgHist &&
+                           payment.reorg_history.length !== oldReorgHist.length) ||
+                           (payment.reorg_history && !oldReorgHist);
     var doubleSpentChanged = (payment.double_spent_history && oldDoubleSpent &&
                              payment.double_spent_history.length !== oldDoubleSpent.length) ||
                              (payment.double_spent_history && !oldDoubleSpent);
     payment.watched = !stopTracking;
-    if (stopTracking || statusChanged || blockHashChanged || doubleSpentChanged) {
+    if (stopTracking || statusChanged || blockHashChanged || doubleSpentChanged || reorgHistChanged) {
       db.insert(payment);
     }
   }
