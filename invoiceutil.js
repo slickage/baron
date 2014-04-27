@@ -6,6 +6,7 @@ var bitcoinUtil = require('./bitcoinutil');
 var db = require('./db');
 var api = require('./insightapi');
 var config = require('./config');
+var lodash = require('lodash');
 
 // ===============================================
 // Miscellaneous Invoice Utilities
@@ -191,18 +192,17 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
       var activePayment = getActivePayment(paymentsArr);
       if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
         resetPayment(activePayment, expectedAmount, cb);
+        return;
       }
     }
-    else {
-      bitcoinUtil.getPaymentAddress(function(err, info) {
-        if (err) {
-          return cb(err, null);
-        }
-        else {
-          insertPayment(invoiceId, info.result, expectedAmount, cb);
-        }
-      });
-    }
+    bitcoinUtil.getPaymentAddress(function(err, info) {
+      if (err) {
+        return cb(err, null);
+      }
+      else {
+        insertPayment(invoiceId, info.result, expectedAmount, cb);
+      }
+    });
   });
 };
 
@@ -217,9 +217,12 @@ function validateTransactionBlock(payment, transaction, cb) {
         return cb(err, false, false);
       }
       var blockIsValid = validate.block(block);
+      // Block is invalid and payment and transaction blockhash match
       var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;
+      // Incoming block is valid and payment and transaction hash both are populated but dont match
+      var blockHashChanged = blockIsValid && payment.block_hash && transaction.blockhash && payment.block_hash !== transaction.blockhash;
       // Block isnt valid and payment.block_hash === transaction.blockhash.
-      return cb(null, blockIsValid, isReorg);
+      return cb(null, blockIsValid, isReorg || blockHashChanged);
     });
   }
   else if (!transaction.blockhash && payment.block_hash) { // Reorg
@@ -231,29 +234,77 @@ function validateTransactionBlock(payment, transaction, cb) {
   }
 }
 
+function processReorgedPayment(payment, blockHash) {
+  payment.block_hash = null;
+  var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
+  if (!lodash.contains(reorgHistory, blockHash)) {
+    reorgHistory.push(blockHash);
+  }
+  payment.reorg_history = reorgHistory;
+  payment.status = 'pending'; // set status back to pending
+}
+
+var processReorgedPayments = function (blockHash) {
+  db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
+    if (err) {
+      return console.log(err);
+    }
+    if (paymentsArr) {
+      paymentsArr.forEach(function (payment) {
+        processReorgedPayment(payment, blockHash);
+        db.insert(payment);
+      });
+    }
+  });
+};
+
+var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
+  if (transaction.normtxid && transaction.walletconflicts.length > 0) {
+    db.findPaymentByNormalizedTxId(transaction.normtxid, function(err, payment) {
+      if (err) {
+        return cb ? cb(err) : null;
+      }
+      //TODO: Notify Admin of Double Spend
+      payment.double_spent_history = transaction.walletconflicts;
+      processReorgedPayment(payment, blockHash);
+      db.insert(payment, cb);
+    });
+  }
+};
+
 // Updates payment with transaction data from listsinceblock or walletnotify
 function updatePaymentWithTransaction(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) {
-      return cb(err, null);
+      return cb(err);
     }
     validateTransactionBlock(payment, transaction, function(err, blockIsValid, isReorg) {
       if (err) {
-        return cb(err, null);
+        return cb(err);
       }
+      var oldBlockHash = payment.block_hash;
       if (blockIsValid) {
-        var newStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-        if(validate.paymentChanged(payment, transaction, newStatus)) {
+        var curStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+        if(validate.paymentChanged(payment, transaction, curStatus)) {
           var amount = transaction.amount;
           payment.amount_paid = amount;
           payment.tx_id = transaction.txid;
           payment.ntx_id = transaction.normtxid;
+          if (isReorg) {
+            var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
+            if (!lodash.contains(reorgHistory, oldBlockHash)) {
+              reorgHistory.push(oldBlockHash);
+            }
+            payment.reorgHistory = reorgHistory;
+            if (transaction.normtxid && transaction.walletconflicts.length > 0) {
+              payment.double_spent_history = transaction.walletconflicts;
+            }
+          }
           payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
           payment.paid_timestamp = transaction.time * 1000;
           if (payment.status === 'unpaid') {
             payment.watched = true;
           }
-          payment.status = newStatus;
           var isUSD = invoice.currency.toUpperCase() === 'USD';
           if (isUSD) {
             var actualPaid = new BigNumber(amount).times(payment.spot_rate);
@@ -265,22 +316,28 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
               payment.expected_amount = amount;
             }
           }
-          db.insert(payment, cb);
+          payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+          db.insert(payment, function (err) {
+            if (isReorg) {
+              processReorgedPayments(oldBlockHash);
+            }
+            return cb(err);
+          });
         }
         else {
           var error = new Error('No changes to update.');
-          return cb(error, null);
+          return cb(error);
         }
       }
       else if (isReorg) {
-        // Clear payments block_hash if it was storing the invalid one.
-        payment.block_hash = null;
-        // Transaction.confirmations should be 0 this should put payment back to pending
-        // This is technically a reorg though. TODO.
-        // payment.reorg = true; Should we add this?
-        payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
-        console.log('REORG: Payment Reorged. Clearing blockhash.');
-        db.insert(payment);
+        // Check for doublespend
+        processReorgAndCheckDoubleSpent(transaction, payment.block_hash, function(err) {
+          if (err) {
+            return cb(err);
+          }
+          // If no double spend process reorg for all payments with block hash
+          processReorgedPayments(payment.block_hash);
+        });
       }
     });
   });
@@ -292,7 +349,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   var paidTime = transaction.time * 1000;
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
     if (err) {
-      return cb(err, null);
+      return cb(err);
     }
     bitstamped.getTicker(paidTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
@@ -330,7 +387,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         db.insert(payment, cb);
       }
       else {
-        return cb(err, null);
+        return cb(err);
       }
     });
   });
@@ -376,5 +433,7 @@ module.exports = {
   createNewPayment: createNewPayment,
   getPaymentHistory: getPaymentHistory,
   updatePayment: updatePayment,
+  processReorgedPayments: processReorgedPayments,
+  processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent
 };
 

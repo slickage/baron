@@ -62,6 +62,7 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
   }
 
   // Get Confirmations
+  console.log(activePayment.block_hash);
   api.getBlock(activePayment.block_hash, function(err, block) {
     var confirmations = 0;
     if (err || !block) {
@@ -82,7 +83,7 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
       remainingBalance: remainingBalance,
       invoicePaid: invoicePaid,
       invoiceId: invoice._id,
-      showRefresh: isUSD, // Refresh is only needed for invoices in USD
+      isUSD: isUSD, // Refresh is only needed for invoices in USD
       url: url,
       status: activePayment.status,
       address: activePayment.address,

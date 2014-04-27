@@ -30,22 +30,6 @@ function getLastBlockHash(cb) {
   });
 }
 
-function processReorgedPayments(blockHash) {
-  db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
-    if (err) {
-      return console.log(err);
-    }
-    if (paymentsArr) {
-      paymentsArr.forEach(function (payment) {
-        payment.block_hash = null;
-        console.log('REORG: Payment Reorged. Clearing blockhash.');
-        // payment.reorg = true; TODO: Should we add this?
-        db.insert(payment);
-      });
-    }
-  });
-}
-
 function processBlockHash(blockHashObj) {
   var blockHash = blockHashObj.hash;
   api.getBlock(blockHash, function(err, block) {
@@ -56,13 +40,15 @@ function processBlockHash(blockHashObj) {
       return console.log(err);
     }
     console.log('> Block Valid: ' + validate.block(block));
-    // If valid get transactions since last block (bitcore)
-    if (validate.block(block)) {
-      // Get List Since Block 
-      bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
-        if (err) { return console.log(err); }
-        var transactions = info.result.transactions;
-        var lastBlockHash = info.result.lastblock;
+    // Get List Since Block 
+    bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
+      if (err) {
+        return console.log(err);
+      }
+      // If valid get transactions since last block (bitcore)
+      var transactions = info.result.transactions;
+      var lastBlockHash = info.result.lastblock;
+      if (validate.block(block)) {
         // Query couch for existing payments by ntxid if found update
         transactions.forEach(function(transaction) {
           if (!transaction.normtxid || !transaction.address || transaction.amount < 0) {
@@ -70,7 +56,7 @@ function processBlockHash(blockHashObj) {
           }
           invoiceUtil.updatePayment(transaction, function(err) {
             if (err) {
-              console.log('Error updating payment with ntxid: ' + transaction.normtxid);
+             return console.log('Error updating payment with ntxid: ' + transaction.normtxid);
             }
           });
         });
@@ -78,16 +64,19 @@ function processBlockHash(blockHashObj) {
           blockHashObj.hash = lastBlockHash; // update to latest block
           db.insert(blockHashObj); // insert updated last block into db
         }
-      });
+      }
+      else { // If invalid update all transactions in block and step back
+        transactions.forEach(function(transaction) {
+          invoiceUtil.processReorgAndCheckDoubleSpent(transaction, block.hash);
+        }); // For each should block until complete
+        invoiceUtil.processReorgedPayments(block.hash);
+        // Update reorged transactions (set block_hash = null)
+        console.log('REORG: Recursively processing previous block: ' + block.previousblockhash);
+        // Recursively check previousHash
+        blockHashObj.hash = block.previousblockhash;
+        processBlockHash(blockHashObj);
     }
-    else { // If invalid update all transactions in block and step back
-      // Update reorged transactions (set block_hash = null)
-      processReorgedPayments(block.hash);
-      console.log('REORG: Recursively handling processing previous block.');
-      // Recursively check previousHash
-      blockHashObj.hash = block.previousblockhash;
-      processBlockHash(blockHashObj);
-    }
+    });
   });
 }
 

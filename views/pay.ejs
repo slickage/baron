@@ -75,7 +75,7 @@
         <% if (ntxId) { %>
           <span class="green"> Sent</span>
         <% } %>
-        <% if (!ntxId && showRefresh) { %>
+        <% if (!ntxId && isUSD) { %>
           <a href="<%= invoiceId %>">
             <img class="right-icon" src="/images/refresh.png" />
           </a>
@@ -88,8 +88,8 @@
           </a>
         <% } %>
         <input type="text" class="form-control address-spacer" value="<%= address %>" />
-        <% if (!ntxId) { %>
-          <span class="red">Payment address is valid for the next <%= expires %>.</span>
+        <% if (!ntxId && isUSD) { %>
+          <span class="red">Payment rate will refresh in <%= expires %>.</span>
         <% } %>
       </div>
 
@@ -122,7 +122,7 @@
             <% if (ntxId) { %>
               <span class="green"> Sent</span>
             <% } %>
-            <% if (!ntxId  && showRefresh) { %>
+            <% if (!ntxId  && isUSD) { %>
               <a href="<%= invoiceId %>">
                 <img class="right-icon" src="/images/refresh.png" />
               </a>
@@ -136,8 +136,8 @@
             <% } %>
             <input type="text" class="form-control address-spacer" value="<%= address %>" />
           </div>
-          <% if (!ntxId) { %>
-            <span class="red">Payment address is valid for the next <%= expires %>.</span>
+          <% if (!ntxId && isUSD) { %>
+            <span class="red">Payment rate will refresh in <%= expires %>.</span>
           <% } %>
       </div>
 

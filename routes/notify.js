@@ -14,17 +14,22 @@ var notify = function(app) {
       else {
         var transaction = info.result;
         var receiveDetail = helper.getReceiveDetail(transaction.details);
-        transaction.address = receiveDetail.address;
-        transaction.amount = receiveDetail.amount;
-        invoiceUtil.updatePayment(transaction, function(err) {
-          if (err) {
-            res.send(500);
-            console.log(err);
-          }
-          else {
-            res.end();
-          }
-        });
+        if (receiveDetail) {
+          transaction.address = receiveDetail.address;
+          transaction.amount = receiveDetail.amount;
+          invoiceUtil.updatePayment(transaction, function(err) {
+            if (err) {
+              res.send(500);
+              console.log(err);
+            }
+            else {
+              res.end();
+            }
+          });
+        }
+        else {
+          res.end();
+        }
       }
     });
   });
