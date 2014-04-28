@@ -165,7 +165,6 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
         created: new Date().getTime(),
         paid_timestamp: null,
         tx_id: null, // Bitcoind txid for transaction
-        ntx_id: null, // Normalized txId
         watched: true, // Watch payments till 100 conf or expired
         type: 'payment'
       };
@@ -259,8 +258,8 @@ var processReorgedPayments = function (blockHash) {
 };
 
 var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
-  if (transaction.normtxid && transaction.walletconflicts.length > 0) {
-    db.findPaymentByNormalizedTxId(transaction.normtxid, function(err, payment) {
+  if (transaction.txid && transaction.walletconflicts.length > 0) {
+    db.findPaymentByTxId(transaction.txid, function(err, payment) {
       if (err) {
         return cb ? cb(err) : null;
       }
@@ -289,14 +288,13 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
           var amount = transaction.amount;
           payment.amount_paid = amount;
           payment.tx_id = transaction.txid;
-          payment.ntx_id = transaction.normtxid;
           if (isReorg) {
             var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
             if (!lodash.contains(reorgHistory, oldBlockHash)) {
               reorgHistory.push(oldBlockHash);
             }
             payment.reorgHistory = reorgHistory;
-            if (transaction.normtxid && transaction.walletconflicts.length > 0) {
+            if (transaction.txid && transaction.walletconflicts.length > 0) {
               payment.double_spent_history = transaction.walletconflicts;
             }
           }
@@ -379,7 +377,6 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           created: new Date().getTime(),
           paid_timestamp: paidTime,
           tx_id: transaction.txid, // Bitcoind txid for transaction
-          ntx_id: transaction.normtxid, // Normalized txId
           watched: true,
           type: 'payment'
         };
@@ -395,7 +392,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
 
 // Updates payment with walletnotify data
 var updatePayment = function(transaction, cb) {
-  db.findPaymentByNormalizedTxId(transaction.normtxid, function(err, payment) {
+  db.findPaymentByTxId(transaction.txid, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, cb);
@@ -408,7 +405,7 @@ var updatePayment = function(transaction, cb) {
         }
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
-          if (!payment.ntx_id) {
+          if (!payment.tx_id) {
             // Initial update from walletnotify
             updatePaymentWithTransaction(payment, transaction, cb);
           }

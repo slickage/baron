@@ -19,7 +19,7 @@ function findOrCreatePayment(invoiceId, cb) {
       return cb(expiredErr, null);
     }
 
-    if (activePayment && activePayment.watched) {
+    if (activePayment && (activePayment.watched || activePayment.status === 'paid' || activePayment.status === 'overpaid')) {
       var invoiceIsPaid = new BigNumber(activePayment.amount_paid).gte(activePayment.expected_amount);
       var invoiceIsUnpaid = new BigNumber(activePayment.amount_paid).equals(0);
       if (invoiceIsPaid || invoiceIsUnpaid) {
@@ -87,7 +87,7 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
       status: activePayment.status,
       address: activePayment.address,
       confirmations: confirmations,
-      ntxId: activePayment.ntx_id,
+      txId: activePayment.tx_id,
       amount: amountToDisplay,
       amountFirstFour: helper.toFourDecimals(amountToDisplay),
       amountLastFour: helper.getLastFourDecimals(amountToDisplay),

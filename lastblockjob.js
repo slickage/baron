@@ -49,9 +49,8 @@ function processBlockHash(blockHashObj) {
       var transactions = info.result.transactions;
       var lastBlockHash = info.result.lastblock;
       if (validate.block(block)) {
-        // Query couch for existing payments by ntxid if found update
         transactions.forEach(function(transaction) {
-          if (!transaction.normtxid || !transaction.address || transaction.amount < 0) {
+          if (!transaction.txid || !transaction.address || transaction.amount < 0) {
             return;
           }
           invoiceUtil.updatePayment(transaction, function(err) {

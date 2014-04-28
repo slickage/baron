@@ -73,8 +73,8 @@ var findPayments = function(address, cb) {
   });
 };
 
-var findPaymentByNormalizedTxId = function(ntxId, cb) {
-  baronDb.view(dbName, 'paymentsNormalizedTxId', { key:ntxId }, function(err, body) {
+var findPaymentByTxId = function(txId, cb) {
+  baronDb.view(dbName, 'paymentsTxId', { key:txId }, function(err, body) {
     var payment = null;
     if (!err && body.rows && body.rows.length > 0) {
       payment = body.rows[0].value;
@@ -83,7 +83,7 @@ var findPaymentByNormalizedTxId = function(ntxId, cb) {
       return cb(null, payment);
     }
     else if (!payment)  {
-      var error = new Error('No invoice matching ntx_id: ' + ntxId);
+      var error = new Error('No invoice matching tx_id: ' + txId);
       return cb(error, null);
     } else {
       return cb(err, null);
@@ -168,7 +168,7 @@ module.exports = {
   findInvoiceAndPayments: findInvoiceAndPayments,
   findPaymentById: findPaymentById,
   findPayments: findPayments,
-  findPaymentByNormalizedTxId: findPaymentByNormalizedTxId,
+  findPaymentByTxId: findPaymentByTxId,
   findInvoice: findInvoice,
   getWatchedPayments: getWatchedPayments,
   getPaymentByBlockHash: getPaymentByBlockHash,

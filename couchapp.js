@@ -52,10 +52,10 @@ ddoc.views.paymentsBlockHash = {
   }
 };
 
-ddoc.views.paymentsNormalizedTxId = {
+ddoc.views.paymentsTxId = {
   map: function(doc) {
     if (doc.type === 'payment') {
-      emit(doc.ntx_id, doc);
+      emit(doc.tx_id, doc);
     }
   }
 };
