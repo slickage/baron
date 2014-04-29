@@ -34,9 +34,12 @@ var paymentChanged = function(payment, transaction, newStatus) {
   var oldPaidTime = payment.paid_timestamp;
   var newPaidTime = transaction.time * 1000;
   var oldStatus = payment.status;
+  var oldDoubleSpentHist = payment.double_spent_history ? payment.double_spent_history : [];
+  var newDoubleSpentHist = transaction.walletconflicts ? transaction.walletconflicts : [];
 
   return oldAmount !== newAmount || oldTxId !== newTxId ||
-    oldBlockHash !== newBlockHash || oldPaidTime !== newPaidTime || oldStatus !== newStatus;
+    oldBlockHash !== newBlockHash || oldPaidTime !== newPaidTime ||
+    oldStatus !== newStatus || oldDoubleSpentHist.length !== newDoubleSpentHist.length;
 };
 
 module.exports = {

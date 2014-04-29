@@ -1,4 +1,4 @@
-var lodash = require('lodash');
+var _ = require('lodash');
 
 var localConfig = {
   port: process.env.PORT || 8080,
@@ -26,4 +26,4 @@ var localConfig = {
 };
 
 // Do a union on local config and passed in config
-module.exports = global.externalConfig ? lodash.extend(localConfig, global.externalConfig) : localConfig;
+module.exports = global.externalConfig ? _.extend(localConfig, global.externalConfig) : localConfig;

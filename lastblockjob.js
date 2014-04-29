@@ -50,9 +50,6 @@ function processBlockHash(blockHashObj) {
       var lastBlockHash = info.result.lastblock;
       if (validate.block(block)) {
         transactions.forEach(function(transaction) {
-          if (!transaction.txid || !transaction.address || transaction.amount < 0) {
-            return;
-          }
           invoiceUtil.updatePayment(transaction, function(err) {
             if (err) {
               return;

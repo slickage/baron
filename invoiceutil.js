@@ -6,7 +6,7 @@ var bitcoinUtil = require('./bitcoinutil');
 var db = require('./db');
 var api = require('./insightapi');
 var config = require('./config');
-var lodash = require('lodash');
+var _ = require('lodash');
 
 // ===============================================
 // Miscellaneous Invoice Utilities
@@ -235,11 +235,13 @@ function validateTransactionBlock(payment, transaction, cb) {
 
 var processReorgedPayment = function(payment, blockHash) {
   payment.block_hash = null;
-  var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
-  if (!lodash.contains(reorgHistory, blockHash)) {
-    reorgHistory.push(blockHash);
+  if (blockHash) {
+    var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
+    if (!_.contains(reorgHistory, blockHash)) {
+      reorgHistory.push(blockHash);
+    }
+    payment.reorg_history = reorgHistory;
   }
-  payment.reorg_history = reorgHistory;
   payment.status = 'pending'; // set status back to pending
 };
 
@@ -264,8 +266,12 @@ var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
         return cb ? cb(err) : null;
       }
       //TODO: Notify Admin of Double Spend
-      payment.double_spent_history = transaction.walletconflicts;
-      processReorgedPayment(payment, blockHash);
+      if (transaction.walletconflicts.length > 0) {
+        payment.double_spent_history = transaction.walletconflicts;
+      }
+      if (blockHash) {
+        processReorgedPayment(payment, blockHash);
+      }
       db.insert(payment, cb);
     });
   }
@@ -285,19 +291,19 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
       if (blockIsValid) {
         var curStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
         if(validate.paymentChanged(payment, transaction, curStatus)) {
-          var amount = transaction.amount;
-          payment.amount_paid = amount;
-          payment.tx_id = transaction.txid;
-          if (isReorg) {
+          if (isReorg) { // Handle Reorg History.
             var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
-            if (!lodash.contains(reorgHistory, oldBlockHash)) {
+            if (!_.contains(reorgHistory, oldBlockHash)) {
               reorgHistory.push(oldBlockHash);
             }
             payment.reorgHistory = reorgHistory;
-            if (transaction.txid && transaction.walletconflicts.length > 0) {
-              payment.double_spent_history = transaction.walletconflicts;
-            }
           }
+          if (transaction.walletconflicts.length > 0) { // Handle Double Spent History.
+            payment.double_spent_history = transaction.walletconflicts;
+          }
+          var amount = transaction.amount;
+          payment.amount_paid = amount;
+          payment.tx_id = transaction.txid;
           payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
           payment.paid_timestamp = transaction.time * 1000;
           if (payment.status === 'unpaid') {
@@ -314,6 +320,7 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
               payment.expected_amount = amount;
             }
           }
+          // Update status after updating amounts to see if it changed.
           payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
           db.insert(payment, function (err) {
             if (isReorg) {
@@ -381,6 +388,20 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           type: 'payment'
         };
         payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+
+        // New transaction to known address has wallet conflicts. This indicates that 
+        // this transaction is a mutated tx of a known payment.
+        if (transaction.walletconflicts.length > 0) {
+          payment.double_spent_history = transaction.walletconflicts;
+          var latestConflictingTx = transaction.walletconflicts[transaction.walletconflicts.length - 1];
+          // Need to grab spot rate and expected_amount from conflicting payment
+          paymentsArr.forEach(function(curPayment) {
+            if (curPayment.tx_id === latestConflictingTx) {
+              payment.expected_amount = curPayment.expected_amount;
+              payment.spot_rate = curPayment.spot_rate;
+            }
+          });
+        }
         db.insert(payment, cb);
       }
       else {
@@ -392,16 +413,20 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
 
 // Updates payment with walletnotify data
 var updatePayment = function(transaction, cb) {
+  if (!transaction.txid || !transaction.address || transaction.amount < 0) {
+    var error = new Error('Ignoring irrelevant transaction.');
+    return cb(error, null);
+  }
   db.findPaymentByTxId(transaction.txid, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, cb);
     }
     else {
-      // look up payment by address, should al
+      // look up payment by address, maybe it hasnt got a txid yet
       db.findPayments(transaction.address, function(err, paymentsArr) {
-        if (err || !paymentsArr) {
-          return cb(err, undefined);
+        if (err) {
+          return cb(err, null);
         }
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {

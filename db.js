@@ -67,9 +67,10 @@ var findPayments = function(address, cb) {
           paymentsArr.push(row.value);
         }
       });
-      return cb(err, paymentsArr);
+      return cb(null, paymentsArr);
     }
-    return cb(err, null);
+    var noPaymentsFoundErr = new Error('No payments found.');
+    return cb(noPaymentsFoundErr, null);
   });
 };
 

@@ -2,7 +2,7 @@ var config = require('./config');
 var request = require('request');
 var helper = require('./helper');
 var db = require('./db');
-var lodash = require('lodash');
+var _ = require('lodash');
 var invoiceUtil = require('./invoiceutil');
 
 // TODO: This job can be removed in the future, we can calculate
@@ -24,9 +24,12 @@ function updateWatchedPayment(payment, invoice, body) {
   }
   if (transaction) {
     var reorgedHash;
-    if (!transaction.blocktime) {
+    // If a transaction doesnt have blocktime but has a blockhash 
+    // it's block was reorged
+    if (!transaction.blocktime && transaction.blockhash) {
       reorgedHash = transaction.blockhash;
       transaction.blockhash = null;
+      transaction.confirmations = -1; // setting to -1 to match txs coming from bitcoind
     }
     var newConfirmations = transaction.confirmations;
     var newBlockHash = transaction.blockhash ? transaction.blockhash : null;
@@ -36,24 +39,26 @@ function updateWatchedPayment(payment, invoice, body) {
     if (reorgedHash) {
       invoiceUtil.processReorgedPayment(payment, reorgedHash);
     }
-    if (payment.reorg_history) {
-      // Check for double spends
+
+    // Check for double spends
+    if (transaction.vin) {
       transaction.vin.forEach(function(input) {
         if (input.doubleSpentTxID) {
           payment.double_spent_history = payment.double_spent_history ? payment.double_spent_history : [];
-          if (!lodash.contains(payment.double_spent_history, input.doubleSpentTxID)) {
+          if (!_.contains(payment.double_spent_history, input.doubleSpentTxID)) {
             payment.double_spent_history.push(input.doubleSpentTxID);
           }
         }
       });
     }
+
     var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
     payment.status = oldStatus === newStatus ? oldStatus : newStatus;
     // payments confirmations have reached 100 (Default) confs stop watching.
     var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
     var statusChanged = newStatus && newStatus !== oldStatus;
     var blockHashChanged = newBlockHash && newBlockHash !== oldBlockHash;
-    if (lodash.contains(payment.reorg_history, newBlockHash) && !payment.block_hash) {
+    if (_.contains(payment.reorg_history, newBlockHash) && !payment.block_hash) {
       blockHashChanged = false;
     }
     var reorgHistChanged = (payment.reorg_history && oldReorgHist &&
