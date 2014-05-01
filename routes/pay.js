@@ -87,7 +87,7 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
       status: activePayment.status,
       address: activePayment.address,
       confirmations: confirmations,
-      txId: activePayment.tx_id,
+      txId: activePayment.tx_id ? activePayment.tx_id : null,
       amount: amountToDisplay,
       amountFirstFour: helper.toFourDecimals(amountToDisplay),
       amountLastFour: helper.getLastFourDecimals(amountToDisplay),
