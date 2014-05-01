@@ -25,6 +25,10 @@ a:hover, a:active {
   color: #999;
 }
 
+.btn {
+  font-weight: 300;
+}
+
 .medium-text {
   font-size: 28px;
   word-wrap: break-word;
@@ -33,7 +37,6 @@ a:hover, a:active {
 .mobile-lbl-text {
   padding-top:10px;
   font-size: 18px; 
-  word-wrap: break-word;
 }
 
 .mobile-text {
