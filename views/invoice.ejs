@@ -160,8 +160,8 @@
             <% payment.reorg_history.forEach(function(blockHash) { %>
               <div class="row indent line-item thin-underline">
                 <div class="col-xs-12 xsmall-text">
-                  Payment was reorged at block: 
-                  <span class="red"><%= blockHash %></span>
+                  <span class="red">Payment was reorged at block: </span>
+                  <%= blockHash %>
                 </div>
               </div>
             <% }); %>
@@ -170,8 +170,8 @@
             <% payment.double_spent_history.forEach(function(txId) { %>
               <div class="row indent line-item thin-underline">
                 <div class="col-xs-12 xsmall-text">
-                  Payment was double spent by transaction:
-                  <span class="red"><%= txId %></span>
+                  <span class="red">Payment was double spent by transaction: </span>
+                  <%= txId %>
                 </div>
               </div>
             <% }); %>
