@@ -4,6 +4,7 @@ var validate = require('./validate');
 var bitcoinUtil = require('./bitcoinutil');
 var invoiceUtil = require('./invoiceutil');
 var db = require('./db');
+var async = require('async');
 
 // Stores initial "last block hash" if it doesnt exist returns it if it does
 function getLastBlockHash(cb) {
@@ -49,17 +50,18 @@ function processBlockHash(blockHashObj) {
       var transactions = info.result.transactions;
       var lastBlockHash = info.result.lastblock;
       if (validate.block(block)) {
-        transactions.forEach(function(transaction) {
+        async.eachSeries(transactions, function(transaction, cb) {
           invoiceUtil.updatePayment(transaction, function(err) {
-            if (err) {
-              return;
-            }
+            cb(); // We dont care if update fails just run everthing in series until completion
           });
+        }, function(err) {
+          if (!err) {
+            if (blockHash !== lastBlockHash) {
+              blockHashObj.hash = lastBlockHash; // update to latest block
+              db.insert(blockHashObj); // insert updated last block into db
+            }
+          }
         });
-        if (blockHash !== lastBlockHash) {
-          blockHashObj.hash = lastBlockHash; // update to latest block
-          db.insert(blockHashObj); // insert updated last block into db
-        }
       }
       else { // If invalid update all transactions in block and step back
         transactions.forEach(function(transaction) {

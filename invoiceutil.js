@@ -47,6 +47,9 @@ var getTotalPaid = function(invoice, paymentsArr) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = new BigNumber(0);
   paymentsArr.forEach(function(payment) {
+    if (payment.status.toLowerCase() === 'invalid') {
+      return;
+    }
     var paidAmount = payment.amount_paid;
     if (paidAmount) {
       paidAmount = new BigNumber(paidAmount);
@@ -242,7 +245,13 @@ var processReorgedPayment = function(payment, blockHash) {
     }
     payment.reorg_history = reorgHistory;
   }
-  payment.status = 'pending'; // set status back to pending
+  if (payment.confirmations === -1) {
+    payment.status = 'invalid';
+    payment.watched = false;
+  }
+  else { // if confirmations arent -1 could be reorged back in
+    payment.status = 'pending';
+  }
 };
 
 var processReorgedPayments = function (blockHash) {
@@ -417,6 +426,7 @@ var updatePayment = function(transaction, cb) {
     var error = new Error('Ignoring irrelevant transaction.');
     return cb(error, null);
   }
+  console.log('>>>>>>>> ' + transaction.txid);
   db.findPaymentByTxId(transaction.txid, function(err, payment) {
     if (!err && payment) {
       // Updating confirmations of a watched payment
@@ -432,6 +442,7 @@ var updatePayment = function(transaction, cb) {
         paymentsArr.forEach(function(payment) {
           if (!payment.tx_id) {
             // Initial update from walletnotify
+            console.log('Updating existing payment');
             updatePaymentWithTransaction(payment, transaction, cb);
           }
           else {
@@ -439,6 +450,7 @@ var updatePayment = function(transaction, cb) {
           }
         });
         if (invoiceId) {
+          console.log('Creating new payment');
           // Create new payment for same invoice as pre-existing payment
           createNewPaymentWithTransaction(invoiceId, transaction, cb);
         }

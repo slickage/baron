@@ -70,7 +70,10 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   var confirmationsMet = Number(confirmations) >= Number(minConfirmations);
   var expectedAmount = new BigNumber(payment.expected_amount);
   var amountPaid = new BigNumber(payment.amount_paid);
-  if (amountPaid.greaterThan(0) && !confirmationsMet) {
+  if (confirmations === -1) {
+    status = 'invalid';
+  }
+  else if (amountPaid.greaterThan(0) && !confirmationsMet) {
     status = 'pending';
   }
   else if (confirmationsMet) {
@@ -99,6 +102,11 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     var webhookUrl = invoice.webhooks.paid.url;
     var webhookToken = invoice.webhooks.paid.token;
     request.post(webhookUrl).form({ token: webhookToken });
+  }
+
+  // Notify admin of invalid transaction
+  if (status === 'invalid' && origStatus !== status) {
+    // TODO: Notify Admin
   }
   return status;
 };

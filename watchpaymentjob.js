@@ -25,7 +25,7 @@ function updateWatchedPayment(payment, invoice, body) {
   if (transaction) {
     var reorgedHash;
     // If a transaction doesnt have blocktime but has a blockhash 
-    // it's block was reorged
+    // it's block was reorged. Insight fix
     if (!transaction.blocktime && transaction.blockhash) {
       reorgedHash = transaction.blockhash;
       transaction.blockhash = null;
@@ -55,7 +55,7 @@ function updateWatchedPayment(payment, invoice, body) {
     var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
     payment.status = oldStatus === newStatus ? oldStatus : newStatus;
     // payments confirmations have reached 100 (Default) confs stop watching.
-    var stopTracking = newConfirmations >= config.trackPaymentUntilConf;
+    var stopTracking = newConfirmations >= config.trackPaymentUntilConf || newConfirmations === -1;
     var statusChanged = newStatus && newStatus !== oldStatus;
     var blockHashChanged = newBlockHash && newBlockHash !== oldBlockHash;
     if (_.contains(payment.reorg_history, newBlockHash) && !payment.block_hash) {

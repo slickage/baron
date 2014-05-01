@@ -154,6 +154,30 @@
             <% } %>
           </div> 
         </div>
+
+        <% if (payment.status.toLowerCase() === 'invalid') { %>
+          <% if (payment.reorg_history) { %>
+            <% payment.reorg_history.forEach(function(blockHash) { %>
+              <div class="row indent line-item thin-underline">
+                <div class="col-xs-12 xsmall-text">
+                  Payment was reorged at block: 
+                  <span class="red"><%= blockHash %></span>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+          <% if (payment.double_spent_history) { %>
+            <% payment.double_spent_history.forEach(function(txId) { %>
+              <div class="row indent line-item thin-underline">
+                <div class="col-xs-12 xsmall-text">
+                  Payment was double spent by transaction:
+                  <span class="red"><%= txId %></span>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+        <% } %>
+
       <% }); %>
     <% } %>
 

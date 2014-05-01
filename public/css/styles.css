@@ -27,23 +27,28 @@ a:hover, a:active {
 
 .medium-text {
   font-size: 28px;
+  word-wrap: break-word;
 }
 
 .mobile-lbl-text {
   padding-top:10px;
   font-size: 18px; 
+  word-wrap: break-word;
 }
 
 .mobile-text {
   font-size: 22px;
+  word-wrap: break-word;
 }
 
 .small-text {
   font-size: 20px;
+  word-wrap: break-word;
 }
 
 .xsmall-text {
   font-size: 18px;
+  word-wrap: break-word;
 }
 
 .alert-box {
@@ -81,7 +86,7 @@ a:hover, a:active {
   font-size: 20px;
 }
 
-.unpaid, .expired, .red {
+.unpaid, .expired, .invalid, .red {
   color: #ff4848;
 }
 
@@ -159,4 +164,8 @@ a:hover, a:active {
 .invoice-data-width {
   max-width:400px;
   min-width:320px;
+}
+
+.indent {
+  margin-left: 25px;
 }
