@@ -116,7 +116,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     findOrCreatePayment(invoiceId, function (err) {
       if (err) {
-        return res.render('error', { ßerrorMsg: err.message });
+        return res.render('error', { errorMsg: err.message });
       }
       else {
         return res.redirect('/pay/' + invoiceId);
