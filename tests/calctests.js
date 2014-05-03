@@ -1,5 +1,5 @@
 var assert = require('assert');
-var invoiceUtil = require('../invoiceutil');
+var invoiceUtil = require(__dirname + '/../invoiceutil');
 
 describe('invoiceutil', function() {
   describe('#getAmountDue', function() {
