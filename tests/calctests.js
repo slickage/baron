@@ -4,7 +4,7 @@ var invoiceUtil = require(__dirname + '/../invoiceutil');
 describe('invoiceutil', function() {
   describe('#getAmountDue', function() {
     it('should return amount due', function() {
-      assert.equal('0.0', '0.0');
+      assert.equal(true, true);
     });
   });
 });
