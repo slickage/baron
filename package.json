@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "mocha -R spec ./tests"
+    "test": "tap ./tests"
   },
   "repository": {
     "type": "git",

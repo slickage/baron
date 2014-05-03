@@ -160,8 +160,8 @@
             <% payment.reorg_history.forEach(function(blockHash) { %>
               <div class="row indent line-item thin-underline">
                 <div class="col-xs-12 xsmall-text">
-                  <span class="red">Payment was reorged at block: </span>
-                  <%= blockHash %>
+                  <span class="red">Payment was reorged from block: </span>
+                    <%= blockHash %>
                 </div>
               </div>
             <% }); %>
