@@ -81,7 +81,12 @@ function processBlockHash(blockHashObj) {
 var lastBlockJob = function() {
   // Get Last Block, create it if baron isnt aware of one.
   getLastBlockHash(function(err, lastBlockHashObj) {
-    if (err || !lastBlockHashObj.hash) { return console.log(err); }
+    if (err) {
+      return console.log(err);
+    }
+    else if (!lastBlockHashObj.hash) {
+      return console.log('Last block object missing hash, check Baron\'s database');
+    }
     console.log('===========================');
     console.log('Processing Last Block: ' + lastBlockHashObj.hash);
     console.log('===========================');
