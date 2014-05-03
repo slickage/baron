@@ -116,6 +116,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     findOrCreatePayment(invoiceId, function (err) {
       if (err) {
+        console.log('>>>POST ERROR: ' + err);
         return res.render('error', { errorMsg: err.message });
       }
       else {
@@ -129,6 +130,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
+        console.log('>>>GET ERROR' + err);
         return res.render('error', { errorMsg: err.message });
       }
       else {

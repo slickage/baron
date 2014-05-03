@@ -20,10 +20,11 @@ var instantiateDb = function () {
         couchapp.createApp(ddoc, dbUrl, function(app) {
           app.push();
         });
-        return;
       });
     }
-    baronDb = nano.use(dbName);
+    else {
+      baronDb = nano.use(dbName);
+    }
   });
 };
 

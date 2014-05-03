@@ -69,7 +69,23 @@ var getTotalPaid = function(invoice, paymentsArr) {
   return totalPaid;
 };
 
-// Calculates the invoice's remaining balance
+var getAmountDue = function(balanceDue, totalPaid, currency) {
+    var isUSD = currency.toUpperCase() === 'USD';
+    var amountDue = new BigNumber(balanceDue).minus(totalPaid);
+    if (isUSD) {
+      amountDue = helper.roundToDecimal(amountDue , 2);
+    }
+    else {
+      amountDue = Number(amountDue);
+      if (helper.decimalPlaces(amountDue) > 8) {
+        amountDue = Number(helper.roundToDecimal(amountDue, 8));
+      }
+    }
+    return amountDue;
+};
+
+
+// Calculates the invoice's remaining balance (Always in BTC, for payments page)
 var calculateRemainingBalance = function(invoice, paymentsArr, cb) {
   var isUSD = invoice.currency.toUpperCase() === 'USD';
   var totalPaid = getTotalPaid(invoice, paymentsArr);
@@ -462,6 +478,7 @@ var updatePayment = function(transaction, cb) {
 module.exports = {
   calculateLineTotals: calculateLineTotals,
   getTotalPaid: getTotalPaid,
+  getAmountDue: getAmountDue,
   getActivePayment: getActivePayment,
   calculateRemainingBalance: calculateRemainingBalance,
   createNewPayment: createNewPayment,

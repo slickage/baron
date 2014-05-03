@@ -7,3 +7,4 @@ public/assets
 .env
 /id_deploy
 TODO.txt
+tests/npm-debug.log

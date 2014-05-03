@@ -17,24 +17,9 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     invoiceUtil.calculateLineTotals(invoice);
     invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
-    invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : invoice.balance_due;
-    invoice.remaining_balance = new BigNumber(invoice.balance_due).minus(invoice.total_paid);
-    console.log(invoice.remaining_balance);
-    if (isUSD) {
-      invoice.remaining_balance = helper.roundToDecimal(invoice.remaining_balance , 2);
-    }
-    else {
-      var fixedFigures;
-      if (invoice.remaining_balance < 1) {
-        fixedFigures = invoice.remaining_balance.c.length;
-        invoice.remaining_balance = invoice.remaining_balance.toFixed(fixedFigures);
-      }
-      else {
-        fixedFigures = Math.abs(invoice.remaining_balance.e);
-        invoice.remaining_balance = invoice.remaining_balance.toFixed(fixedFigures);
-      }
-    }
-    
+    invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : Number(invoice.balance_due);
+    invoice.remaining_balance = invoiceUtil.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
+
     var invoiceExpired = validate.invoiceExpired(invoice);
     if (invoiceExpired && invoice.remaining_balance > 0) {
       var expiredErr = new Error('Error: Invoice is expired.');

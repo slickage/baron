@@ -64,6 +64,7 @@ a:hover, a:active {
 
 .dark-gray {
   color: #666;
+  word-wrap: break-word;
 }
 
 .address-text {
