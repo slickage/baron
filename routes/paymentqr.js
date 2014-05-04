@@ -6,7 +6,7 @@ var paymentqr = function(app) {
     var address = req.query.address;
     if (address) {
       var amount = Number(req.query.amount) || undefined;
-      var code = qr.image('bitcoin:' + address + '&amount=' + amount, { type: 'svg' });
+      var code = qr.image('bitcoin:' + address + '?amount=' + amount, { type: 'svg' });
       res.type('svg');
       code.pipe(res);
     }
