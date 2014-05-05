@@ -53,7 +53,7 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
 var invoices = function(app) {
   
   // View Invoice by ID
-  app.get('/invoices/:invoiceId', function(req, res) {
+  app.get('/' + config.invoicePostRoute + '/:invoiceId', function(req, res) {
     var invoiceId = req.params.invoiceId;
     findInvoiceAndPaymentHistory(invoiceId, function(err, invoice) {
       if (err) {
@@ -67,15 +67,24 @@ var invoices = function(app) {
 
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
-    db.createInvoice(req.body, function(err, invoice) {
-      if(err) {
-        res.write(err.message);
-        res.end();
-      }
-      else {
-        res.json(invoice);
-      }
-    });
+    var invoice = req.body;
+    if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.postAccessToken) {
+      var err = new Error('Access Denied: Invalid access token.');
+      console.log(req.ip + ' attempted to create an invoice with an invalid access token.');
+      res.status(401).write(err.message);
+      return res.end();
+    }
+    else {
+      db.createInvoice(req.body, function(err, invoice) {
+        if(err) {
+          res.write(err.message);
+          res.end();
+        }
+        else {
+          res.json(invoice);
+        }
+      });
+    }
   });
 
 };
