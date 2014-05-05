@@ -1,4 +1,5 @@
-var invoiceUtil = require('../invoiceutil');
+var paymentUtil = require('../paymentutil');
+var invoiceHelper = require('../invoicehelper');
 var helper = require('../helper');
 var validate = require('../validate');
 var api = require('../insightapi');
@@ -11,7 +12,7 @@ function findOrCreatePayment(invoiceId, cb) {
     if (err) {
       return cb(err, null);
     }
-    var activePayment = invoiceUtil.getActivePayment(paymentsArr);
+    var activePayment = invoiceHelper.getActivePayment(paymentsArr);
 
     // Invoice is expired and unpaid
     if (validate.invoiceExpired(invoice) && activePayment && activePayment.status === 'unpaid') {
@@ -34,18 +35,18 @@ function findOrCreatePayment(invoiceId, cb) {
     }
 
     // Create a new payment object for invoices without a payment or with a partial payment
-    invoiceUtil.calculateRemainingBalance(invoice, paymentsArr, function(err, remainingBalance) {
+    invoiceHelper.getAmountDueBTC(invoice, paymentsArr, function(err, amountDue) {
       if (err) {
         return cb(err, null);
       }
-      invoiceUtil.createNewPayment(invoiceId, remainingBalance, function(err, newPayment) {
+      paymentUtil.createNewPayment(invoiceId, amountDue, function(err, newPayment) {
         if (err) {
           return cb(err, null);
         }
         var result = {
           payment: newPayment,
           invoice: invoice,
-          remainingBalance: remainingBalance
+          remainingBalance: amountDue
         };
         return cb(null, result);
       });

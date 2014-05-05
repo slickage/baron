@@ -2,7 +2,7 @@ var config = require('./config');
 var api = require('./insightapi');
 var validate = require('./validate');
 var bitcoinUtil = require('./bitcoinutil');
-var invoiceUtil = require('./invoiceutil');
+var paymentUtil = require('./paymentutil');
 var db = require('./db');
 var async = require('async');
 
@@ -46,12 +46,17 @@ function processBlockHash(blockHashObj) {
       if (err) {
         return console.log(err);
       }
-      // If valid get transactions since last block (bitcore)
-      var transactions = info.result.transactions;
+      var transactions = [];
+      info.result.transactions.forEach(function(transaction) {
+        if (transaction.category === 'receive') { // ignore sent tx's
+          transactions.push(transaction);
+        }
+      });
       var lastBlockHash = info.result.lastblock;
+      // If valid get transactions since last block (bitcore)
       if (validate.block(block)) {
         async.eachSeries(transactions, function(transaction, cb) {
-          invoiceUtil.updatePayment(transaction, function(err) {
+          paymentUtil.updatePayment(transaction, function(err) {
             cb(); // We dont care if update fails just run everthing in series until completion
           });
         }, function(err) {
@@ -65,11 +70,11 @@ function processBlockHash(blockHashObj) {
       }
       else { // If invalid update all transactions in block and step back
         transactions.forEach(function(transaction) {
-          invoiceUtil.processReorgAndCheckDoubleSpent(transaction, block.hash);
+          paymentUtil.processReorgAndCheckDoubleSpent(transaction, block.hash);
         }); // For each should block until complete
-        invoiceUtil.processReorgedPayments(block.hash);
+        paymentUtil.processReorgedPayments(block.hash);
         // Update reorged transactions (set block_hash = null)
-        console.log('REORG: Recursively processing previous block: ' + block.previousblockhash);
+        console.log('> REORG: Recursively processing previous block: ' + block.previousblockhash);
         // Recursively check previousHash
         blockHashObj.hash = block.previousblockhash;
         processBlockHash(blockHashObj);

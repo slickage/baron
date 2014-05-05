@@ -2,7 +2,7 @@ var helper = require('../helper');
 var validate = require('../validate');
 var db = require('../db');
 var config = require('../config');
-var invoiceUtil = require('../invoiceutil');
+var invoiceHelper = require('../invoicehelper');
 var BigNumber = require('bignumber.js');
 
 function findInvoiceAndPaymentHistory(invoiceId, cb) {
@@ -11,14 +11,14 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
       return cb(err, null);
     }
     
-    var paymentHistory = invoiceUtil.getPaymentHistory(paymentsArr);
+    var paymentHistory = invoiceHelper.getPaymentHistory(paymentsArr);
     invoice.payment_history = paymentHistory;
 
     var isUSD = invoice.currency.toUpperCase() === 'USD';
-    invoiceUtil.calculateLineTotals(invoice);
-    invoice.total_paid = invoiceUtil.getTotalPaid(invoice, paymentsArr);
+    invoiceHelper.calculateLineTotals(invoice);
+    invoice.total_paid = invoiceHelper.getTotalPaid(invoice, paymentsArr);
     invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : Number(invoice.balance_due);
-    invoice.remaining_balance = invoiceUtil.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
+    invoice.remaining_balance = invoiceHelper.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
 
     var invoiceExpired = validate.invoiceExpired(invoice);
     if (invoiceExpired && invoice.remaining_balance > 0) {

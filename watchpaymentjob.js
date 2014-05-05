@@ -3,7 +3,7 @@ var request = require('request');
 var helper = require('./helper');
 var db = require('./db');
 var _ = require('lodash');
-var invoiceUtil = require('./invoiceutil');
+var paymentUtil = require('./paymentutil');
 
 // TODO: This job can be removed in the future, we can calculate
 // The confirmations of our watched payments based on our stored
@@ -37,7 +37,7 @@ function updateWatchedPayment(payment, invoice, body) {
     // If our payment was in a block and tx doesnt have a blocktime now
     // that means the block was reorged. blocktime is removed when tx is orphaned
     if (reorgedHash) {
-      invoiceUtil.processReorgedPayment(payment, reorgedHash);
+      paymentUtil.processReorgedPayment(payment, reorgedHash);
     }
 
     // Check for double spends
@@ -85,7 +85,7 @@ function updateWatchedPayment(payment, invoice, body) {
 var watchPaymentsJob = function () {
   db.getWatchedPayments(function (err, paymentsArr) {
     if (err || !paymentsArr) {
-      return console.log(err);
+      return err ? console.log(err) : null;
     }
     // Process all watched payments
     console.log('===========================');
