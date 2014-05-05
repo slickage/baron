@@ -4,7 +4,7 @@ var localConfig = {
   port: process.env.PORT || 8080,
   couchdb: {
     url: process.env.DB_URL || 'http://localhost:5984',
-    name: 'baron'
+    name: process.env.DB_NAME || 'baron'
   },
   bitcoind:  {
     host: process.env.BITCOIND_HOST || 'localhost',
@@ -21,7 +21,7 @@ var localConfig = {
   chainExplorerUrl: 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: 15000,
   lastBlockJobInterval: 15000,
-  paymentValidForMinutes: 1,
+  paymentValidForMinutes: 5,
   trackPaymentUntilConf: 100
 };
 

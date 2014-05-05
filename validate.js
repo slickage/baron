@@ -1,8 +1,13 @@
 var invoice = function(invoice) {
   var curTime = new Date().getTime();
-  if (!invoice.currency || !invoice.min_confirmations || !invoice.line_items ||
-       invoice.line_items.length < 1 ||
-       Number(invoice.expiration) < curTime) {
+  var invalidLineItems = false;
+  if(invoice.line_items && invoice.line_items.length > 0) {
+    invoice.line_items.forEach(function(item) {
+      invalidLineItems = !item.amount || !item.quantity || !item.description;
+    });
+  }
+  if (!invoice.currency || !invoice.min_confirmations ||
+      invalidLineItems ||  Number(invoice.expiration) < curTime) {
      return null;
   }
   else {

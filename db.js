@@ -3,7 +3,7 @@ var config = require(__dirname + '/config');
 var couchapp = require('couchapp');
 var ddoc = require(__dirname + '/couchapp');
 var nano = require('nano')(config.couchdb.url);
-var dbName = config.couchdb.name || 'baron';
+var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
 var baronDb;
 
@@ -155,7 +155,6 @@ var createInvoice = function(invoice, cb) {
       balanceDue = balanceDue.plus(lineCost);
     });
     invoice.balance_due = Number(balanceDue.valueOf());
-    console.log('>>>>>>> ' + invoice.balance_due);
     baronDb.insert(invoice, cb);
   }
   else {
