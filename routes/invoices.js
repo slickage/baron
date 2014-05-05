@@ -72,16 +72,17 @@ var invoices = function(app) {
       var err = new Error('Access Denied: Invalid access token.');
       console.log(req.ip + ' attempted to create an invoice with an invalid access token.');
       res.status(401).write(err.message);
-      return res.end();
+      res.end();
     }
     else {
-      db.createInvoice(req.body, function(err, invoice) {
+      db.createInvoice(req.body, function(err, invoiceData) {
         if(err) {
-          res.write(err.message);
+          res.status(400).write(err.message + '\n' + JSON.stringify(invoice));
           res.end();
         }
         else {
-          res.json(invoice);
+          res.json(invoiceData);
+          res.end();
         }
       });
     }

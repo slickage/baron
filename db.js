@@ -4,6 +4,7 @@ var couchapp = require('couchapp');
 var ddoc = require(__dirname + '/couchapp');
 var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name || 'baron';
+var BigNumber = require('bignumber.js');
 var baronDb;
 
 var instantiateDb = function () {
@@ -148,6 +149,13 @@ var createInvoice = function(invoice, cb) {
     invoice.access_token = undefined;
     invoice.created = new Date().getTime();
     invoice.type = 'invoice';
+    var balanceDue = new BigNumber(0);
+    invoice.line_items.forEach(function(item) {
+      var lineCost = new BigNumber(item.amount).times(item.quantity);
+      balanceDue = balanceDue.plus(lineCost);
+    });
+    invoice.balance_due = Number(balanceDue.valueOf());
+    console.log('>>>>>>> ' + invoice.balance_due);
     baronDb.insert(invoice, cb);
   }
   else {

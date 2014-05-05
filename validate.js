@@ -1,7 +1,7 @@
 var invoice = function(invoice) {
   var curTime = new Date().getTime();
   if (!invoice.currency || !invoice.min_confirmations || !invoice.line_items ||
-       invoice.line_items.length < 1 || !invoice.balance_due ||
+       invoice.line_items.length < 1 ||
        Number(invoice.expiration) < curTime) {
      return null;
   }
