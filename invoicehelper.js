@@ -53,8 +53,12 @@ var getTotalPaid = function(invoice, paymentsArr) {
       }
     }
   });
+  totalPaid = Number(totalPaid.valueOf());
   if (isUSD) {
-    totalPaid = helper.roundToDecimal(Number(totalPaid.valueOf()), 2);
+    totalPaid = helper.roundToDecimal(totalPaid, 2);
+  }
+  else if (helper.decimalPlaces(totalPaid) > 8) {
+    totalPaid = helper.roundToDecimal(totalPaid, 8);
   }
   return totalPaid;
 };
