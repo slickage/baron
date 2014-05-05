@@ -23,19 +23,21 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
         return days + 'd ' + hours + 'h ' + mins + 'm ' + secs + 's';
       }
     };
-
-    setInterval(function(){
-      for (var i = 0; i < expirationSpans.length; ++i) {
-        var item = expirationSpans[i];
-        var curTime = new Date().getTime();
-        if(expiration < curTime){
-          window.location.reload();
+    
+    if (expirationSpans && expirationSpans.length > 0 ) {
+      setInterval(function(){
+        for (var i = 0; i < expirationSpans.length; ++i) {
+          var item = expirationSpans[i];
+          var curTime = new Date().getTime();
+          if(expiration < curTime){
+            window.location.reload();
+          }
+          else {
+            item.innerText = getExpirationCountDown(expiration);
+          }
         }
-        else {
-          item.innerText = getExpirationCountDown(expiration);
-        }
-      }
-    }, 500);
+      }, 500);
+    }
 
     var requestConfirmations = function() {
         var request = new XMLHttpRequest();
