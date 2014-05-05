@@ -16,4 +16,4 @@ blockJob.runLastBlockJob();
 watchJob.runWatchPaymentsJob();
 
 app.listen(config.port);
-console.log('HTTP Server on port: ' + config.port);
+console.log('Baron listening at http://0.0.0.0:' + config.port);
