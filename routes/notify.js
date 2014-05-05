@@ -1,7 +1,7 @@
-var paymentUtil = require('../paymentutil');
-var bitcoinUtil = require('../bitcoinutil');
-var blockJob = require('../lastblockjob');
-var helper = require('../helper');
+var paymentUtil = require(__dirname + '/../paymentutil');
+var bitcoinUtil = require(__dirname + '/../bitcoinutil');
+var blockJob = require(__dirname + '/../lastblockjob');
+var helper = require(__dirname + '/../helper');
 
 var notify = function(app) {
 

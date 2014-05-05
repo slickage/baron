@@ -1,9 +1,9 @@
-var config = require('./config');
+var config = require(__dirname + '/config');
 var request = require('request');
-var helper = require('./helper');
-var db = require('./db');
+var helper = require(__dirname + '/helper');
+var db = require(__dirname + '/db');
 var _ = require('lodash');
-var paymentUtil = require('./paymentutil');
+var paymentUtil = require(__dirname + '/paymentutil');
 
 // TODO: This job can be removed in the future, we can calculate
 // The confirmations of our watched payments based on our stored

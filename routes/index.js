@@ -1,6 +1,6 @@
 module.exports = function(app) {
-  require('./invoices')(app);
-  require('./pay')(app);
-  require('./paymentqr')(app);
-  require('./notify')(app);
+  require(__dirname + '/invoices')(app);
+  require(__dirname + '/pay')(app);
+  require(__dirname + '/paymentqr')(app);
+  require(__dirname + '/notify')(app);
 };

@@ -1,4 +1,4 @@
-var helper = require('./helper');
+var helper = require(__dirname + '/helper');
 var BigNumber = require('bignumber.js');
 var bitstamped = require('bitstamped');
 

@@ -1,9 +1,9 @@
-var config = require('./config');
-var api = require('./insightapi');
-var validate = require('./validate');
-var bitcoinUtil = require('./bitcoinutil');
-var paymentUtil = require('./paymentutil');
-var db = require('./db');
+var config = require(__dirname + '/config');
+var api = require(__dirname + '/insightapi');
+var validate = require(__dirname + '/validate');
+var bitcoinUtil = require(__dirname + '/bitcoinutil');
+var paymentUtil = require(__dirname + '/paymentutil');
+var db = require(__dirname + '/db');
 var async = require('async');
 
 // Stores initial "last block hash" if it doesnt exist returns it if it does

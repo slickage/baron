@@ -1,5 +1,5 @@
 var request = require('request');
-var config = require('./config');
+var config = require(__dirname + '/config');
 var insightUrl = config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port;
 
 var getLastBlockHash = function(cb) {

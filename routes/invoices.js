@@ -1,8 +1,8 @@
-var helper = require('../helper');
-var validate = require('../validate');
-var db = require('../db');
-var config = require('../config');
-var invoiceHelper = require('../invoicehelper');
+var helper = require(__dirname + '/../helper');
+var validate = require(__dirname + '/../validate');
+var db = require(__dirname + '/../db');
+var config = require(__dirname + '/../config');
+var invoiceHelper = require(__dirname + '/../invoicehelper');
 var BigNumber = require('bignumber.js');
 
 function findInvoiceAndPaymentHistory(invoiceId, cb) {

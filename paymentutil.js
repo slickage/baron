@@ -1,12 +1,12 @@
-var helper = require('./helper');
-var validate = require('./validate');
+var helper = require(__dirname + '/helper');
+var validate = require(__dirname + '/validate');
 var BigNumber = require('bignumber.js');
 var bitstamped = require('bitstamped');
-var bitcoinUtil = require('./bitcoinutil');
-var db = require('./db');
-var api = require('./insightapi');
-var config = require('./config');
-var invoiceHelper = require('./invoicehelper');
+var bitcoinUtil = require(__dirname + '/bitcoinutil');
+var db = require(__dirname + '/db');
+var api = require(__dirname + '/insightapi');
+var config = require(__dirname + '/config');
+var invoiceHelper = require(__dirname + '/invoicehelper');
 var _ = require('lodash');
 
 // ===============================================

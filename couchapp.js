@@ -1,4 +1,4 @@
-var config = require('./config');
+var config = require(__dirname + '/config');
 
 var ddoc = {
   _id: '_design/' + (config.couchdb.name || 'baron'),

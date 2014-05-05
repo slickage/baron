@@ -1,11 +1,11 @@
-var paymentUtil = require('../paymentutil');
-var invoiceHelper = require('../invoicehelper');
-var helper = require('../helper');
-var validate = require('../validate');
-var api = require('../insightapi');
-var config = require('../config');
+var paymentUtil = require(__dirname + '/../paymentutil');
+var invoiceHelper = require(__dirname + '/../invoicehelper');
+var helper = require(__dirname + '/../helper');
+var validate = require(__dirname + '/../validate');
+var api = require(__dirname + '/../insightapi');
+var config = require(__dirname + '/../config');
 var BigNumber = require('bignumber.js');
-var db = require('../db');
+var db = require(__dirname + '/../db');
 
 function findOrCreatePayment(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {

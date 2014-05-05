@@ -1,7 +1,7 @@
-var validate = require('./validate');
-var config = require('./config');
+var validate = require(__dirname + '/validate');
+var config = require(__dirname + '/config');
 var couchapp = require('couchapp');
-var ddoc = require('./couchapp');
+var ddoc = require(__dirname + '/couchapp');
 var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name || 'baron';
 var baronDb;

@@ -1,6 +1,6 @@
 var bitcore = require('bitcore');
 var RpcClient = bitcore.RpcClient;
-var config = require('./config');
+var config = require(__dirname + '/config');
 
 var client = new RpcClient({
   protocol: 'http',
