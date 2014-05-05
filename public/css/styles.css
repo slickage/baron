@@ -173,3 +173,11 @@ a:hover, a:active {
 .indent {
   margin-left: 25px;
 }
+
+.hide {
+  display: none;
+}
+
+.show {
+  display: block;
+}

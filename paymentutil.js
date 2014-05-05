@@ -78,6 +78,7 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
         }
         else {
           setTimeout(stopWatchingPayment, config.paymentValidForMinutes * 60 * 1000, result.id);
+          payment._id = result.id;
           return cb(null, payment);
         }
       });

@@ -79,6 +79,11 @@ function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
     var url = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
     var paymentData = {
       validFor: config.paymentValidForMinutes,
+      minConfirmations: invoice.min_confirmations,
+      queryUrl: '/payment/' + activePayment._id,
+      blockHash: activePayment.block_hash,
+      insightUrl: config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port + '/api/block/',
+      expireTime: expiration,
       expires: helper.getExpirationCountDown(expiration),
       remainingBalance: remainingBalance,
       invoicePaid: invoicePaid,
@@ -117,7 +122,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     findOrCreatePayment(invoiceId, function (err) {
       if (err) {
-        console.log('>>>POST ERROR: ' + err);
+        console.log('>>> POST ERROR: ' + err);
         return res.render('error', { errorMsg: err.message });
       }
       else {
@@ -131,11 +136,23 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
-        console.log('>>>GET ERROR' + err);
+        console.log('>>> GET ERROR ' + err);
         return res.render('error', { errorMsg: err.message });
       }
       else {
         return res.render('pay', paymentData);
+      }
+    });
+  });
+
+  app.get('/payment/:paymentId', function(req, res) {
+    var paymentId = req.params.paymentId;
+    db.findPaymentById(paymentId, function(err, payment) {
+      if (err) {
+        res.write(err);
+      }
+      else {
+        res.json(payment);
       }
     });
   });
