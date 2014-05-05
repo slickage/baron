@@ -144,11 +144,7 @@ var getLastKnownBlockHash = function(cb) {
 };
 
 var createInvoice = function(invoice, cb) {
-  if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.postAccessToken) {
-    var err = new Error('Access Denied: Invalid access token.');
-    return cb(err, null);
-  }
-  else if (validate.invoice(invoice)) {
+  if (validate.invoice(invoice)) {
     invoice.access_token = undefined;
     invoice.created = new Date().getTime();
     invoice.type = 'invoice';
