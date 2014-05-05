@@ -101,7 +101,17 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   if (invoice.webhooks && (status === 'paid' || status === 'overpaid') && origStatus !== status) {
     var webhookUrl = invoice.webhooks.paid.url;
     var webhookToken = invoice.webhooks.paid.token;
-    request.post(webhookUrl).form({ token: webhookToken });
+    request.post(webhookUrl, { form: { token: webhookToken } },
+      function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+          console.log('[Webhook: ' + webhookUrl + '] was notified of invoice ' + invoice._id + '\'s payment.');
+        }
+        else {
+          // TODO: Should keep trying to notify until we get a response.
+          console.log('[Webhook: ' + webhookUrl + '] failed to receive payment notification.');
+        }
+      }
+    );
   }
 
   // Notify admin of invalid transaction
