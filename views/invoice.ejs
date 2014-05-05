@@ -53,16 +53,23 @@
     <% invoice.line_items.forEach(function(item){ %>
       <div class="row line-item thin-underline">
         <div class="col-xs-12 col-sm-4 dark-gray"><%= item.description %></div>
-        <div class="col-xs-4 visible-xs mobile-lbl-text">Quantity</div>          
-        <div class="col-xs-8 col-sm-2 right"><%= item.quantity %> &times;</div>
-        <div class="col-xs-4 visible-xs mobile-lbl-text">Cost</div>          
-        <div class="col-xs-8 col-sm-3 right">
-          <%= item.amount %> <%= invoice.currency.toUpperCase() %>
-        </div> 
-        <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>          
-        <div class="col-xs-8 col-sm-3 right">
-          <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
-        </div>
+        <% if (item.quantity > 1) { %>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Quantity</div>
+          <div class="col-xs-8 col-sm-2 right"><%= item.quantity %> &times;</div>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Cost</div>
+          <div class="col-xs-8 col-sm-3 right">
+            <%= item.amount %> <%= invoice.currency.toUpperCase() %>
+          </div>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>
+          <div class="col-xs-8 col-sm-3 right">
+            <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
+          </div>
+        <% } else { %>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>
+          <div class="col-xs-8 col-sm-8 right">
+            <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
+          </div>
+        <% } %>
       </div>
     <% }); %>
 
