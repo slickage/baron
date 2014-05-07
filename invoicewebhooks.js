@@ -17,6 +17,7 @@ function postToWebhook(webhookObj, cb) {
   console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
   request.post(webhookObj.url, { form: { token: postToken } },
     function (error, response, body) {
+      body = JSON.parse(body);
       var receivedHandshakeToken = body.token;
       var handshakeSuccess = handshakeToken === receivedHandshakeToken;
       if (!error && handshakeSuccess && response.statusCode === 200) {
