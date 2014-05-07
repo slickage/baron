@@ -183,6 +183,10 @@ var insert = function(doc, cb) { // Used to update a payment or invoice
   baronDb.insert(doc, cb);
 };
 
+var destroy = function(docId, docRev, cb) { // Used to update a payment or invoice
+  baronDb.destroy(docId, docRev, cb);
+};
+
 module.exports = {
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
@@ -195,5 +199,6 @@ module.exports = {
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
   getFailedWebhooks: getFailedWebhooks,
-  insert: insert
+  insert: insert,
+  destroy: destroy
 };
