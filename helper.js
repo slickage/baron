@@ -72,11 +72,11 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   var amountPaid = new BigNumber(payment.amount_paid);
   if (confirmations === -1) {
     status = 'invalid';
-    invoiceWebhooks.tryCallInvalid(invoice.webhooks, invoice._id, origStatus, status);
+    invoiceWebhooks.queueInvalid(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (amountPaid.greaterThan(0) && !confirmationsMet) {
     status = 'pending';
-    invoiceWebhooks.tryCallPending(invoice.webhooks, invoice._id, origStatus, status);
+    invoiceWebhooks.queuePending(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (confirmationsMet) {
     var isUSD = invoice.currency.toUpperCase() === 'USD';
@@ -90,15 +90,15 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     }
     if(amountPaid.equals(expectedAmount) || closeEnough) {
       status = 'paid';
-      invoiceWebhooks.tryCallPaid(invoice.webhooks, invoice._id, origStatus, status);
+      invoiceWebhooks.queuePaid(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
-      invoiceWebhooks.tryCallPartial(invoice.webhooks, invoice._id, origStatus, status);
+      invoiceWebhooks.queuePartial(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.greaterThan(expectedAmount)) {
       status = 'overpaid';
-      invoiceWebhooks.tryCallPaid(invoice.webhooks, invoice._id, origStatus, status);
+      invoiceWebhooks.queuePaid(invoice.webhooks, invoice._id, origStatus, status);
     }
   }
 

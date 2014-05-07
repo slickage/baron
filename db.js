@@ -164,8 +164,23 @@ var createInvoice = function(invoice, cb) {
   }
 };
 
-var getFailedWebhooks = function (cb) {
-  baronDb.view(dbName, 'failedWebhooks', function(err, body) {
+var getWebhooks = function (cb) {
+  baronDb.view(dbName, 'webhooks', function(err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var webhooksArr = [];
+      body.rows.forEach(function(row) {
+        if (row.value.type === 'webhook') {
+          webhooksArr.push(row.value);
+        }
+      });
+      return cb(err, webhooksArr);
+    }
+    return cb(err, null);
+  });
+};
+
+var getWebhooksByInvoiceId = function(invoiceId, cb) {
+  baronDb.view(dbName, 'webhooksByInvoiceID', { key: invoiceId }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var webhooksArr = [];
       body.rows.forEach(function(row) {
@@ -198,7 +213,8 @@ module.exports = {
   getPaymentByBlockHash: getPaymentByBlockHash,
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
-  getFailedWebhooks: getFailedWebhooks,
+  getWebhooks: getWebhooks,
+  getWebhooksByInvoiceId: getWebhooksByInvoiceId,
   insert: insert,
   destroy: destroy
 };

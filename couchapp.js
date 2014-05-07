@@ -76,10 +76,18 @@ ddoc.views.lastBlockHash = {
   }
 };
 
-ddoc.views.failedWebhooks = {
+ddoc.views.webhooks = {
   map: function(doc) {
     if (doc.type === 'webhook') {
-      emit(doc.created, doc);
+      emit([doc.invoice_id, doc.created], doc);
+    }
+  }
+};
+
+ddoc.views.webhooksByInvoiceID = {
+  map: function(doc) {
+    if (doc.type === 'webhook') {
+      emit(doc.invoice_id, doc);
     }
   }
 };

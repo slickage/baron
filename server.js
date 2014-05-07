@@ -1,7 +1,7 @@
 var config = require(__dirname + '/config');
 var watchJob = require(__dirname + '/jobs/watchpaymentjob');
 var blockJob = require(__dirname + '/jobs/lastblockjob');
-var webhooksJob = require(__dirname + '/jobs/retrywebhooksjob');
+var webhooksJob = require(__dirname + '/jobs/webhooksjob');
 var path = require('path');
 var express = require('express');
 var app = express();
@@ -15,6 +15,6 @@ require(__dirname + '/routes')(app);
 require('bitstamped');
 blockJob.runLastBlockJob();
 watchJob.runWatchPaymentsJob();
-webhooksJob.runRetryWebhooksJob();
+webhooksJob.runWebhooksJob();
 app.listen(config.port);
 console.log('Baron listening at http://0.0.0.0:' + config.port);

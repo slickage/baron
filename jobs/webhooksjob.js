@@ -3,14 +3,14 @@ var invoiceWebhooks = require(__dirname + '/../invoicewebhooks');
 var db = require(__dirname + '/../db');
 var async = require('async');
 
-function retryWebhooksJob() {
-  db.getFailedWebhooks(function (err, webhooksArr) {
+function webhooksJob() {
+  db.getWebhooks(function (err, webhooksArr) {
     if (!err && webhooksArr) {
       console.log('===========================');
       console.log('Retrying Failed Webhooks [' + webhooksArr.length + ']');
       console.log('===========================');
       async.eachSeries(webhooksArr, function(webhookObj, cb) {
-        invoiceWebhooks.postToWebhookIgnoreFailure(webhookObj, cb);
+        invoiceWebhooks.postToWebhook(webhookObj, cb);
       }, function(err) {
         if (!err) {
           console.log('> Done processing failed webhooks.');
@@ -20,12 +20,12 @@ function retryWebhooksJob() {
   });
 }
 
-var runRetryWebhooksJob = function () {
+var runWebhooksJob = function () {
   setInterval(function(){
-    retryWebhooksJob();
-  }, config.retryWebhooksJobInterval);
+    webhooksJob();
+  }, config.webhooksJobInterval);
 };
 
 module.exports = {
-  runRetryWebhooksJob: runRetryWebhooksJob
+  runWebhooksJob: runWebhooksJob
 };
