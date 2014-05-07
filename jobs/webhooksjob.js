@@ -10,7 +10,7 @@ function webhooksJob() {
       console.log('Retrying Failed Webhooks [' + webhooksArr.length + ']');
       console.log('===========================');
       async.eachSeries(webhooksArr, function(webhookObj, cb) {
-        invoiceWebhooks.postToWebhook(webhookObj, cb);
+        invoiceWebhooks.postToWebhookIgnoreFailure(webhookObj, cb);
       }, function(err) {
         if (!err) {
           console.log('> Done processing failed webhooks.');

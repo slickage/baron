@@ -14,113 +14,124 @@ function generateHandshakeToken(postToken, token) {
 function postToWebhook(webhookObj, cb) {
   var postToken = generatePostToken(webhookObj.token);
   var handshakeToken = generateHandshakeToken(postToken, webhookObj.token);
-  var webhookInfo = webhookObj.invoice_id + ', ' + webhookObj.status + ', '+ webhookObj.url;
-  console.log('> [Webhook (' + webhookInfo + ')] attempting to call webhook');
+  console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
   request.post(webhookObj.url, { form: { token: postToken } },
     function (error, response, body) {
-      body = JSON.parse(body);
       var receivedHandshakeToken = body.token;
       var handshakeSuccess = handshakeToken === receivedHandshakeToken;
       if (!error && handshakeSuccess && response.statusCode === 200) {
-        db.destroy(webhookObj._id, webhookObj._rev, function(err) {
-          if (err) {
-            console.log('> [Webhook (' + webhookInfo + ')] failed to destroy ' + JSON.stringify(webhookObj));
-          }
-          else {
-            console.log('> [Webhook (' + webhookInfo + ')] webhook successfully called');
-          }
-          cb();
-        });
+        cb();
       }
       else {
         if (!handshakeSuccess) {
-          console.log('> [Webhook (' + webhookInfo + ')] handshake between baron and webhook url failed');
+          console.log('[Webhook Handshake Failed: ' + webhookObj.invoice_id + '] handshake between baron and webhook failed.');
         }
-        else {
-          console.log('> [Webhook (' + webhookInfo + ')] failed to notify');
-        }
-        cb();
+        error = error ? error : new Error();
+        cb(error);
       }
     }
   );
 }
 
-function addWebhookToQueue(webhookObj) {
-  var webhookInfo = webhookObj.invoice_id + ', ' + webhookObj.status + ', '+ webhookObj.url;
-  db.getWebHooksByInvoiceId(webhookObj.invoice_id, function(err, webhooksArr) {
+function postToWebhookStoreFailure(webhookObj) {
+  postToWebhook(webhookObj, function(err) {
     if (err) {
-      console.log('> [Webhook (' + webhookInfo + ')] Error querying webhooks');
+      webhookObj.created = new Date().getTime();
+      webhookObj.type = 'webhook';
+      db.insert(webhookObj, function(err) {
+        if (err) {
+          console.log('[Webhook Storage: ' + webhookObj.invoice_id + '] failed to store webhook for retry: \n' + JSON.stringify(webhookObj));
+        }
+        else {
+          console.log('[Webhook Failed: ' + webhookObj.invoice_id + '] failed to notify ' + webhookObj.url);
+        }
+      });
     }
     else {
-      var duplicate = false;
-      if (webhooksArr) {
-        webhooksArr.forEach(function(webhook) {
-          if (webhookObj.status === webhook.status) {
-            duplicate = true;
-          }
-        });
-      }
-
-      if (!duplicate) {
-        webhookObj.created = new Date().getTime();
-        webhookObj.type = 'webhook';
-        db.insert(webhookObj, function(err) {
-          if (err) {
-            console.log('> [Webhook (' + webhookInfo + ')] Failed to queue webhook: \n' + JSON.stringify(webhookObj));
-          }
-          else {
-            console.log('> [Webhook (' + webhookInfo + ')] Queued for execution');
-          }
-        });
-      }
+        console.log('[Webhook Success: ' + webhookObj.invoice_id + '] successfully notified ' + webhookObj.url);
     }
   });
 }
 
-var queuePaid = function(webhooks, invoiceId, origStatus, newStatus) {
-  if (origStatus !== newStatus) {
-    if (webhooks && webhooks.paid && webhooks.paid.url && webhooks.paid.token) {
-      webhooks.paid.status = newStatus;
-      webhooks.paid.invoice_id = invoiceId;
-      addWebhookToQueue(webhooks.paid);
+var postToWebhookIgnoreFailure = function(webhookObj, cb) {
+  postToWebhook(webhookObj, function(err) {
+    if (err) {
+        console.log('[Webhook Retry Failed: ' + webhookObj.invoice_id + '] failed to notify ' + webhookObj.url);
+        cb();
     }
-  }
+    else {
+        db.destroy(webhookObj._id, webhookObj._rev, function(err) {
+          if (err) {
+            console.log('[Webhook Destroy Failed: ' + webhookObj.invoice_id + '] failed to destroy ' + JSON.stringify(webhookObj));
+          }
+        });
+        console.log('[Webhook Retry Success: ' + webhookObj.invoice_id + '] successfully notified ' + webhookObj.url);
+        cb();
+    }
+  });
 };
 
-var queuePartial = function(webhooks, invoiceId, origStatus, newStatus) {
-  if (origStatus !== newStatus) {
-    if (webhooks && webhooks.partial && webhooks.partial.url && webhooks.partial.token) {
-      webhooks.partial.status = newStatus;
-      webhooks.partial.invoice_id = invoiceId;
-      addWebhookToQueue(webhooks.partial);
-    }
+function tryCallPaid(webhooks, invoiceId, newStatus) {
+  if (webhooks && webhooks.paid && webhooks.paid.url && webhooks.paid.token) {
+    webhooks.paid.status = newStatus;
+    webhooks.paid.invoice_id = invoiceId;
+    postToWebhookStoreFailure(webhooks.paid);
   }
-};
+}
 
-var queuePending = function(webhooks, invoiceId, origStatus, newStatus) {
-  if (origStatus !== newStatus) {
-    if (webhooks && webhooks.pending && webhooks.pending.url && webhooks.pending.token) {
-      webhooks.pending.status = newStatus;
-      webhooks.pending.invoice_id = invoiceId;
-      addWebhookToQueue(webhooks.pending);
-    }
+function tryCallPartial(webhooks, invoiceId, newStatus) {
+  if (webhooks && webhooks.partial && webhooks.partial.url && webhooks.partial.token) {
+    webhooks.partial.status = newStatus;
+    webhooks.partial.invoice_id = invoiceId;
+    postToWebhookStoreFailure(webhooks.partial);
   }
-};
+}
 
-var queueInvalid = function(webhooks, invoiceId, origStatus, newStatus) {
+function tryCallPending(webhooks, invoiceId, newStatus) {
+  if (webhooks && webhooks.pending && webhooks.pending.url && webhooks.pending.token) {
+    webhooks.pending.status = newStatus;
+    webhooks.pending.invoice_id = invoiceId;
+    postToWebhookStoreFailure(webhooks.pending);
+  }
+}
+
+function tryCallInvalid(webhooks, invoiceId, newStatus) {
+  if (webhooks && webhooks.invalid && webhooks.invalid.url && webhooks.invalid.token) {
+    webhooks.invalid.status = newStatus;
+    webhooks.invalid.invoice_id = invoiceId;
+    postToWebhookStoreFailure(webhooks.invalid);
+  }
+}
+
+var determineWebhookCall = function(invoiceId, origStatus, newStatus) {
   if (origStatus !== newStatus) {
-    if (webhooks && webhooks.invalid && webhooks.invalid.url && webhooks.invalid.token) {
-      webhooks.invalid.status = newStatus;
-      webhooks.invalid.invoice_id = invoiceId;
-      addWebhookToQueue(webhooks.invalid);
-    }
+    db.findInvoice(invoiceId, function(err, invoice) {
+      if (err) {
+        console.log('[Webhooks (' + invoiceId + ')] Error finding invoice.');
+      }
+      else if (invoice.webhooks) {
+        switch(newStatus) {
+          case 'invalid':
+            tryCallInvalid(invoice.webhooks, invoiceId, newStatus);
+            break;
+          case 'pending':
+            tryCallPending(invoice.webhooks, invoiceId, newStatus);
+            break;
+          case 'partial':
+            tryCallPartial(invoice.webhooks, invoiceId, newStatus);
+            break;
+          case 'paid':
+          case 'overpaid':
+            tryCallPaid(invoice.webhooks, invoiceId, newStatus);
+            break;
+          default: break;
+        }
+      }
+    });
   }
 };
 
 module.exports = {
-  postToWebhook: postToWebhook,
-  queuePaid: queuePaid,
-  queuePartial: queuePartial,
-  queuePending: queuePending,
-  queueInvalid: queueInvalid
+  postToWebhookIgnoreFailure: postToWebhookIgnoreFailure,
+  determineWebhookCall: determineWebhookCall
 };

@@ -179,21 +179,6 @@ var getWebhooks = function (cb) {
   });
 };
 
-var getWebhooksByInvoiceId = function(invoiceId, cb) {
-  baronDb.view(dbName, 'webhooksByInvoiceID', { key: invoiceId }, function(err, body) {
-    if (!err && body.rows && body.rows.length > 0) {
-      var webhooksArr = [];
-      body.rows.forEach(function(row) {
-        if (row.value.type === 'webhook') {
-          webhooksArr.push(row.value);
-        }
-      });
-      return cb(err, webhooksArr);
-    }
-    return cb(err, null);
-  });
-};
-
 var insert = function(doc, cb) { // Used to update a payment or invoice
   baronDb.insert(doc, cb);
 };
@@ -214,7 +199,6 @@ module.exports = {
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
   getWebhooks: getWebhooks,
-  getWebhooksByInvoiceId: getWebhooksByInvoiceId,
   insert: insert,
   destroy: destroy
 };

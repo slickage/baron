@@ -83,11 +83,3 @@ ddoc.views.webhooks = {
     }
   }
 };
-
-ddoc.views.webhooksByInvoiceID = {
-  map: function(doc) {
-    if (doc.type === 'webhook') {
-      emit(doc.invoice_id, doc);
-    }
-  }
-};

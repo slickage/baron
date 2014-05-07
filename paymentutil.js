@@ -7,6 +7,7 @@ var db = require(__dirname + '/db');
 var api = require(__dirname + '/insightapi');
 var config = require(__dirname + '/config');
 var invoiceHelper = require(__dirname + '/invoicehelper');
+var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 var _ = require('lodash');
 
 // ===============================================
@@ -163,8 +164,13 @@ var processReorgedPayments = function (blockHash) {
     }
     if (paymentsArr) {
       paymentsArr.forEach(function (payment) {
+        var origStatus = payment.status;
         processReorgedPayment(payment, blockHash);
-        db.insert(payment);
+        db.insert(payment, function(err) {
+          if (!err) {
+            invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+          }
+        });
       });
     }
   });
@@ -176,6 +182,7 @@ var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
       if (err) {
         return cb ? cb(err) : null;
       }
+      var origStatus = payment.status;
       //TODO: Notify Admin of Double Spend
       if (transaction.walletconflicts.length > 0) {
         payment.double_spent_history = transaction.walletconflicts;
@@ -183,7 +190,15 @@ var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
       if (blockHash) {
         processReorgedPayment(payment, blockHash);
       }
-      db.insert(payment, cb);
+      db.insert(payment, function(err) {
+        if (err) {
+          cb(err);
+        }
+        else {
+          invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+          cb();
+        }
+      });
     });
   }
 };
@@ -200,6 +215,7 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
       }
       var oldBlockHash = payment.block_hash;
       if (blockIsValid) {
+        var origStatus = payment.status;
         var curStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
         if(validate.paymentChanged(payment, transaction, curStatus)) {
           if (isReorg) { // Handle Reorg History.
@@ -235,6 +251,9 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
           db.insert(payment, function (err) {
             if (isReorg) {
               processReorgedPayments(oldBlockHash);
+            }
+            if (!err) {
+              invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
             }
             return cb(err);
           });

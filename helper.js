@@ -66,17 +66,14 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   confirmations = confirmations ? confirmations : 0; // Pending if there are no confs
   var minConfirmations = invoice.min_confirmations;
   var status = payment.status;
-  var origStatus = status;
   var confirmationsMet = Number(confirmations) >= Number(minConfirmations);
   var expectedAmount = new BigNumber(payment.expected_amount);
   var amountPaid = new BigNumber(payment.amount_paid);
   if (confirmations === -1) {
     status = 'invalid';
-    invoiceWebhooks.queueInvalid(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (amountPaid.greaterThan(0) && !confirmationsMet) {
     status = 'pending';
-    invoiceWebhooks.queuePending(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (confirmationsMet) {
     var isUSD = invoice.currency.toUpperCase() === 'USD';
@@ -90,23 +87,13 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     }
     if(amountPaid.equals(expectedAmount) || closeEnough) {
       status = 'paid';
-      invoiceWebhooks.queuePaid(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
-      invoiceWebhooks.queuePartial(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.greaterThan(expectedAmount)) {
       status = 'overpaid';
-      invoiceWebhooks.queuePaid(invoice.webhooks, invoice._id, origStatus, status);
     }
-  }
-
-
-
-  // Notify admin of invalid transaction
-  if (status === 'invalid' && origStatus !== status) {
-    // TODO: Notify Admin
   }
   return status;
 };

@@ -4,6 +4,7 @@ var helper = require(__dirname + '/../helper');
 var db = require(__dirname + '/../db');
 var _ = require('lodash');
 var paymentUtil = require(__dirname + '/../paymentutil');
+var invoiceWebhooks = require(__dirname + '/../invoicewebhooks');
 
 // TODO: This job can be removed in the future, we can calculate
 // The confirmations of our watched payments based on our stored
@@ -69,7 +70,11 @@ function updateWatchedPayment(payment, invoice, body) {
                              (payment.double_spent_history && !oldDoubleSpent);
     payment.watched = !stopTracking;
     if (stopTracking || statusChanged || blockHashChanged || doubleSpentChanged || reorgHistChanged) {
-      db.insert(payment);
+      db.insert(payment, function(err) {
+        if (!err) {
+          invoiceWebhooks.determinWebhookCall(payment.invoice_id, oldStatus, newStatus);
+        }
+      });
     }
   }
   else {
