@@ -66,7 +66,7 @@ var invoices = function(app) {
   });
 
   // Post invoice object to /invoice to create new invoice
-  app.post('/createinvoice', function(req, res) {
+  app.post('/invoices', function(req, res) {
     var invoice = req.body;
     if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.postAccessToken) {
       var err = new Error('Access Denied: Invalid access token.');

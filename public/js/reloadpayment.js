@@ -2,7 +2,7 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
     var expirationSpans = document.getElementsByClassName('expiration');
     var confirmationSpans = document.getElementsByClassName('confirmations');
     var confirmations = Number(confirmationSpans[0].innerText);
-    
+
     var getExpirationCountDown = function (expiration) {
       var curTime = new Date().getTime();
       var diff = expiration - curTime;
@@ -49,10 +49,11 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
           var newStatus = res.status;
           var newBlockHash = res.block_hash;
           var newConfirmations = res.confirmations;
-          if (newConfirmations === minConfirmations) {
-             window.location.reload();
-          }
-          else if (confirmations !== newConfirmations) {
+
+          if (confirmations !== newConfirmations) {
+            if (newConfirmations === minConfirmations) {
+               window.location.reload();
+            }
             for (var i = 0; i < confirmationSpans.length; ++i) {
               var item = confirmationSpans[i];
               item.innerText = newConfirmations;

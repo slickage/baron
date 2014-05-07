@@ -99,7 +99,13 @@
     </div>
 
     <div class="row hidden-xs">
-      <div class="col-sm-4"></div>
+      <div class="col-sm-4">
+        <% if (invoice.terms) { %>
+          <a class="small-text" target="_blank" href="/terms/<%= invoice._id %>">
+            View Terms and Conditions
+          </a>
+        <% } %>
+      </div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Amount Paid</span>
           <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>

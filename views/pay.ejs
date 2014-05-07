@@ -89,7 +89,12 @@
             <img class="right-icon" src="/images/info.png" />
           </a>
         <% } %>
-        <input type="text" class="form-control address-spacer" value="<%= address %>" />
+        <input type="text" class="form-control address-spacer<% if (hasTermsAndConditions) { %>-small<% } %>" value="<%= address %>" />
+        <% if (hasTermsAndConditions) { %>
+          <a class="small-text" target="_blank" href="/terms/<%= invoiceId %>">
+            View Terms and Conditions
+          </a>
+        <% } %>
         <% if (!txId && isUSD) { %>
           <span class="red">Payment rate will refresh in <span class="expiration"><%= expires %></span>.</span>
         <% } %>
@@ -138,7 +143,12 @@
                 <img class="right-icon" src="/images/info.png" />
               </a>
             <% } %>
-            <input type="text" class="form-control address-spacer" value="<%= address %>" />
+            <input type="text" class="form-control address-spacer<% if (hasTermsAndConditions) { %>-small<% } %>" value="<%= address %>" />
+            <% if (hasTermsAndConditions) { %>
+              <a class="small-text" target="_blank" href="/terms/<%= invoiceId %>">
+                View Terms and Conditions
+              </a>
+            <% } %>
           </div>
           <% if (!txId && isUSD) { %>
             <span class="red">Payment rate will refresh in <span class="expiration"><%= expires %></span>.</span>
