@@ -1,5 +1,5 @@
 var BigNumber = require('bignumber.js');
-var request = require('request');
+var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
@@ -72,9 +72,11 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   var amountPaid = new BigNumber(payment.amount_paid);
   if (confirmations === -1) {
     status = 'invalid';
+    invoiceWebhooks.tryCallInvalid(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (amountPaid.greaterThan(0) && !confirmationsMet) {
     status = 'pending';
+    invoiceWebhooks.tryCallPending(invoice.webhooks, invoice._id, origStatus, status);
   }
   else if (confirmationsMet) {
     var isUSD = invoice.currency.toUpperCase() === 'USD';
@@ -88,31 +90,19 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
     }
     if(amountPaid.equals(expectedAmount) || closeEnough) {
       status = 'paid';
+      invoiceWebhooks.tryCallPaid(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.lessThan(expectedAmount)) {
       status = 'partial';
+      invoiceWebhooks.tryCallPartial(invoice.webhooks, invoice._id, origStatus, status);
     }
     else if (amountPaid.greaterThan(expectedAmount)) {
       status = 'overpaid';
+      invoiceWebhooks.tryCallPaid(invoice.webhooks, invoice._id, origStatus, status);
     }
   }
 
-  // TODO: Better place to put this? Notify webhook if paid
-  if (invoice.webhooks && (status === 'paid' || status === 'overpaid') && origStatus !== status) {
-    var webhookUrl = invoice.webhooks.paid.url;
-    var webhookToken = invoice.webhooks.paid.token;
-    request.post(webhookUrl, { form: { token: webhookToken } },
-      function (error, response, body) {
-        if (!error && response.statusCode === 200) {
-          console.log('[Webhook: ' + webhookUrl + '] was notified of invoice ' + invoice._id + '\'s payment.');
-        }
-        else {
-          // TODO: Should keep trying to notify until we get a response.
-          console.log('[Webhook: ' + webhookUrl + '] failed to receive payment notification.');
-        }
-      }
-    );
-  }
+
 
   // Notify admin of invalid transaction
   if (status === 'invalid' && origStatus !== status) {

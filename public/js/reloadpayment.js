@@ -39,28 +39,6 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
       }, 500);
     }
 
-    var requestConfirmations = function() {
-        var request = new XMLHttpRequest();
-        var isAsynchronous = true;
-        request.open('GET', insightUrl + blockHash, isAsynchronous);
-        request.onload = function(xmlEvent){
-          var res = JSON.parse(request.response);
-          if (res && res.confirmations) {
-            var newConfirmations = res.confirmations;
-            if (newConfirmations === minConfirmations) {
-               window.location.reload();
-            }
-            else if (confirmations !== newConfirmations) {
-              for (var i = 0; i < confirmationSpans.length; ++i) {
-                var item = confirmationSpans[i];
-                item.innerText = newConfirmations;
-              }
-            }
-          }
-        };
-        request.send();
-    };
-
     var requestPayment = function() {
         var request = new XMLHttpRequest();
         var isAsynchronous = true;
@@ -70,6 +48,16 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
           var newTxId = res.tx_id;
           var newStatus = res.status;
           var newBlockHash = res.block_hash;
+          var newConfirmations = res.confirmations;
+          if (newConfirmations === minConfirmations) {
+             window.location.reload();
+          }
+          else if (confirmations !== newConfirmations) {
+            for (var i = 0; i < confirmationSpans.length; ++i) {
+              var item = confirmationSpans[i];
+              item.innerText = newConfirmations;
+            }
+          }
           if (newBlockHash) {
             blockHash = newBlockHash;
           }
@@ -81,11 +69,6 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
     };
 
     setInterval(function(){
-      if (!txId || !blockHash) {
-        requestPayment();
-      }
-      else if(blockHash) {
-        requestConfirmations();
-      }
+      requestPayment();
     }, 15000);
 };

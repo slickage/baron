@@ -105,7 +105,7 @@ var findInvoice = function(invoiceId, cb) {
 };
 
 var getWatchedPayments = function(cb) {
-  baronDb.view(dbName, 'watchedPayments', function (err, body) {
+  baronDb.view(dbName, 'watchedPayments', function(err, body) {
      if (!err && body.rows && body.rows.length > 0) {
       var paymentsArr = [];
       body.rows.forEach(function(row) {
@@ -120,10 +120,10 @@ var getWatchedPayments = function(cb) {
 };
 
 var getPaymentByBlockHash = function(blockHash, cb) {
-  baronDb.view(dbName, 'paymentsBlockHash', { key:blockHash }, function (err, body) {
+  baronDb.view(dbName, 'paymentsBlockHash', { key:blockHash }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var paymentsArr = [];
-      body.rows.forEach(function (row) {
+      body.rows.forEach(function(row) {
         if (row.value.type === 'payment') {
           paymentsArr.push(row.value);
         }
@@ -135,7 +135,7 @@ var getPaymentByBlockHash = function(blockHash, cb) {
 };
 
 var getLastKnownBlockHash = function(cb) {
-  baronDb.view(dbName, 'lastBlockHash', function (err, body) {
+  baronDb.view(dbName, 'lastBlockHash', function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
       var lastKnownBlockHash = body.rows[0].value;
       return cb(err, lastKnownBlockHash);
@@ -164,6 +164,21 @@ var createInvoice = function(invoice, cb) {
   }
 };
 
+var getFailedWebhooks = function (cb) {
+  baronDb.view(dbName, 'failedWebhooks', function(err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var webhooksArr = [];
+      body.rows.forEach(function(row) {
+        if (row.value.type === 'webhook') {
+          webhooksArr.push(row.value);
+        }
+      });
+      return cb(err, webhooksArr);
+    }
+    return cb(err, null);
+  });
+};
+
 var insert = function(doc, cb) { // Used to update a payment or invoice
   baronDb.insert(doc, cb);
 };
@@ -179,5 +194,6 @@ module.exports = {
   getPaymentByBlockHash: getPaymentByBlockHash,
   getLastKnownBlockHash: getLastKnownBlockHash,
   createInvoice: createInvoice,
+  getFailedWebhooks: getFailedWebhooks,
   insert: insert
 };

@@ -54,7 +54,7 @@ function findOrCreatePayment(invoiceId, cb) {
   });
 }
 
-function buildPaymentData(activePayment, invoice, remainingBalance, cb) {
+function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb) {
   var owedAmount = activePayment.expected_amount;
   // Check if invoice is paid
   var invoicePaid;
@@ -110,7 +110,7 @@ function createPaymentDataForView(invoiceId, cb) {
       return cb(err, null);
     }
     else {
-      buildPaymentData(result.payment, result.invoice, result.remainingBalance, cb);
+      buildFormattedPaymentData(result.payment, result.invoice, result.remainingBalance, cb);
     }
   });
 }
@@ -148,11 +148,29 @@ var pay = function(app) {
   app.get('/payment/:paymentId', function(req, res) {
     var paymentId = req.params.paymentId;
     db.findPaymentById(paymentId, function(err, payment) {
-      if (err) {
-        res.write(err);
+      if (err || !payment) {
+        res.send(400);
+        res.end();
       }
       else {
-        res.json(payment);
+        api.getBlock(payment.block_hash, function(err, block) {
+          payment.confirmations = 0;
+          if (!err && block && block.confirmations) {
+            payment.confirmations = block.confirmations;
+          }
+          delete(payment._id);
+          delete(payment._rev);
+          delete(payment.address);
+          delete(payment.amount_paid);
+          delete(payment.created);
+          delete(payment.expected_amount);
+          delete(payment.invoice_id);
+          delete(payment.paid_timestamp);
+          delete(payment.spot_rate);
+          delete(payment.type);
+          delete(payment.watched);
+          res.json(payment);
+        });
       }
     });
   });

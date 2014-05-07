@@ -21,6 +21,7 @@ var localConfig = {
   chainExplorerUrl: 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: 15000,
   lastBlockJobInterval: 15000,
+  retryWebhooksJobInterval: 15000,
   paymentValidForMinutes: 5,
   trackPaymentUntilConf: 100
 };

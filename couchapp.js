@@ -75,3 +75,11 @@ ddoc.views.lastBlockHash = {
     }
   }
 };
+
+ddoc.views.failedWebhooks = {
+  map: function(doc) {
+    if (doc.type === 'webhook') {
+      emit(doc.created, doc);
+    }
+  }
+};

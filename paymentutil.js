@@ -217,9 +217,8 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
           payment.tx_id = transaction.txid;
           payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
           payment.paid_timestamp = transaction.time * 1000;
-          if (payment.status === 'unpaid') {
-            payment.watched = true;
-          }
+          var paymentIsUnpaid = payment.status === 'unpaid';
+          payment.watched = paymentIsUnpaid ? paymentIsUnpaid : payment.watched;
           var isUSD = invoice.currency.toUpperCase() === 'USD';
           if (isUSD) {
             var actualPaid = new BigNumber(amount).times(payment.spot_rate);
