@@ -4,7 +4,6 @@ var invoice = function(invoice) {
   if(invoice.line_items && invoice.line_items.length > 0) {
     invoice.line_items.forEach(function(item) {
       invalidLineItems = !item.amount || !item.quantity || !item.description;
-      console.log('Invaid');
     });
   }
   if (!invoice.currency || !invoice.min_confirmations ||

@@ -17,18 +17,23 @@ function postToWebhook(webhookObj, cb) {
   console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
   request.post(webhookObj.url, { form: { token: postToken } },
     function (error, response, body) {
-      body = JSON.parse(body);
-      var receivedHandshakeToken = body.token;
-      var handshakeSuccess = handshakeToken === receivedHandshakeToken;
-      if (!error && handshakeSuccess && response.statusCode === 200) {
-        cb();
-      }
-      else {
-        if (!handshakeSuccess) {
-          console.log('[Webhook Handshake Failed: ' + webhookObj.invoice_id + '] handshake between baron and webhook failed.');
+      try {
+        body = JSON.parse(body);
+        var receivedHandshakeToken = body.token;
+        var handshakeSuccess = handshakeToken === receivedHandshakeToken;
+        if (!error && handshakeSuccess && response.statusCode === 200) {
+          cb();
         }
-        error = error ? error : new Error();
-        cb(error);
+        else {
+          if (!handshakeSuccess) {
+            console.log('[Webhook Handshake Failed: ' + webhookObj.invoice_id + '] handshake between baron and webhook failed.');
+          }
+          error = error ? error : new Error();
+          cb(error);
+        }
+      }
+      catch(e) {
+        cb(e);
       }
     }
   );
