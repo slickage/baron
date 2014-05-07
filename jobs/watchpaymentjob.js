@@ -72,7 +72,7 @@ function updateWatchedPayment(payment, invoice, body) {
     if (stopTracking || statusChanged || blockHashChanged || doubleSpentChanged || reorgHistChanged) {
       db.insert(payment, function(err) {
         if (!err) {
-          invoiceWebhooks.determinWebhookCall(payment.invoice_id, oldStatus, newStatus);
+          invoiceWebhooks.determineWebhookCall(payment.invoice_id, oldStatus, newStatus);
         }
       });
     }
