@@ -141,7 +141,7 @@
       <% invoice.payment_history.forEach(function(payment) { %>
         <div class="row line-item thin-underline">
           <div class="col-xs-12 col-sm-5 col-md-4">
-            <span class="visible-xs mobile-address-text"><a href="#BlockChainInfo"><%= payment.tx_id.substring(0, 25) %>...</a></span>
+            <span class="visible-xs mobile-address-text"><a href="<%= payment.url %>"><%= payment.tx_id.substring(0, 25) %>...</a></span>
             <span class="hidden-xs address-text">
               <a href="<%= payment.url %>">
                 <%= payment.tx_id.substring(0, 25) %>...
