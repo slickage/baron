@@ -3,12 +3,12 @@ var crypto = require('crypto');
 var db = require(__dirname + '/db');
 
 function generatePostToken(token) {
-  return crypto.createHash('sha1').update(token).digest('hex');
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 function generateHandshakeToken(postToken, token) {
   var toHash = postToken + token;
-  return crypto.createHash('sha1').update(toHash).digest('hex');
+  return crypto.createHash('sha256').update(toHash).digest('hex');
 }
 
 function postToWebhook(webhookObj, cb) {
