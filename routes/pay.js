@@ -79,7 +79,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var url = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
     var paymentData = {
       validFor: config.paymentValidForMinutes,
-      hasTermsAndConditions: invoice.terms ? true : false,
+      hasTermsAndConditions: invoice.terms ? invoice.terms : null,
       minConfirmations: invoice.min_confirmations,
       queryUrl: '/payment/' + activePayment._id,
       blockHash: activePayment.block_hash,

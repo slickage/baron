@@ -91,7 +91,7 @@
         <% } %>
         <input type="text" class="form-control address-spacer<% if (hasTermsAndConditions) { %>-small<% } %>" value="<%= address %>" />
         <% if (hasTermsAndConditions) { %>
-          <a class="small-text" target="_blank" href="/terms/<%= invoiceId %>">
+          <a class="small-text" target="_blank" href="<%= hasTermsAndConditions %>">
             View Terms and Conditions
           </a>
         <% } %>
@@ -145,7 +145,7 @@
             <% } %>
             <input type="text" class="form-control address-spacer<% if (hasTermsAndConditions) { %>-small<% } %>" value="<%= address %>" />
             <% if (hasTermsAndConditions) { %>
-              <a class="small-text" target="_blank" href="/terms/<%= invoiceId %>">
+              <a class="small-text" target="_blank" href="<%= hasTermsAndConditions %>">
                 View Terms and Conditions
               </a>
             <% } %>

@@ -101,7 +101,7 @@
     <div class="row hidden-xs">
       <div class="col-sm-4">
         <% if (invoice.terms) { %>
-          <a class="small-text" target="_blank" href="/terms/<%= invoice._id %>">
+          <a class="small-text" target="_blank" href="<%= invoice.terms %>">
             View Terms and Conditions
           </a>
         <% } %>
