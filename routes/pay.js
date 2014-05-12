@@ -78,6 +78,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
     var url = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
     var paymentData = {
+      appTitle: config.appTitle,
       validFor: config.paymentValidForMinutes,
       hasTermsAndConditions: invoice.terms ? invoice.terms : null,
       minConfirmations: invoice.min_confirmations,
@@ -124,7 +125,7 @@ var pay = function(app) {
     findOrCreatePayment(invoiceId, function (err) {
       if (err) {
         console.log('>>> POST ERROR: ' + err);
-        return res.render('error', { errorMsg: err.message });
+        return res.render('error', { appTitle: config.appTitle, errorMsg: err.message });
       }
       else {
         return res.redirect('/pay/' + invoiceId);
@@ -138,7 +139,7 @@ var pay = function(app) {
     createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
         console.log('>>> GET ERROR ' + err);
-        return res.render('error', { errorMsg: err.message });
+        return res.render('error', { appTitle: config.appTitle,  errorMsg: err.message });
       }
       else {
         return res.render('pay', paymentData);

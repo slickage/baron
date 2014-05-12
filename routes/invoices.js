@@ -57,10 +57,10 @@ var invoices = function(app) {
     var invoiceId = req.params.invoiceId;
     findInvoiceAndPaymentHistory(invoiceId, function(err, invoice) {
       if (err) {
-        return res.render('error', { errorMsg: err.message });
+        return res.render('error', { appTitle: config.appTitle, errorMsg: err.message });
       }
       else {
-        return res.render('invoice', { invoice: invoice });
+        return res.render('invoice', { appTitle: config.appTitle, invoice: invoice });
       }
     });
   });

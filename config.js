@@ -15,6 +15,7 @@ var config = {
     protocol: process.env.INSIGHT_PROTOCOL || 'http'
   },
   port: process.env.PORT || 8080,
+  appTitle: process.env.APP_TITLE || 'Baron',
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
