@@ -1,5 +1,4 @@
 var BigNumber = require('bignumber.js');
-var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
