@@ -80,7 +80,6 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var paymentData = {
       appTitle: config.appTitle,
       validFor: config.paymentValidForMinutes,
-      hasTermsAndConditions: invoice.terms ? invoice.terms : null,
       minConfirmations: invoice.min_confirmations,
       queryUrl: '/payment/' + activePayment._id,
       blockHash: activePayment.block_hash,
