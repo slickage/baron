@@ -115,7 +115,6 @@ Invoices have the following properties:
 * `currency` - Currency of the invoice, can be either USD or BTC
 * `min_confirmations` - Minimum confirmations before a payment is considered paid
 * `expiration` ***(optional)*** - Expiration time for invoice (unix timestamp)
-* `terms` - ***(optional)*** A URL to a specific terms and conditions page for this invoice
 * `webhooks` - ***(optional)*** An object containing event webhooks <sup>[2]</sup>
 * `line_items` - Array storing line items
   * `description` - Line item description text
@@ -134,7 +133,6 @@ var newInvoice = {
     "currency" : "BTC",
     "min_confirmations" : 3,
     "expiration" : 1399997753000, // Optional
-    "terms" : "http://somesite.com/terms", // Optional
     "webhooks" : { // Optional
       "paid": { "url": "http://somesite.com/notifypaid", "token": "268f84b93a69bbd" }
     },

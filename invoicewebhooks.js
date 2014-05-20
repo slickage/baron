@@ -1,33 +1,15 @@
 var request = require('request');
-var crypto = require('crypto');
 var db = require(__dirname + '/db');
 
-function generatePostToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-function generateHandshakeToken(postToken, token) {
-  var toHash = postToken + token;
-  return crypto.createHash('sha256').update(toHash).digest('hex');
-}
-
 function postToWebhook(webhookObj, cb) {
-  var postToken = generatePostToken(webhookObj.token);
-  var handshakeToken = generateHandshakeToken(postToken, webhookObj.token);
   console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
-  request.post(webhookObj.url, { form: { token: postToken } },
-    function (error, response, body) {
+  request.post(webhookObj.url, { form: { token: webhookObj.token } },
+    function (error, response) {
       try {
-        body = JSON.parse(body);
-        var receivedHandshakeToken = body.token;
-        var handshakeSuccess = handshakeToken === receivedHandshakeToken;
-        if (!error && handshakeSuccess && response.statusCode === 200) {
+        if (!error && response.statusCode === 200) {
           cb();
         }
         else {
-          if (!handshakeSuccess) {
-            console.log('[Webhook Handshake Failed: ' + webhookObj.invoice_id + '] handshake between baron and webhook failed.');
-          }
           error = error ? error : new Error();
           cb(error);
         }
