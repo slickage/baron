@@ -211,10 +211,11 @@ Baron is capable of doing a ***POST*** to a url when a payment event occurs. A p
 var newInvoice = {
   //...
   "webhooks": {
-    "paid": { "url": "http://somesite.com/notifypaid", "token": "93a69bbdf4c5f37dd6" }
-    "partial": { "url": "http://somesite.com/notifypartial", "token": "93a69bbdf4c5f37dd6" }
-    "invalid": { "url": "http://somesite.com/notifyinvalid", "token": "93a69bbdf4c5f37dd6" }
-    "pending": { "url": "http://somesite.com/notifypending", "token": "93a69bbdf4c5f37dd6" }
+    "token": "93a69bbdf4c5f37dd6"
+    "paid": { "url": "http://somesite.com/notifypaid" },
+    "partial": { "url": "http://somesite.com/notifypartial" },
+    "invalid": { "url": "http://somesite.com/notifyinvalid" },
+    "pending": { "url": "http://somesite.com/notifypending" }
   }
   //...
 };

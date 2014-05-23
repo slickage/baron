@@ -60,33 +60,37 @@ var postToWebhookIgnoreFailure = function(webhookObj, cb) {
 };
 
 function tryCallPaid(webhooks, invoiceId, newStatus) {
-  if (webhooks && webhooks.paid && webhooks.paid.url && webhooks.paid.token) {
+  if (webhooks && webhooks.paid && webhooks.paid.url && webhooks.token) {
     webhooks.paid.status = newStatus;
     webhooks.paid.invoice_id = invoiceId;
+    webhooks.paid.token = webhooks.token;
     postToWebhookStoreFailure(webhooks.paid);
   }
 }
 
 function tryCallPartial(webhooks, invoiceId, newStatus) {
-  if (webhooks && webhooks.partial && webhooks.partial.url && webhooks.partial.token) {
+  if (webhooks && webhooks.partial && webhooks.partial.url && webhooks.token) {
     webhooks.partial.status = newStatus;
     webhooks.partial.invoice_id = invoiceId;
+    webhooks.partial.token = webhooks.token;
     postToWebhookStoreFailure(webhooks.partial);
   }
 }
 
 function tryCallPending(webhooks, invoiceId, newStatus) {
-  if (webhooks && webhooks.pending && webhooks.pending.url && webhooks.pending.token) {
+  if (webhooks && webhooks.pending && webhooks.pending.url && webhooks.token) {
     webhooks.pending.status = newStatus;
     webhooks.pending.invoice_id = invoiceId;
+    webhooks.pending.token = webhooks.token;
     postToWebhookStoreFailure(webhooks.pending);
   }
 }
 
 function tryCallInvalid(webhooks, invoiceId, newStatus) {
-  if (webhooks && webhooks.invalid && webhooks.invalid.url && webhooks.invalid.token) {
+  if (webhooks && webhooks.invalid && webhooks.invalid.url && webhooks.token) {
     webhooks.invalid.status = newStatus;
     webhooks.invalid.invoice_id = invoiceId;
+    webhooks.invalid.token = webhooks.token;
     postToWebhookStoreFailure(webhooks.invalid);
   }
 }
