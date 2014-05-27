@@ -24,6 +24,7 @@ Change directories to Baron and install dependencies:
 ```sh
 $ npm install
 ```
+** Before proceeding with Baron's installation ensure that couchdb is using the ['random' algorithm](http://docs.couchdb.org/en/latest/config/misc.html#uuids/algorithm) instead of the default 'sequential'. This is to prevent easy guessing of invoice id hashes. **
 
 ### Baron Configuration
 Configurations can be changed in the config.js file in the root of Baron.
