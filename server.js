@@ -17,4 +17,6 @@ blockJob.runLastBlockJob();
 watchJob.runWatchPaymentsJob();
 webhooksJob.runWebhooksJob();
 app.listen(config.port);
-console.log('Baron listening at http://0.0.0.0:' + config.port);
+console.log('CouchDB server:    ' + config.couchdb.url + '/' + config.couchdb.name);
+console.log('Bitcoind RPC:      ' + config.bitcoind.host + ':' + config.bitcoind.port);
+console.log('Baron listening:   http://0.0.0.0:' + config.port);
