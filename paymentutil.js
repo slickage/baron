@@ -100,7 +100,7 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
         return;
       }
     }
-    bitcoinUtil.getPaymentAddress(function(err, info) {
+    bitcoinUtil.getNewAddress(function(err, info) {
       if (err) {
         return cb(err, null);
       }

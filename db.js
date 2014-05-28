@@ -36,13 +36,17 @@ function checkUUIDAlg() {
 
 var instantiateDb = function () {
   nano.db.get(dbName, function(err) {
-    if (err) {
-      if (err.code && err.code === 'ECONNREFUSED') {
-        console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
-        return process.exit(1);
-      }
-      if (err.reason && err.reason === 'no_db_file') {
-        nano.db.create(dbName, function(err) {
+    if (err && err.code && err.code === 'ECONNREFUSED') {
+      console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
+      return process.exit(1);
+    }
+    else if (err && err.reason && err.reason === 'no_db_file') {
+      nano.db.create(dbName, function(err) {
+        if (err) {
+          console.log('Error: Failed to create database:\n' + err);
+          return process.exit(1);
+        }
+        else {
           console.log('Database created.');
           baronDb = nano.use(dbName);
           var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
@@ -50,8 +54,8 @@ var instantiateDb = function () {
             app.push();
           });
           checkUUIDAlg();
-        });
-      }
+        }
+      });
     }
     else {
       baronDb = nano.use(dbName);
