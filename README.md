@@ -221,12 +221,8 @@ var newInvoice = {
   //...
 };
 ```
-
+* `token` - A token that the invoice creating app is aware of (possibly a hash of the id of the affected record)
 * `url` - The url Baron should ***POST*** to when the payment event occurs
-* `token` - A token that the invoice creating app is aware of
-
-## Webhook Tokens
-We're making some changes to webhook tokens, please check back later...
 
 ## License
 MIT
