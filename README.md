@@ -205,7 +205,7 @@ Baron is also able to handle partial payments. When a payment only partially ful
 This is an example of an invoice that was paid in full by two separate payments:
 ![Partial Payment Screenshot](http://i.imgur.com/sKAsBFu.png)
 
-### Webhooks
+## Webhooks
 Baron is capable of doing a ***POST*** to a url when a payment event occurs. A payment event is when a payment goes from one status to anther. If a payment was to go from `unpaid` to `paid` status this would trigger the webhook stored in `newInvoice.webhooks.paid`. Here is a full list of supported webhooks:
 
 ```js
@@ -223,6 +223,14 @@ var newInvoice = {
 ```
 * `token` - A token that the invoice creating app is aware of (possibly a hash of the id of the affected record)
 * `url` - The url Baron should ***POST*** to when the payment event occurs
+
+### Webhook Verification
+In order to prevent a malicious ***POST*** of the invoice status to webhooks, the app receiving the webhook notification can verify the status of the invoice. Baron provides a `/status/:invoiceId` route which supports ***GET*** and will display the following data provided an invoiceId:
+
+* `confirmations` - The number of confirmations the payment's block has
+* `status` - The status of the payment
+
+The `/status/:invoiceId` route can be used to verify that an invoice is in the status that Baron's webhook notified.
 
 ## License
 MIT

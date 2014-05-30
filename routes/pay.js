@@ -159,17 +159,17 @@ var pay = function(app) {
           if (!err && block && block.confirmations) {
             payment.confirmations = block.confirmations;
           }
-          delete(payment._id);
-          delete(payment._rev);
-          delete(payment.address);
-          delete(payment.amount_paid);
-          delete(payment.created);
-          delete(payment.expected_amount);
-          delete(payment.invoice_id);
-          delete(payment.paid_timestamp);
-          delete(payment.spot_rate);
-          delete(payment.type);
-          delete(payment.watched);
+          delete payment._id;
+          delete payment._rev;
+          delete payment.address;
+          delete payment.amount_paid;
+          delete payment.created;
+          delete payment.expected_amount;
+          delete payment.invoice_id;
+          delete payment.paid_timestamp;
+          delete payment.spot_rate;
+          delete payment.type;
+          delete payment.watched;
           res.json(payment);
         });
       }
