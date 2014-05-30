@@ -5,53 +5,33 @@ var db = require(__dirname + '/../db');
 var _ = require('lodash');
 var paymentUtil = require(__dirname + '/../paymentutil');
 var invoiceWebhooks = require(__dirname + '/../invoicewebhooks');
+var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 
 // TODO: This job can be removed in the future, we can calculate
 // The confirmations of our watched payments based on our stored
 // last known block. Remove in the future.
 
-function updateWatchedPayment(payment, invoice, body) {
+function updateWatchedPayment(payment, invoice, transaction) {
   var oldStatus = payment.status;
   var oldBlockHash = payment.block_hash;
   var oldDoubleSpent = payment.double_spent_history;
   var oldReorgHist = payment.reorg_history;
-  var transaction;
-  try {
-    transaction = JSON.parse(body);
-  }
-  catch (err) {
-    console.log('Error parsing transaction from body: ' + body);
-    transaction = null;
-  }
   if (transaction) {
-    var reorgedHash;
-    // If a transaction doesnt have blocktime but has a blockhash 
-    // it's block was reorged. Insight fix
-    if (!transaction.blocktime && transaction.blockhash) {
-      reorgedHash = transaction.blockhash;
-      transaction.blockhash = null;
-      transaction.confirmations = -1; // setting to -1 to match txs coming from bitcoind
-    }
-    var newConfirmations = transaction.confirmations;
-    var newBlockHash = transaction.blockhash ? transaction.blockhash : null;
+    var newConfirmations = transaction.result.confirmations;
+    var newBlockHash = transaction.result.blockhash ? transaction.result.blockhash : null;
     payment.block_hash = newBlockHash;
-    // If our payment was in a block and tx doesnt have a blocktime now
-    // that means the block was reorged. blocktime is removed when tx is orphaned
-    if (reorgedHash) {
-      paymentUtil.processReorgedPayment(payment, reorgedHash);
+    // If transaction blockhash changed, it has reorged and reconfirmed into another block 
+    if (oldBlockHash !== transaction.result.blockhash) {
+      paymentUtil.processReorgedPayment(payment, transaction.result.blockhash);
     }
 
-    // Check for double spends
-    if (transaction.vin) {
-      transaction.vin.forEach(function(input) {
-        if (input.doubleSpentTxID) {
-          payment.double_spent_history = payment.double_spent_history ? payment.double_spent_history : [];
-          if (!_.contains(payment.double_spent_history, input.doubleSpentTxID)) {
-            payment.double_spent_history.push(input.doubleSpentTxID);
-          }
-        }
-      });
-    }
+    // Check for double spent (replacement, mutation, etc.)
+    transaction.result.walletconflicts.forEach(function(wc) {
+      payment.double_spent_history = payment.double_spent_history ? payment.double_spent_history : [];
+      if (!_.contains(payment.double_spent_history, wc)) {
+        payment.double_spent_history.push(wc);
+      }
+    });
 
     var newStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
     payment.status = oldStatus === newStatus ? oldStatus : newStatus;
@@ -105,10 +85,11 @@ var watchPaymentsJob = function () {
           if (err) {
             return console.log(err);
           }
-          var insightUrl = config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port;
-          var requestUrl = insightUrl + '/api/tx/' + payment.tx_id;
-          request(requestUrl, function (error, response, body) {
-            updateWatchedPayment(payment, invoice, body);
+          bitcoinUtil.getTransaction(payment.tx_id, function (err, transaction) {
+            if (err) {
+              return console.log(err);
+            }
+            updateWatchedPayment(payment, invoice, transaction);
           });
         });
       }
