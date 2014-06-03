@@ -117,7 +117,7 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
 
 function validateTransactionBlock(payment, transaction, cb) {
   if (transaction.blockhash) {
-    api.getBlock(transaction.blockhash, function(err, block) {
+    bitcoinUtil.getBlock(transaction.blockhash, function(err, block) {
       if (err) {
         return cb(err, false, false);
       }

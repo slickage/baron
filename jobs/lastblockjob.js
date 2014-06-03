@@ -16,10 +16,15 @@ function getLastBlockHash(cb) {
       return cb(null, lastBlockHash);
     }
     else {
-      api.getLastBlockHash(function (err, lastBlockHash) {
+      bitcoinUtil.getBestBlockHash(function (err, lastBlockHash) {
         if (err) {
           return cb(err, null);
         }
+        lastBlockHash.hash = lastBlockHash.result;
+        lastBlockHash.type = 'blockhash';
+        delete(lastBlockHash.id);
+        delete(lastBlockHash.error);
+        delete(lastBlockHash.result);
         db.insert(lastBlockHash, function(err) {
           if (err) {
             return cb(err, null);
@@ -33,7 +38,7 @@ function getLastBlockHash(cb) {
 
 function processBlockHash(blockHashObj) {
   var blockHash = blockHashObj.hash;
-  api.getBlock(blockHash, function(err, block) {
+  bitcoinUtil.getBlock(blockHash, function(err, block) {
     if (err || !block) {
       // TODO: If there's an error, lastblock in db is probably corrupt.
       // Should we update the latest block? 
