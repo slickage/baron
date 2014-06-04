@@ -1,4 +1,4 @@
-var api = require(__dirname + '/../insightapi');
+var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var db = require(__dirname + '/../db');
 var invoiceHelper = require(__dirname + '/../invoicehelper');
 
@@ -13,8 +13,9 @@ var statusRoute = function(app) {
       }
       else {
         var payment = invoiceHelper.getActivePayment(paymentsArr);
-        api.getBlock(payment.block_hash, function(err, block) {
+        bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
           payment.confirmations = 0;
+          block = block.result;
           if (!err && block && block.confirmations) {
             payment.confirmations = block.confirmations;
           }

@@ -160,11 +160,10 @@
   <script type="text/javascript">
     var expiration = Number('<%= expireTime %>');
     var txId = '<%= txId %>' === 'null' ? null : '<%= txId %>';
-    var insightUrl = '<%= insightUrl %>';
     var blockHash = '<%= blockHash %>' === 'null' ? null : '<%= blockHash %>';
     var queryUrl = '<%= queryUrl %>';
     var minConfirmations = Number('<%= minConfirmations %>');
-    reloadPayment(expiration, txId, insightUrl, blockHash, queryUrl, minConfirmations);
+    reloadPayment(expiration, txId, blockHash, queryUrl, minConfirmations);
   </script>
 </body>
 </html>

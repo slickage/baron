@@ -1,4 +1,4 @@
-var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl, minConfirmations) {
+var reloadPayment = function (expiration, txId, blockHash, queryUrl, minConfirmations) {
     var expirationSpans = document.getElementsByClassName('expiration');
     var confirmationSpans = document.getElementsByClassName('confirmations');
     var confirmations = Number(confirmationSpans[0].innerText);
@@ -54,9 +54,11 @@ var reloadPayment = function (expiration, txId, insightUrl, blockHash, queryUrl,
             if (newConfirmations === minConfirmations) {
                window.location.reload();
             }
-            for (var i = 0; i < confirmationSpans.length; ++i) {
-              var item = confirmationSpans[i];
-              item.innerText = newConfirmations;
+            else {
+              for (var i = 0; i < confirmationSpans.length; ++i) {
+                var item = confirmationSpans[i];
+                item.innerText = newConfirmations;
+              }
             }
           }
           if (newBlockHash) {

@@ -2,7 +2,7 @@ var paymentUtil = require(__dirname + '/../paymentutil');
 var invoiceHelper = require(__dirname + '/../invoicehelper');
 var helper = require(__dirname + '/../helper');
 var validate = require(__dirname + '/../validate');
-var api = require(__dirname + '/../insightapi');
+var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var config = require(__dirname + '/../config');
 var BigNumber = require('bignumber.js');
 var db = require(__dirname + '/../db');
@@ -63,8 +63,9 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
   }
 
   // Get Confirmations
-  api.getBlock(activePayment.block_hash, function(err, block) {
+  bitcoinUtil.getBlock(activePayment.block_hash, function(err, block) {
     var confirmations = 0;
+    block = block.result;
     if (err || !block) {
       confirmations = 0;
     }
@@ -83,7 +84,6 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       minConfirmations: invoice.min_confirmations,
       queryUrl: '/payment/' + activePayment._id,
       blockHash: activePayment.block_hash,
-      insightUrl: config.insight.protocol + '://' + config.insight.host + ':' + config.insight.port + '/api/block/',
       expireTime: expiration,
       expires: helper.getExpirationCountDown(expiration),
       remainingBalance: remainingBalance,
@@ -154,8 +154,9 @@ var pay = function(app) {
         res.end();
       }
       else {
-        api.getBlock(payment.block_hash, function(err, block) {
+        bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
           payment.confirmations = 0;
+          block = block.result;
           if (!err && block && block.confirmations) {
             payment.confirmations = block.confirmations;
           }

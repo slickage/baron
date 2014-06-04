@@ -4,7 +4,6 @@ var BigNumber = require('bignumber.js');
 var bitstamped = require('bitstamped');
 var bitcoinUtil = require(__dirname + '/bitcoinutil');
 var db = require(__dirname + '/db');
-var api = require(__dirname + '/insightapi');
 var config = require(__dirname + '/config');
 var invoiceHelper = require(__dirname + '/invoicehelper');
 var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
@@ -204,7 +203,7 @@ var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
 };
 
 // Updates payment with transaction data from listsinceblock or walletnotify
-function updatePaymentWithTransaction(payment, transaction, cb) {
+var updatePaymentWithTransaction = function(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) {
       return cb(err);
@@ -216,7 +215,8 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
       var oldBlockHash = payment.block_hash;
       if (blockIsValid) {
         var origStatus = payment.status;
-        var curStatus = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+        var newConfirmations = transaction.confirmations;
+        var curStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
         if(validate.paymentChanged(payment, transaction, curStatus)) {
           if (isReorg) { // Handle Reorg History.
             var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
@@ -233,8 +233,7 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
           payment.tx_id = transaction.txid;
           payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
           payment.paid_timestamp = transaction.time * 1000;
-          var paymentIsUnpaid = payment.status === 'unpaid';
-          payment.watched = paymentIsUnpaid ? paymentIsUnpaid : payment.watched;
+          payment.watched = newConfirmations === -1 ? false : newConfirmations < config.trackPaymentUntilConf;
           var isUSD = invoice.currency.toUpperCase() === 'USD';
           if (isUSD) {
             var actualPaid = new BigNumber(amount).times(payment.spot_rate);
@@ -247,7 +246,7 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
             }
           }
           // Update status after updating amounts to see if it changed.
-          payment.status = helper.getPaymentStatus(payment, transaction.confirmations, invoice);
+          payment.status = helper.getPaymentStatus(payment, newConfirmations, invoice);
           db.insert(payment, function (err) {
             if (isReorg) {
               processReorgedPayments(oldBlockHash);
@@ -275,7 +274,7 @@ function updatePaymentWithTransaction(payment, transaction, cb) {
       }
     });
   });
-}
+};
 
 // Handles case where user sends multiple payments to same address
 // Creates payment with transaction data from listsinceblock or walletnotify
@@ -379,6 +378,7 @@ var updatePayment = function(transaction, cb) {
 module.exports = {
   createNewPayment: createNewPayment,
   updatePayment: updatePayment,
+  updatePaymentWithTransaction: updatePaymentWithTransaction,
   processReorgedPayment: processReorgedPayment,
   processReorgedPayments: processReorgedPayments,
   processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent

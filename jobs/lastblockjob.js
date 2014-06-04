@@ -1,5 +1,4 @@
 var config = require(__dirname + '/../config');
-var api = require(__dirname + '/../insightapi');
 var validate = require(__dirname + '/../validate');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var paymentUtil = require(__dirname + '/../paymentutil');
@@ -22,9 +21,9 @@ function getLastBlockHash(cb) {
         }
         lastBlockHash.hash = lastBlockHash.result;
         lastBlockHash.type = 'blockhash';
-        delete(lastBlockHash.id);
-        delete(lastBlockHash.error);
-        delete(lastBlockHash.result);
+        delete lastBlockHash.id;
+        delete lastBlockHash.error;
+        delete lastBlockHash.result;
         db.insert(lastBlockHash, function(err) {
           if (err) {
             return cb(err, null);
