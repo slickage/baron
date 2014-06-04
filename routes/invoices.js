@@ -4,6 +4,7 @@ var db = require(__dirname + '/../db');
 var config = require(__dirname + '/../config');
 var invoiceHelper = require(__dirname + '/../invoicehelper');
 var BigNumber = require('bignumber.js');
+var _ = require('lodash');
 
 function findInvoiceAndPaymentHistory(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
@@ -41,6 +42,10 @@ function findInvoiceAndPaymentHistory(invoiceId, cb) {
       if (payment.status.toLowerCase() === 'pending') {
         hasPending = true;
       }
+    });
+
+    paymentHistory = _.sortBy(paymentHistory, function(payment) {
+      return payment.created;
     });
 
     invoice.is_paid = !hasPending && invoice.remaining_balance <= 0;
