@@ -7,5 +7,9 @@ public/assets
 .env
 /id_deploy
 TODO.txt
-tests/npm-debug.log
+npm-debug.log
+tags
 README.html
+tests/reorgtest/logs/*
+tests/reorgtest/tmp/*
+tests/reorgtest/reorgtest.conf

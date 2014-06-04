@@ -24,7 +24,7 @@ var statusRoute = function(app) {
           }
           delete payment._id;
           delete payment._rev;
-          delete payment.address;
+          //delete payment.address;
           delete payment.amount_paid;
           delete payment.created;
           delete payment.expected_amount;

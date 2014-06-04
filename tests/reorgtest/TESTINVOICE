@@ -1,0 +1,14 @@
+{
+  "access_token": "postaccesstoken",
+  "currency": "BTC",
+  "expiration": 1499097633000,
+  "min_confirmations": 1,
+  "line_items": [
+      {
+          "description": "Line Item #1",
+          "quantity": 1,
+          "amount": 50
+      }
+  ],
+  "webhooks":{ "paid": {"url": "http://localhost:9242/test", "token": "token"} }
+}

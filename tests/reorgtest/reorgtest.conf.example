@@ -1,0 +1,3 @@
+BARONDIR=/path/to/baron
+BARONPORT=8080
+DB_NAME=baronregtest
