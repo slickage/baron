@@ -38,10 +38,11 @@ function getLastBlockHash(cb) {
 function processBlockHash(blockHashObj) {
   var blockHash = blockHashObj.hash;
   bitcoinUtil.getBlock(blockHash, function(err, block) {
-    if (err || !block) {
-      // TODO: If there's an error, lastblock in db is probably corrupt.
-      // Should we update the latest block? 
-      console.log('Error: Last block may have been corrupted. Bitcoind may be out of sync with network.');
+    if (err) {
+      if (block.error.code === -5) {
+        console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.  Delete lastBlockHash from baron db if you wish to proceed.');
+        process.exit(1);
+      }
       return console.log(err);
     }
     console.log('> Block Valid: ' + validate.block(block));
