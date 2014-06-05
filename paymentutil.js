@@ -124,7 +124,7 @@ function validateTransactionBlock(payment, transaction, cb) {
       // Block is invalid and payment and transaction blockhash match
       var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;
       // Incoming block is valid and payment and transaction hash both are populated but dont match
-      var blockHashChanged = blockIsValid && payment.block_hash && transaction.blockhash && payment.block_hash !== transaction.blockhash;
+      var blockHashChanged = (blockIsValid && Boolean(payment.block_hash) && Boolean(transaction.blockhash) && (payment.block_hash !== transaction.blockhash);
       // Block isnt valid and payment.block_hash === transaction.blockhash.
       return cb(null, blockIsValid, isReorg || blockHashChanged);
     });
