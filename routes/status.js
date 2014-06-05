@@ -14,6 +14,9 @@ var statusRoute = function(app) {
       else {
         var payment = invoiceHelper.getActivePayment(paymentsArr);
         bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
+          if (err) {
+            console.log(err);
+          }
           payment.confirmations = 0;
           block = block.result;
           if (!err && block && block.confirmations) {

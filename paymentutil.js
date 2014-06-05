@@ -120,6 +120,7 @@ function validateTransactionBlock(payment, transaction, cb) {
       if (err) {
         return cb(err, false, false);
       }
+      block = block.result;
       var blockIsValid = validate.block(block);
       // Block is invalid and payment and transaction blockhash match
       var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;

@@ -45,19 +45,21 @@ function processBlockHash(blockHashObj) {
       }
       return console.log(err);
     }
+    block = block.result;
     //console.log('> Block Valid: ' + validate.block(block));
     // Get List Since Block 
     bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
       if (err) {
         return console.log(err);
       }
+      info = info.result;
       var transactions = [];
-      info.result.transactions.forEach(function(transaction) {
+      info.transactions.forEach(function(transaction) {
         if (transaction.category === 'receive') { // ignore sent tx's
           transactions.push(transaction);
         }
       });
-      var lastBlockHash = info.result.lastblock;
+      var lastBlockHash = info.lastblock;
       // If valid get transactions since last block (bitcore)
       if (validate.block(block)) {
         async.eachSeries(transactions, function(transaction, cb) {
