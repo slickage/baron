@@ -26,7 +26,7 @@ var invoiceExpired = function(invoice) {
 };
 
 var block = function(block) {
-  return block.confirmations ? Number(block.confirmations) !== -1 : true;
+  return Number(block.confirmations);
 };
 
 var paymentChanged = function(payment, transaction, newStatus) {
