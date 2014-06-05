@@ -45,7 +45,7 @@ function processBlockHash(blockHashObj) {
       }
       return console.log(err);
     }
-    console.log('> Block Valid: ' + validate.block(block));
+    //console.log('> Block Valid: ' + validate.block(block));
     // Get List Since Block 
     bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
       if (err) {
