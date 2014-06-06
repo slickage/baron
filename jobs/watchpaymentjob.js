@@ -10,9 +10,9 @@ var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 
 function updateWatchedPayment(payment, transaction) {
   var receiveDetail = helper.getReceiveDetail(transaction.details);
-  if (receiveDetail) {
-    transaction.address = receiveDetail.address;
-    transaction.amount = receiveDetail.amount;
+  if (receiveDetail || (!receiveDetail && (transaction.confirmations === -1))) {
+    transaction.address = receiveDetail ? receiveDetail.address : payment.address;
+    transaction.amount = receiveDetail ? receiveDetail.amount : payment.amount_paid;
     paymentUtil.updatePaymentWithTransaction(payment, transaction, function(err) {
       if (err) {
         console.log(err);
