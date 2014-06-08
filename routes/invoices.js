@@ -87,7 +87,6 @@ var invoices = function(app) {
         }
         else {
           res.json(invoiceData);
-          res.end();
         }
       });
     }
