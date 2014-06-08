@@ -16,6 +16,7 @@ errorexit() {
 [ -n "$BARONDIR" ]   || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
 [ -n "$BARONPORT" ]  || BARONPORT=8080
 [ -n "$DBNAME" ]     || DB_NAME=baronregtest
+[ -n "$TMPDIR" ]     || TMPDIR=$BARONDIR/tests/reorgtest/tmp
 
 setupbitcoind() {
   mkdir -p $TMPDIR/${1}
@@ -92,7 +93,6 @@ killall node
 curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
 sleep 3
 
-TMPDIR=$BARONDIR/tests/reorgtest/tmp
 LOGDIR=$BARONDIR/tests/reorgtest/logs
 rm -rf $TMPDIR
 mkdir -p $TMPDIR
