@@ -85,6 +85,22 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
   });
 };
 
+var findMatchingMetadataId = function(metadataId, cb) {
+  baronDb.view(dbName, 'invoiceMetadataId', { key:metadataId }, function(err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var matchingInvoice = body.rows[0].value;
+      console.log('findMatchingMetadataId: ' + require('util').inspect(matchingInvoice));
+      var result = {
+        ok: true,
+        _id: matchingInvoice._id,
+        _rev: matchingInvoice._rev
+      };
+      return cb(err, result);
+    }
+  return cb(err, null);
+  });
+}
+
 var findPaymentById = function(paymentId, cb) {
   baronDb.view(dbName, 'paymentsById', { key:paymentId }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
@@ -179,8 +195,35 @@ var getLastKnownBlockHash = function(cb) {
   });
 };
 
+function reuseInvoice(invoice, cb) {
+  if (invoice.metadata && invoice.metadata.id) {
+    findMatchingMetadataId(invoice.metadata.id, function(err, result) {
+      console.log('reuseInvoice match:' + require('util').inspect(result));
+      return cb(err, result);
+    });
+  }
+  else {
+    return cb(err, null);
+  }
+}
+
 var createInvoice = function(invoice, cb) {
-  if (validate.invoice(invoice)) {
+  // Validate
+  if (!validate.invoice(invoice)) {
+    var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
+      ' object being sent conforms to the specifications in the API');
+    return cb(invalidErr, null);
+  }
+  console.log('createInvoice invoice: ' + require('util').inspect(invoice));
+
+  // If metadata.id is already known in database, return existing invoice instead of create new.
+  reuseInvoice(invoice, function (err, existingInvoice) {
+    if (existingInvoice !== null) {
+      console.log('reusing existingInvoice:' + require('util').inspect(existingInvoice));
+      return cb(err, existingInvoice);
+    }
+    else {
+    // Create New Invoice
     invoice.access_token = undefined;
     invoice.created = new Date().getTime();
     invoice.type = 'invoice';
@@ -191,12 +234,8 @@ var createInvoice = function(invoice, cb) {
     });
     invoice.balance_due = Number(balanceDue.valueOf());
     baronDb.insert(invoice, cb);
-  }
-  else {
-    var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
-      ' object being sent conforms to the specifications in the API');
-    return cb(invalidErr, null);
-  }
+    }
+  });
 };
 
 var getWebhooks = function (cb) {
@@ -225,6 +264,7 @@ var destroy = function(docId, docRev, cb) { // Used to update a payment or invoi
 module.exports = {
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
+  findMatchingMetadataId: findMatchingMetadataId,
   findPaymentById: findPaymentById,
   findPayments: findPayments,
   findPaymentByTxId: findPaymentByTxId,
