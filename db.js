@@ -85,6 +85,16 @@ var findInvoiceAndPayments = function(invoiceId, cb) {
   });
 };
 
+var findMatchingMetadataId = function(metadataId, cb) {
+  baronDb.view(dbName, 'invoiceMetadataId', { key:metadataId }, function(err, body) {
+    if (!err && body.rows && body.rows.length > 0) {
+      var matchingInvoice = body.rows[0].value;
+      return cb(err, matchingInvoice);
+    }
+  return cb(err, null);
+  });
+}
+
 var findPaymentById = function(paymentId, cb) {
   baronDb.view(dbName, 'paymentsById', { key:paymentId }, function(err, body) {
     if (!err && body.rows && body.rows.length > 0) {
@@ -179,24 +189,48 @@ var getLastKnownBlockHash = function(cb) {
   });
 };
 
-var createInvoice = function(invoice, cb) {
-  if (validate.invoice(invoice)) {
-    invoice.access_token = undefined;
-    invoice.created = new Date().getTime();
-    invoice.type = 'invoice';
-    var balanceDue = new BigNumber(0);
-    invoice.line_items.forEach(function(item) {
-      var lineCost = new BigNumber(item.amount).times(item.quantity);
-      balanceDue = balanceDue.plus(lineCost);
+function reuseInvoice(invoice, cb) {
+  if (invoice.metadata && invoice.metadata.id) {
+    findMatchingMetadataId(invoice.metadata.id, function(err, result) {
+      return cb(err, result);
     });
-    invoice.balance_due = Number(balanceDue.valueOf());
-    baronDb.insert(invoice, cb);
   }
   else {
+    return cb(undefined, null);
+  }
+}
+
+var createInvoice = function(invoice, cb) {
+  // Validate
+  if (!validate.invoice(invoice)) {
     var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
       ' object being sent conforms to the specifications in the API');
     return cb(invalidErr, null);
   }
+
+  // If metadata.id is already known in database, return existing invoice instead of create new.
+  reuseInvoice(invoice, function (err, existingInvoice) {
+    if (existingInvoice) {
+      // Override expiration time of the existing invoice
+      if (invoice.expiration) {
+        existingInvoice.expiration = invoice.expiration;
+      }
+      baronDb.insert(existingInvoice, cb);
+    }
+    else {
+      // Create New Invoice
+      invoice.access_token = undefined;
+      invoice.created = new Date().getTime();
+      invoice.type = 'invoice';
+      var balanceDue = new BigNumber(0);
+      invoice.line_items.forEach(function(item) {
+        var lineCost = new BigNumber(item.amount).times(item.quantity);
+        balanceDue = balanceDue.plus(lineCost);
+      });
+      invoice.balance_due = Number(balanceDue.valueOf());
+      baronDb.insert(invoice, cb);
+    }
+  });
 };
 
 var getWebhooks = function (cb) {
@@ -225,6 +259,7 @@ var destroy = function(docId, docRev, cb) { // Used to update a payment or invoi
 module.exports = {
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
+  findMatchingMetadataId: findMatchingMetadataId,
   findPaymentById: findPaymentById,
   findPayments: findPayments,
   findPaymentByTxId: findPaymentByTxId,

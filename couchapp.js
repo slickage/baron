@@ -68,6 +68,14 @@ ddoc.views.watchedPayments = {
   }
 };
 
+ddoc.views.invoiceMetadataId = {
+ map: function(doc) {
+   if (doc.type === 'invoice' && doc.metadata && doc.metadata.id) {
+     emit(doc.metadata.id, doc);
+   }
+ }
+};
+
 ddoc.views.lastBlockHash = {
   map: function(doc) {
     if (doc.type === 'blockhash') {
