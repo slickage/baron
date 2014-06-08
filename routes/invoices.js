@@ -86,6 +86,7 @@ var invoices = function(app) {
           res.end();
         }
         else {
+          console.log('invoiceData:' + require('util').inspect(invoiceData));
           res.json(invoiceData);
         }
       });
