@@ -86,7 +86,7 @@ var invoices = function(app) {
           res.end();
         }
         else {
-          //console.log('invoiceData:' + require('util').inspect(invoiceData));
+          console.log('Invoice ' + invoiceData.id + ': submitted by ' + req.ip);
           res.json(invoiceData);
         }
       });

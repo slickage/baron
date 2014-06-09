@@ -14,10 +14,7 @@ var statusRoute = function(app) {
       else {
         var payment = invoiceHelper.getActivePayment(paymentsArr);
         bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
-          if (err) {
-            console.log('statusRoute:');
-            console.log(err);
-          }
+          // TODO: err.code === 0  is ECONNREFUSED, display error to user?
           payment.confirmations = 0;
           block = block.result;
           if (!err && block && block.confirmations) {
