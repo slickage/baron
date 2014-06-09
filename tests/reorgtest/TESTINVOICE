@@ -10,5 +10,9 @@
           "amount": 50
       }
   ],
-  "webhooks":{ "paid": {"url": "http://localhost:9242/test", "token": "token"} }
+  "webhooks":{ 
+    "token": "token", 
+    "paid": {"url": "http://localhost:8080/paid"},
+    "invalid": {"url": "http://localhost:8080/invalid" }
+  }
 }
