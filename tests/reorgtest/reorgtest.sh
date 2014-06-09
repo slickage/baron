@@ -13,14 +13,14 @@ errorexit() {
   exit 255
 }
 
-[ -n "$BARONDIR" ]   || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
-[ -n "$BARONPORT" ]  || BARONPORT=8080
-[ -n "$DBNAME" ]     || DB_NAME=baronregtest
-[ -n "$TMPDIR" ]     || TMPDIR=$BARONDIR/tests/reorgtest/tmp
+[ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
+[ -n "$BARONPORT" ]   || BARONPORT=8080
+[ -n "$DBNAME" ]      || DB_NAME=baronregtest
+[ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/reorgtest/tmp
 
 setupbitcoind() {
-  mkdir -p $TMPDIR/${1}
-  cd $TMPDIR/${1}
+  mkdir -p $BARONTMPDIR/${1}
+  cd $BARONTMPDIR/${1}
   cat <<EOF > bitcoin.conf
 rpcuser=user
 rpcpassword=password
@@ -45,7 +45,7 @@ fi
 btc() {
   N=$1
   shift
-  bitcoind -datadir=$TMPDIR/$N $@
+  bitcoind -datadir=$BARONTMPDIR/$N $@
 }
 
 startbtc() {
@@ -79,7 +79,7 @@ spendfrom() {
 
 
 printalias() {
-  echo "alias btc${1}='bitcoind -datadir=$TMPDIR/$1'"
+  echo "alias btc${1}='bitcoind -datadir=$BARONTMPDIR/$1'"
 }
 
 printhashes() {
@@ -94,8 +94,8 @@ curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
 sleep 3
 
 LOGDIR=$BARONDIR/tests/reorgtest/logs
-rm -rf $TMPDIR
-mkdir -p $TMPDIR
+rm -rf $BARONTMPDIR
+mkdir -p $BARONTMPDIR
 mkdir -p $LOGDIR
 
 for x in 1 2 3 4; do
@@ -149,7 +149,7 @@ btc 3 stop
 btc 4 stop
 sleep 3
 echo "[COPYING WALLET 1 to 3]"
-cp $TMPDIR/2/regtest/wallet.dat $TMPDIR/3/regtest/wallet.dat
+cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
 echo "[STARTING BITCOIND 3 & 4]"
 startbtc 3
 startbtc 4
@@ -195,7 +195,7 @@ btc 3 stop
 btc 4 stop
 sleep 3
 echo "[COPYING WALLET 1 to 3]"
-cp $TMPDIR/2/regtest/wallet.dat $TMPDIR/3/regtest/wallet.dat
+cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
 echo "[STARTING BITCOIND 3 & 4]"
 startbtc 3
 startbtc 4
@@ -241,7 +241,7 @@ btc 3 stop
 btc 4 stop
 sleep 3
 echo "[COPYING WALLET 1 to 3]"
-cp $TMPDIR/2/regtest/wallet.dat $TMPDIR/3/regtest/wallet.dat
+cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
 echo "[STARTING BITCOIND 3 & 4]"
 startbtc 3
 startbtc 4
