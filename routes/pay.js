@@ -64,9 +64,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
 
   // Get Confirmations
   bitcoinUtil.getBlock(activePayment.block_hash, function(err, block) {
-    if (err) {
-      console.log(err);
-    }
+    // TODO: err.code === 0  is ECONNREFUSED, display error to user?
     var confirmations = 0;
     block = block.result;
     if (err || !block) {
@@ -158,9 +156,7 @@ var pay = function(app) {
       }
       else {
         bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
-          if (err) {
-            console.log(err);
-          }
+          // TODO: err.code === 0  is ECONNREFUSED, display error to user?
           payment.confirmations = 0;
           block = block.result;
           if (!err && block && block.confirmations) {
