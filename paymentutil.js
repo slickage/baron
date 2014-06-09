@@ -259,8 +259,7 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           });
         }
         else {
-          var error = new Error('No changes to update.');
-          return cb(error);
+          return cb();
         }
       }
       else if (isReorg) {
