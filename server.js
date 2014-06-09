@@ -4,10 +4,11 @@ var blockJob = require(__dirname + '/jobs/lastblockjob');
 var webhooksJob = require(__dirname + '/jobs/webhooksjob');
 var path = require('path');
 var express = require('express');
+var bodyParser = require('body-parser');
 var app = express();
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
-app.use(express.bodyParser());
+app.use(bodyParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 require(__dirname + '/db').instantiateDb();
