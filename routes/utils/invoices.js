@@ -33,10 +33,6 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     // Is the invoice paid in full?
     var hasPending = false;
     paymentHistory.forEach(function(payment) {
-      delete payment._id;
-      delete payment._rev;
-      delete payment.spot_rate;
-      
       payment.url = config.chainExplorerUrl + '/' + payment.tx_id; // populate chain explorer url
       if(isUSD) {
         var amountUSD = new BigNumber(payment.amount_paid).times(payment.spot_rate);
@@ -46,6 +42,9 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
       if (payment.status.toLowerCase() === 'pending') {
         hasPending = true;
       }
+      delete payment._id;
+      delete payment._rev;
+      delete payment.spot_rate;
     });
 
     paymentHistory = _.sortBy(paymentHistory, function(payment) {
