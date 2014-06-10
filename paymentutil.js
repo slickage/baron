@@ -8,6 +8,7 @@ var config = require(__dirname + '/config');
 var invoiceHelper = require(__dirname + '/invoicehelper');
 var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 var _ = require('lodash');
+var async = require('async');
 
 // ===============================================
 // Creating New Payments with Transaction Data
@@ -375,12 +376,29 @@ var updatePayment = function(transaction, cb) {
   });
 };
 
+var txidQueue = async.queue(function (transaction, cb) {
+  console.log('queue: updatePayment ' + transaction.txid + " from " + transaction.debug);
+  updatePayment(transaction, function(err) {
+    if (err) {
+      console.log(err);
+    }
+    else {
+    }
+    cb();
+  });
+}, 1);
+
+txidQueue.drain = function() {
+    console.log('queue: empty');
+}
+
 module.exports = {
   createNewPayment: createNewPayment,
   updatePayment: updatePayment,
   updatePaymentWithTransaction: updatePaymentWithTransaction,
   processReorgedPayment: processReorgedPayment,
   processReorgedPayments: processReorgedPayments,
-  processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent
+  processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent,
+  txidQueue: txidQueue
 };
 

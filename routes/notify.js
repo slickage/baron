@@ -17,7 +17,8 @@ var notify = function(app) {
         if (receiveDetail) {
           transaction.address = receiveDetail.address;
           transaction.amount = receiveDetail.amount;
-          paymentUtil.updatePayment(transaction, function(err) {
+          transaction.debug = 'walletnotify';
+          paymentUtil.txidQueue.push(transaction, function(err) {
             if (err) {
               res.send(500);
               console.log(err);

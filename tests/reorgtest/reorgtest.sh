@@ -142,7 +142,8 @@ export PORT=$BARONPORT
 export BITCOIND_PORT=20013
 export LAST_BLOCK_JOB_INTERVAL=4133
 export UPDATE_WATCH_LIST_INTERVAL=5000
-npm start > $LOGDIR/baron.log 2>&1 & 
+#npm start > $LOGDIR/baron.log 2>&1 &
+node server.js &
 cd - > /dev/null
 
 # START POSTWATCHER
