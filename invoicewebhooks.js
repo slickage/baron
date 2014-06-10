@@ -3,7 +3,13 @@ var db = require(__dirname + '/db');
 
 function postToWebhook(webhookObj, cb) {
   console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
-  request.post(webhookObj.url, { form: { token: webhookObj.token } },
+  var postData = {};
+  postData.token = webhookObj.token;
+  if (webhookObj.metadata) {
+    postData.metadata = webhookObj.metadata;
+  }
+  var form = { form: postData }
+  request.post(webhookObj.url, { form: postData },
     function (error, response) {
       try {
         if (!error && response.statusCode === 200) {
@@ -59,38 +65,46 @@ var postToWebhookIgnoreFailure = function(webhookObj, cb) {
   });
 };
 
-function tryCallPaid(webhooks, invoiceId, newStatus) {
+function tryCallPaid(invoice, invoiceId, newStatus) {
+  var webhooks = invoice.webhooks;
   if (webhooks && webhooks.paid && webhooks.paid.url && webhooks.token) {
     webhooks.paid.status = newStatus;
     webhooks.paid.invoice_id = invoiceId;
     webhooks.paid.token = webhooks.token;
+    webhooks.paid.metadata = invoice.metadata;
     postToWebhookStoreFailure(webhooks.paid);
   }
 }
 
-function tryCallPartial(webhooks, invoiceId, newStatus) {
+function tryCallPartial(invoice, invoiceId, newStatus) {
+  var webhooks = invoice.webhooks;
   if (webhooks && webhooks.partial && webhooks.partial.url && webhooks.token) {
     webhooks.partial.status = newStatus;
     webhooks.partial.invoice_id = invoiceId;
     webhooks.partial.token = webhooks.token;
+    webhooks.partial.metadata = invoice.metadata;
     postToWebhookStoreFailure(webhooks.partial);
   }
 }
 
-function tryCallPending(webhooks, invoiceId, newStatus) {
+function tryCallPending(invoice, invoiceId, newStatus) {
+  var webhooks = invoice.webhooks;
   if (webhooks && webhooks.pending && webhooks.pending.url && webhooks.token) {
     webhooks.pending.status = newStatus;
     webhooks.pending.invoice_id = invoiceId;
     webhooks.pending.token = webhooks.token;
+    webhooks.pending.metadata = invoice.metadata;
     postToWebhookStoreFailure(webhooks.pending);
   }
 }
 
-function tryCallInvalid(webhooks, invoiceId, newStatus) {
+function tryCallInvalid(invoice, invoiceId, newStatus) {
+  var webhooks = invoice.webhooks;
   if (webhooks && webhooks.invalid && webhooks.invalid.url && webhooks.token) {
     webhooks.invalid.status = newStatus;
     webhooks.invalid.invoice_id = invoiceId;
     webhooks.invalid.token = webhooks.token;
+    webhooks.invalid.metadata = invoice.metadata;
     postToWebhookStoreFailure(webhooks.invalid);
   }
 }
@@ -104,17 +118,17 @@ var determineWebhookCall = function(invoiceId, origStatus, newStatus) {
       else if (invoice.webhooks) {
         switch(newStatus) {
           case 'invalid':
-            tryCallInvalid(invoice.webhooks, invoiceId, newStatus);
+            tryCallInvalid(invoice, invoiceId, newStatus);
             break;
           case 'pending':
-            tryCallPending(invoice.webhooks, invoiceId, newStatus);
+            tryCallPending(invoice, invoiceId, newStatus);
             break;
           case 'partial':
-            tryCallPartial(invoice.webhooks, invoiceId, newStatus);
+            tryCallPartial(invoice, invoiceId, newStatus);
             break;
           case 'paid':
           case 'overpaid':
-            tryCallPaid(invoice.webhooks, invoiceId, newStatus);
+            tryCallPaid(invoice, invoiceId, newStatus);
             break;
           default: break;
         }

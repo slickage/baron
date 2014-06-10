@@ -1,4 +1,4 @@
-BARONDIR=/path/to/baron
+#BARONDIR=/path/to/baron
 #BARONPORT=8080
-#DB_NAME=baronregtest
 #BARONTMPDIR=/path/to/tmp
+#DB_NAME=baronregtest

@@ -1,11 +1,17 @@
 #!/bin/bash
+SCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )"
 
 # Read reorgtest.conf
 if [ ! -e reorgtest.conf ]; then
   echo "ERROR: reorgtest.conf not found."
   exit 255
 else
-  . reorgtest.conf
+  . $SCRIPTDIR/reorgtest.conf
+  [ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
+  [ -n "$BARONPORT" ]   || BARONPORT=8080
+  [ -n "$DBNAME" ]      || DB_NAME=baronregtest
+  [ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/reorgtest/tmp
+  LOGDIR=$BARONDIR/tests/reorgtest/logs
 fi
 
 errorexit() {
@@ -13,10 +19,12 @@ errorexit() {
   exit 255
 }
 
-[ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
-[ -n "$BARONPORT" ]   || BARONPORT=8080
-[ -n "$DBNAME" ]      || DB_NAME=baronregtest
-[ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/reorgtest/tmp
+# Sanity Checks
+cd $SCRIPTDIR
+for f in postwatcher.js TESTINVOICE TESTINVOICE2; do
+  [ ! -e $f ] && errorexit "File not found: $SCRIPTDIR/$f"
+done
+cd - > /dev/null
 
 setupbitcoind() {
   mkdir -p $BARONTMPDIR/${1}
@@ -93,7 +101,6 @@ killall node
 curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
 sleep 3
 
-LOGDIR=$BARONDIR/tests/reorgtest/logs
 rm -rf $BARONTMPDIR
 mkdir -p $BARONTMPDIR
 mkdir -p $LOGDIR
@@ -111,7 +118,7 @@ btc 3 addnode localhost:20014 onetry
 btc 4 addnode localhost:20014 onetry
 sleep 1
 
-# Generate 106 blocks to have spendable outputs
+# Generate blocks to have spendable outputs
 btc 1 setgenerate true
 sleep 1
 btc 2 setgenerate true 106
@@ -137,6 +144,15 @@ export LAST_BLOCK_JOB_INTERVAL=4133
 export UPDATE_WATCH_LIST_INTERVAL=5000
 npm start > $LOGDIR/baron.log 2>&1 & 
 cd - > /dev/null
+
+# START POSTWATCHER
+echo "[STARTING POSTWATCHER]"
+export PORT=9242
+cd $SCRIPTDIR
+node postwatcher.js &
+cd - > /dev/null
+sleep 1
+
 ### STARTUP COMPLETE
 
 ### Test #1: Reorg unconfirm then reconfirm into another block
@@ -277,8 +293,29 @@ btc 3 setgenerate true
 sleep 1
 }
 
+### Test #4: Payment with Metadata ID
+test4() {
+printhashes
+echo "Test #4: Payment with Metadata ID"
+printhashes
+echo "[SUBMIT INVOICE TO BARON]"
+echo $BARONDIR/tests/reorgtest/TESTINVOICE2
+INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
+echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
+# Poke payment page so the payment is created
+curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/status/$INVOICEID | jq -r '.address')
+if [ "$PAYADDRESS" == "null" ]; then
+  errorexit "ERROR: route/status.js must expose payment.address."
+fi
+echo "[PAY $PAYADDRESS using wallet 2]"
+spendfrom 2 $TXID4 $PAYADDRESS
+sleep 1
+echo "[GENERATE block on node 1]"
+btc 1 setgenerate true
+}
 
-[ -z "$1" ] && TESTS="test1 test2 test3"
+[ -z "$1" ] && TESTS="test1 test2 test3 test4"
 for x in $@; do
   TESTS="$TESTS $x"
 done

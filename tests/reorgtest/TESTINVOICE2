@@ -14,5 +14,6 @@
     "token": "token", 
     "paid": {"url": "http://localhost:9242/paid"},
     "invalid": {"url": "http://localhost:9242/invalid" }
-  }
+  },
+  "metadata": { "id": "secretidentifier" }
 }
