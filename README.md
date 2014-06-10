@@ -228,16 +228,15 @@ var newInvoice = {
   //...
 };
 ```
-* `token` - A token that the invoice creating app is aware of (possibly a hash of the id of the affected record)
+* `token` - Secret token is posted to the webhook.  This is typically used to authenticate the connection when Baron posts the status notification to the webhook.  Identifying information about the Invoice may optionally be passed within the `metadata` field, described above.
 * `url` - The url Baron should ***POST*** to when the payment event occurs
 
 ### Webhook Verification
-In order to prevent a malicious ***POST*** of the invoice status to webhooks, the app receiving the webhook notification can verify the status of the invoice. Baron provides a `/status/:invoiceId` route which supports ***GET*** and will display the following data provided an invoiceId:
+The app notified by the webhook can trust the incoming payment notification because it has a matching secret token that was set when the Invoice was created. Further information about the Invoice can optionally be queried from Baron via the `/api/invoices/:invoiceId` route.  For example, the Invoice can be verified as paid if `is_paid` is `true`.
 
-* `confirmations` - The number of confirmations the payment's block has
-* `status` - The status of the payment
+**Security Consideration**
 
-The `/status/:invoiceId` route can be used to verify that an invoice is in the status that Baron's webhook notified.
+Both the webhook and payment status check can be subject to attack if intra-app communication is over the Internet without the protection of SSL. Verification with `/api/invoices/:invoiceId` can successfully guard against a forged payment if at least the Baron side is protected by SSL. You can avoid these issues by communicating over an internal network or VPN between the two apps.
 
 ## License
 MIT

@@ -176,7 +176,7 @@ INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/te
 echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
-PAYADDRESS=$(curl -s http://localhost:$BARONPORT/status/$INVOICEID | jq -r '.address')
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 if [ "$PAYADDRESS" == "null" ]; then
   errorexit "ERROR: route/status.js must expose payment.address."
 fi
@@ -222,7 +222,7 @@ INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/te
 echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
-PAYADDRESS=$(curl -s http://localhost:$BARONPORT/status/$INVOICEID | jq -r '.address')
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 if [ "$PAYADDRESS" == "null" ]; then
   errorexit "ERROR: route/status.js must expose payment.address."
 fi
@@ -268,7 +268,7 @@ INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/te
 echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
-PAYADDRESS=$(curl -s http://localhost:$BARONPORT/status/$INVOICEID | jq -r '.address')
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 if [ "$PAYADDRESS" == "null" ]; then
   errorexit "ERROR: route/status.js must expose payment.address."
 fi
@@ -299,12 +299,11 @@ printhashes
 echo "Test #4: Payment with Metadata ID"
 printhashes
 echo "[SUBMIT INVOICE TO BARON]"
-echo $BARONDIR/tests/reorgtest/TESTINVOICE2
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
 echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
-PAYADDRESS=$(curl -s http://localhost:$BARONPORT/status/$INVOICEID | jq -r '.address')
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 if [ "$PAYADDRESS" == "null" ]; then
   errorexit "ERROR: route/status.js must expose payment.address."
 fi
