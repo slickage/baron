@@ -87,7 +87,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       blockHash: activePayment.block_hash,
       expireTime: expiration,
       expires: helper.getExpirationCountDown(expiration),
-      remainingBalance: remainingBalance,
+      remainingBalance: Number(remainingBalance),
       invoicePaid: invoicePaid,
       invoiceId: invoice._id,
       isUSD: isUSD, // Refresh is only needed for invoices in USD
