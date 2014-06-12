@@ -1,7 +1,17 @@
-var reloadPayment = function (expiration, txId, blockHash, queryUrl, minConfirmations) {
-    var expirationSpans = document.getElementsByClassName('expiration');
+var reloadPayment = function (queryUrl, expiration) {
+    var statusBanner = document.getElementById('status-banner');
+    var expirationTextSpans = document.getElementsByClassName('expiration-text');
     var confirmationSpans = document.getElementsByClassName('confirmations');
-    var confirmations = Number(confirmationSpans[0].innerText);
+    var qrCodeDivs = document.getElementsByClassName('qrcode');
+    var sentTextSpans = document.getElementsByClassName('sent-text');
+    var statusTextSpans = document.getElementsByClassName('status-text');
+    var amountSpan = document.getElementsByClassName('amount-text');
+    var refreshLinkSpans = document.getElementsByClassName('refresh-link');
+    var infoLinkSpans = document.getElementsByClassName('info-link');
+
+    var requestLocked = false;
+
+    var confirmations, status, qrImageUrl, amount, chainExplorerUrl;
 
     var getExpirationCountDown = function (expiration) {
       var curTime = new Date().getTime();
@@ -23,52 +33,168 @@ var reloadPayment = function (expiration, txId, blockHash, queryUrl, minConfirma
         return days + 'd ' + hours + 'h ' + mins + 'm ' + secs + 's';
       }
     };
-    
-    if (expirationSpans && expirationSpans.length > 0 ) {
-      setInterval(function(){
-        for (var i = 0; i < expirationSpans.length; ++i) {
-          var item = expirationSpans[i];
-          var curTime = new Date().getTime();
-          if(expiration < curTime){
-            window.location.reload();
-          }
-          else {
-            item.innerText = getExpirationCountDown(expiration);
-          }
-        }
-      }, 500);
-    }
 
     var requestPayment = function() {
-        var request = new XMLHttpRequest();
-        var isAsynchronous = true;
-        request.open('GET', queryUrl, isAsynchronous);
-        request.onload = function(xmlEvent){
-          var res = JSON.parse(request.response);
-          var newTxId = res.tx_id;
-          var newStatus = res.status;
-          var newBlockHash = res.block_hash;
-          var newConfirmations = res.confirmations;
+      if (requestLocked) {
+        return;
+      }
+      requestLocked = true;
+      var request = new XMLHttpRequest();
+      var isAsynchronous = true;
+      request.open('GET', queryUrl, isAsynchronous);
+      request.onload = function(){
+        var payment = JSON.parse(request.response);
+        updatePageData(payment);
+        requestLocked = false;
+      };
+      request.send();
+    };
 
-          if (confirmations !== newConfirmations) {
-            if (newConfirmations === minConfirmations) {
-               window.location.reload();
-            }
-            else {
-              for (var i = 0; i < confirmationSpans.length; ++i) {
-                var item = confirmationSpans[i];
-                item.innerText = newConfirmations;
-              }
-            }
+    String.prototype.repeat = function(n){
+      n = n || 0;
+      var s = '', i;
+      for (i = 0; i < n; i++) {
+        s += this;
+      }
+      return s;
+    };
+
+    if (expirationTextSpans && expirationTextSpans.length > 0) {
+      var ellipsis = '';
+      setInterval(function(){
+        if (chainExplorerUrl) {
+          expirationTextSpans.item(0).innerText = '';
+          expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+          return clearInterval(this);
+        }
+        var curTime = new Date().getTime();
+        if (expiration <= curTime){
+          if (ellipsis.length >= 3) {
+            ellipsis = '';
           }
-          if (newBlockHash) {
-            blockHash = newBlockHash;
+
+          ellipsis = '.'.repeat(ellipsis.length + 1);
+          expirationTextSpans.item(0).innerText = 'Fetching new exchange rate' + ellipsis;
+          expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+          requestPayment();
+        }
+        else {
+          expirationTextSpans.item(0).innerText = 'Payment rate will refresh in ' +
+            getExpirationCountDown(expiration) + '.';
+          expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+        }
+      }, 1000);
+    }
+
+    var updatePageData = function(payment) {
+      var newStatus = payment.status;
+      var newConfirmations = payment.confirmations;
+      var newQrImageUrl = payment.qrImageUrl;
+      var newAmount = payment.amount;
+      var newExpiration =  payment.expireTime;
+      var newChainExplorerUrl = payment.chainExplorerUrl;
+
+      // Update Info/Refresh Link
+      if (newChainExplorerUrl && newChainExplorerUrl !== chainExplorerUrl) {
+        chainExplorerUrl = newChainExplorerUrl;
+        Array.prototype.forEach.call(infoLinkSpans, function(span) {
+          span.innerHTML = '<a target="_blank" href="' + newChainExplorerUrl +
+            '"><img class="right-icon" src="/images/info.png" /></a>';
+        });
+        Array.prototype.forEach.call(refreshLinkSpans, function(span) {
+          span.innerHTML = '';
+        });
+        Array.prototype.forEach.call(qrCodeDivs, function(div) {
+          div.innerHTML = '';
+        });
+      }
+
+      // Update Expiration
+      if (expiration && newExpiration !== expiration) {
+        expiration = newExpiration;
+        expirationTextSpans.item(0).innerText = 'Payment rate will refresh in ' +
+          getExpirationCountDown(expiration) + '.';
+        expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+      }
+
+      // Update Amount
+      if (newAmount && newAmount !== amount) {
+        amount = newAmount;
+        Array.prototype.forEach.call(amountSpan, function(span) {
+          var amountText;
+          if (payment.amountLastFour === '0000') {
+            amountText = payment.amountFirstFour + ' BTC';
           }
-          if (res && !txId && (newTxId || newStatus !== 'unpaid')) {
-            window.location.reload();
+          else {
+            amountText = payment.amountFirstFour + '<span class="gray">' + payment.amountLastFour + '</span> BTC';
           }
-        };
-        request.send();
+          span.innerHTML = amountText;
+        });
+      }
+
+      // Update QRCode
+      Array.prototype.forEach.call(qrCodeDivs, function(div) {
+        if (newQrImageUrl && newQrImageUrl !== qrImageUrl) {
+          qrImageUrl = newQrImageUrl;
+          div.innerHTML = '<a href="' + payment.bitcoinUrl + '"><img width="320" height="320" src="' + payment.qrImageUrl + '" alt="" title="" /></a>';
+        }
+      });
+
+      // Update Confirmations
+      if (newConfirmations && newConfirmations !== confirmations) {
+        confirmations = newConfirmations;
+        Array.prototype.forEach.call(confirmationSpans, function(span) {
+          span.innerText = newConfirmations;
+        });
+      }
+
+      // Update Status
+      if (newStatus && newStatus !== status) {
+        status = newStatus;
+        Array.prototype.forEach.call(statusTextSpans, function(span) {
+          span.className = 'status-text ' + newStatus;
+          var newStatusText;
+          var statusBannerDisplay = 'none';
+          var sentTextDisplay = 'none';
+          if (newStatus === 'pending') {
+            sentTextDisplay = 'inline-block';
+            newStatusText = 'Payment is Pending';
+          }
+          else if (newStatus === 'unpaid') {
+            newStatusText = 'Balance is Unpaid';
+          }
+          else if (newStatus === 'paid') {
+            sentTextDisplay = 'inline-block';
+            statusBannerDisplay = 'inline-block';
+            statusBanner.innerHTML = 'Invoice has been paid in full.';
+            newStatusText = 'Balance is Paid';
+          }
+          else if (newStatus === 'partial') {
+            sentTextDisplay = 'inline-block';
+            newStatusText = 'Balance is Underpaid';
+          }
+          else if (newStatus === 'overpaid') {
+            sentTextDisplay = 'inline-block';
+            statusBannerDisplay = 'inline-block';
+            statusBanner.innerHTML = 'Invoice has been <strong>overpaid</strong>.';
+            newStatusText = 'Balance is Overpaid';
+          }
+          else if (newStatus === 'expired') {
+            newStatusText = 'Payment is Expired';
+          }
+          else {
+            sentTextDisplay = 'inline-block';
+            newStatusText = 'Payment is Invalid';
+          }
+          statusBanner.style.display = statusBannerDisplay;
+          if (sentTextDisplay === 'inline-block') {
+            Array.prototype.forEach.call(sentTextSpans, function(span) {
+              span.style.display = sentTextDisplay;
+            });
+          }
+          span.innerText = newStatusText;
+        });
+      }
     };
 
     setInterval(function(){

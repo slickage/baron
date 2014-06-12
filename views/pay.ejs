@@ -16,31 +16,27 @@
         <h1><%= appTitle %></h1>
       </div>
     </div>
-    <% if (invoicePaid) { %>
-      <div class="row ">
-        <div class="col-sm-12 alert alert-success xsmall-text alert-box"> 
+    
+      <div class="row" style="<% if (!invoicePaid) { %>display: none;<% } %>">
+        <div id="status-banner" class="col-sm-12 alert alert-success xsmall-text alert-box"> 
           <% if (remainingBalance < 0) { %>
               Invoice has been <strong>overpaid</strong>.
-              <a href="/invoices/<%= invoiceId %>">
-                View Invoice
-              </a>
-          <% } else { %>
-              Invoice has been paid in full. 
-              <a href="/invoices/<%= invoiceId %>">
-                View Invoice
-              </a>
+          <% } else if(invoicePaid) { %>
+              Invoice has been paid in full.
           <% } %>
+          <a href="/invoices/<%= invoiceId %>">
+            View Invoice
+          </a>
         </div>
       </div>
-    <% } %>
 
     <!-- Payment Info -->
     <div class="row spacer">
 
       <!-- QR Code for xsmall screens -->
-      <div class="col-md-5 col-sm-6 center-margin visible-xs no-padding">
+      <div class="qrcode col-md-5 col-sm-6 center-margin visible-xs no-padding">
         <% if (!txId) { %>
-          <a href="bitcoin:<%= address %>?amount=<%= amount %>">
+          <a href="<%= bitcoinUrl %>">
             <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
           </a>
           <br />
@@ -49,7 +45,7 @@
 
       <!-- Data for xsmall screens -->
       <div class="col-md-7 col-sm-6 col-lg-8 center-margin-data visible-xs no-padding">
-        <span class="<%= status %>">
+        <span class="status-text <%= status %>">
           <% if (status === 'pending') { %>
             Payment is Pending
           <% } else if (status === 'invalid') { %>
@@ -69,35 +65,41 @@
           <% } %>
         </span>
         <br />
-        <% if (amountLastFour === '0000') { %>
-          <%= amountFirstFour %> BTC 
-        <% } else { %>
-         <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
-        <% } %>
-        <% if (txId) { %>
-          <span class="green"> Sent</span>
-        <% } %>
-        <% if (!txId && isUSD) { %>
-          <a href="<%= invoiceId %>">
-            <img class="right-icon" src="/images/refresh.png" />
-          </a>
-        <% } %>
+        <span class="amount-text">
+          <% if (amountLastFour === '0000') { %>
+            <%= amountFirstFour %> BTC 
+          <% } else { %>
+           <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+          <% } %>
+        </span>
+        <span style="<% if (!txId) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
+        <span class="refresh-link">
+          <% if (!txId && isUSD) { %>
+            <a href="<%= invoiceId %>">
+              <img class="right-icon" src="/images/refresh.png" />
+            </a>
+          <% } %>
+        </span>
         <br />
         <span class="green confirmations"><%= confirmations %></span> Confirmations
-        <% if (url) { %>
-          <a target="_blank" href="<%= url %>">
-            <img class="right-icon" src="/images/info.png" />
-          </a>
-        <% } %>
+        <span class="info-link">
+          <% if (chainExplorerUrl) { %>
+            <a target="_blank" href="<%= chainExplorerUrl %>">
+              <img class="right-icon" src="/images/info.png" />
+            </a>
+          <% } %>
+        </span>
         <input type="text" class="form-control address-spacer" value="<%= address %>" />
-        <% if (!txId && isUSD) { %>
-          <span class="red">Payment rate will refresh in <span class="expiration"><%= expires %></span>.</span>
-        <% } %>
+        <div>
+          <% if (!txId && isUSD) { %>
+            <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
+          <% } %>
+        </div>
       </div>
 
       <!-- Data for non mobile -->
       <div class="col-md-7 col-sm-6 col-lg-8 hidden-xs">
-          <span class="<%= status %>">
+          <span class="status-text <%= status %>">
             <% if (status === 'pending') { %>
               Payment is Pending
             <% } else if (status === 'invalid') { %>
@@ -117,38 +119,43 @@
             <% } %>
           </span>
           <div class="invoice-data-width">
-
-            <% if (amountLastFour === '0000') { %>
-              <%= amountFirstFour %> BTC 
-            <% } else { %>
-             <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
-            <% } %>
-            <% if (txId) { %>
-              <span class="green"> Sent</span>
-            <% } %>
-            <% if (!txId  && isUSD) { %>
-              <a href="<%= invoiceId %>">
-                <img class="right-icon" src="/images/refresh.png" />
-              </a>
-            <% } %>
+            <span class="amount-text">
+              <% if (amountLastFour === '0000') { %>
+                <%= amountFirstFour %> BTC 
+              <% } else { %>
+               <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
+              <% } %>
+            </span>
+            <span style="<% if (!txId) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
+            <span class="refresh-link">
+              <% if (!txId && isUSD) { %>
+                <a href="<%= invoiceId %>">
+                  <img class="right-icon" src="/images/refresh.png" />
+                </a>
+              <% } %>
+            </span>
             <br />
             <span class="green confirmations"><%= confirmations %></span> Confirmations
-            <% if (url) { %>
-              <a target="_blank" href="<%= url %>">
-                <img class="right-icon" src="/images/info.png" />
-              </a>
-            <% } %>
+            <span class="info-link">
+              <% if (chainExplorerUrl) { %>
+                <a target="_blank" href="<%= chainExplorerUrl %>">
+                  <img class="right-icon" src="/images/info.png" />
+                </a>
+              <% } %>
+            </span>
             <input type="text" class="form-control address-spacer" value="<%= address %>" />
           </div>
-          <% if (!txId && isUSD) { %>
-            <span class="red">Payment rate will refresh in <span class="expiration"><%= expires %></span>.</span>
-          <% } %>
+          <div>
+            <% if (!txId && isUSD) { %>
+              <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
+            <% } %>
+          </div>
       </div>
 
       <!-- QR Code for non mobile -->
-      <div class="col-md-5 col-sm-6 col-lg-4 right hidden-xs">
+      <div class="qrcode col-md-5 col-sm-6 col-lg-4 right hidden-xs">
         <% if (!txId) { %>
-          <a href="bitcoin:<%= address %>?amount=<%= amount %>">
+          <a href="<%= bitcoinUrl %>">
             <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
           </a>
         <% } %>
@@ -159,11 +166,8 @@
   <script src="/js/reloadpayment.js"></script>
   <script type="text/javascript">
     var expiration = Number('<%= expireTime %>');
-    var txId = '<%= txId %>' === 'null' ? null : '<%= txId %>';
-    var blockHash = '<%= blockHash %>' === 'null' ? null : '<%= blockHash %>';
-    var queryUrl = '<%= queryUrl %>';
-    var minConfirmations = Number('<%= minConfirmations %>');
-    reloadPayment(expiration, txId, blockHash, queryUrl, minConfirmations);
+    var queryUrl = '/api/pay/<%= invoiceId %>';
+    reloadPayment(queryUrl, expiration);
   </script>
 </body>
 </html>

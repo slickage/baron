@@ -78,12 +78,11 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var expiration = activePayment.created + validMins;
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
-    var url = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
+    var chainExplorerUrl = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
+    var txId = activePayment.tx_id ? activePayment.tx_id : null;
     var paymentData = {
       appTitle: config.appTitle,
-      validFor: config.paymentValidForMinutes,
       minConfirmations: invoice.min_confirmations,
-      queryUrl: '/payment/' + activePayment._id,
       blockHash: activePayment.block_hash,
       expireTime: expiration,
       expires: helper.getExpirationCountDown(expiration),
@@ -91,15 +90,16 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       invoicePaid: invoicePaid,
       invoiceId: invoice._id,
       isUSD: isUSD, // Refresh is only needed for invoices in USD
-      url: url,
       status: activePayment.status,
       address: activePayment.address,
       confirmations: confirmations,
-      txId: activePayment.tx_id ? activePayment.tx_id : null,
+      txId: txId,
       amount: amountToDisplay,
       amountFirstFour: helper.toFourDecimals(amountToDisplay),
       amountLastFour: helper.getLastFourDecimals(amountToDisplay),
-      qrImageUrl: '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay
+      chainExplorerUrl: chainExplorerUrl,
+      qrImageUrl: txId ? null : '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay,
+      bitcoinUrl: txId ? null : 'bitcoin:' + activePayment.address + '?amount=' +  amountToDisplay,
     };
 
     return cb(null, paymentData);
