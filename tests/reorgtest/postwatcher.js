@@ -7,12 +7,10 @@ app.use(bodyParser());
 
 app.post('/*', function(req, res) {
   if (req.body) {
-    console.log('Route posted to:  ' + req.path);
-    console.log('Body Parameters:');
-    console.log(req.body);
+    console.log('postwatcher route: ' + req.path + ' body: ' + require('util').inspect(req.body));
   }
   res.end();
 });
 
 app.listen(port);
-console.log('Listening at: ' + port);
+console.log('postwatcher listening at: ' + port);

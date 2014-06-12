@@ -64,7 +64,6 @@ startbtc() {
     btc $1 getinfo > /dev/null 2>&1
     [ "$?" == "0" ] && break
   done
-  set -e
 }
 
 waitfor() {
@@ -95,9 +94,8 @@ printhashes() {
 }
 
 #### CLEAR BITCOIND AND NODE ####
-echo "[DIE DIE DIE!!!]"
-killall bitcoind
-killall node
+killall bitcoind 2> /dev/null
+killall node     2> /dev/null
 curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
 sleep 3
 
@@ -142,7 +140,8 @@ export PORT=$BARONPORT
 export BITCOIND_PORT=20013
 export LAST_BLOCK_JOB_INTERVAL=4133
 export UPDATE_WATCH_LIST_INTERVAL=5000
-npm start > $LOGDIR/baron.log 2>&1 & 
+#npm start > $LOGDIR/baron.log 2>&1 &
+node server.js &
 cd - > /dev/null
 
 # START POSTWATCHER
@@ -152,6 +151,10 @@ cd $SCRIPTDIR
 node postwatcher.js &
 cd - > /dev/null
 sleep 1
+
+# Exit handler: killall node and bitcoind instances along with tester
+trap "set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM
+echo "Use CTRL-C to kill tester, Baron and bitcoind."
 
 ### STARTUP COMPLETE
 
@@ -322,5 +325,11 @@ done
 # execute tests
 for x in $TESTS; do
   $x
+done
+
+# Loop forever until CTRL-C
+while :
+do
+        sleep 60
 done
 
