@@ -308,7 +308,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
         var payment = {
-          _id: invoiceId + '_' + transaction.address,
+          _id: invoiceId + '_' + transaction.txid,
           invoice_id: invoiceId,
           address: transaction.address,
           amount_paid: Number(transaction.amount),
