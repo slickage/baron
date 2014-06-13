@@ -93,6 +93,18 @@ printhashes() {
   echo "###############################"
 }
 
+detectwhichopen() {
+  # X11 Freedesktop
+  which xdg-open > /dev/null 2>&1 && [ -n "$DISPLAY" ]      && OPEN=xdg-open
+  # OSX
+  which open > /dev/null 2>&1 && uname -a | grep -q ^Darwin && OPEN=open
+}
+
+openurl() {
+  echo "URL: $1"
+  [ -n "$OPEN" ] && $OPEN $1
+}
+
 #### CLEAR BITCOIND AND NODE ####
 killall bitcoind 2> /dev/null
 killall node     2> /dev/null
@@ -102,6 +114,15 @@ sleep 3
 rm -rf $BARONTMPDIR
 mkdir -p $BARONTMPDIR
 mkdir -p $LOGDIR
+
+# Exit handler: killall node and bitcoind instances along with tester
+trap "set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM
+echo "Use CTRL-C to kill tester, Baron and bitcoind."
+
+# Detect browser
+unset OPEN
+detectwhichopen
+[ -n "$OPEN" ] && echo "Browser Opener: $OPEN"
 
 for x in 1 2 3 4; do
   setupbitcoind $x
@@ -152,10 +173,6 @@ node postwatcher.js &
 cd - > /dev/null
 sleep 1
 
-# Exit handler: killall node and bitcoind instances along with tester
-trap "set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM
-echo "Use CTRL-C to kill tester, Baron and bitcoind."
-
 ### STARTUP COMPLETE
 
 ### Test #1: Reorg unconfirm then reconfirm into another block
@@ -176,7 +193,7 @@ startbtc 4
 btc 4 addnode localhost:20034 onetry
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
-echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
@@ -222,7 +239,7 @@ btc 4 addnode localhost:20034 onetry
 sleep 0.5
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
-echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
@@ -268,7 +285,7 @@ btc 4 addnode localhost:20034 onetry
 sleep 0.5
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
-echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
@@ -303,7 +320,7 @@ echo "Test #4: Payment with Metadata ID"
 printhashes
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
-echo "URL: http://localhost:$BARONPORT/invoices/$INVOICEID"
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
