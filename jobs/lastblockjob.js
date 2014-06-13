@@ -38,11 +38,10 @@ function getLastBlockHash(cb) {
 function processBlockHash(blockHashObj) {
   var blockHash = blockHashObj.hash;
   bitcoinUtil.getBlock(blockHash, function(err, block) {
-    if (err) {
-      if (block.error.code === -5) {
-        console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.  Delete lastBlockHash from baron db if you wish to proceed.');
-        process.exit(1);
-      }
+    if (block && block.error && block.error.code && block.error.code === -5) {
+      console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.  Delete lastBlockHash from baron db if you wish to proceed.');
+      process.exit(1);
+    } else if (err) {
       return console.log(err);
     }
     block = block.result;
