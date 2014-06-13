@@ -34,7 +34,7 @@ var reloadInvoice = function(queryUrl, expiration, isPaid) {
   if (expiration && !isPaid) {
     var expirationInterval = setInterval(function() {
       if (isPaid) {
-        return clearInterval(expirationInterval);
+        return;
       }
       var curTime = new Date().getTime();
       if (expiration <= curTime && amountDue > 0) {
@@ -43,10 +43,10 @@ var reloadInvoice = function(queryUrl, expiration, isPaid) {
         location.reload();
       }
       else if (amountDue <= 0) {
-        clearInterval(expirationInterval);
         statusBanner.style.display = 'none';
       }
       else {
+        statusBanner.style.display = 'block';
         statusBannerText.innerText = 'Invoice will expire in ' + getExpirationCountDown(expiration) + '.';
       }
     }, 1000);
@@ -158,6 +158,9 @@ var reloadInvoice = function(queryUrl, expiration, isPaid) {
     if (newAmountDue !== undefined && newAmountDue !== amountDue) {
       if (newAmountDue <= 0) {
         payButton.style.display = 'none';
+      }
+      else {
+        payButton.style.display = 'block';
       }
       Array.prototype.forEach.call(amountDueSpans, function(span) {
         span.innerText = newAmountDue;
