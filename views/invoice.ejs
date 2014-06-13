@@ -64,13 +64,11 @@
 
     <div class="row">
       <div class="col-xs-12 col-sm-4">
-        <% if (remaining_balance > 0) { %>
-          <form id="pay-button" method="POST" action="/pay/<%= _id %>">
-            <button type="submit" class="btn btn-lg btn-default btn-wide">
-              Pay Now
-            </button>
-          </form>
-        <% } %>
+        <form id="pay-button" style="<% if (remaining_balance <= 0) { %>display: none;<% } %>" method="POST" action="/pay/<%= _id %>">
+          <button type="submit" class="btn btn-lg btn-default btn-wide">
+            Pay Now
+          </button>
+        </form>
       </div>
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
         <span class="visible-xs float-left medium-text">Total</span>
