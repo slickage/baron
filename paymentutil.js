@@ -249,10 +249,15 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           // Update status after updating amounts to see if it changed.
           payment.status = helper.getPaymentStatus(payment, newConfirmations, invoice);
           db.insert(payment, function (err) {
-            if (isReorg) {
+            if (err && err.error === 'conflict' ) {
+              console.log('updatePaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+              //console.log(err);
+              return cb();
+            }
+            else if (isReorg) {
               processReorgedPayments(oldBlockHash);
             }
-            if (!err) {
+            else if (!err) {
               invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
             }
             return cb(err);
@@ -303,6 +308,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
         var payment = {
+          _id: invoiceId + '_' + transaction.address,
           invoice_id: invoiceId,
           address: transaction.address,
           amount_paid: Number(transaction.amount),
@@ -330,7 +336,12 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
             }
           });
         }
-        db.insert(payment, cb);
+        db.insert(payment, function(err) {
+          if (err && err.error === 'conflict' ) {
+            console.log('createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+            return cb();
+          }
+        });
       }
       else {
         return cb(err);
