@@ -12,7 +12,8 @@ var invoices = function(app) {
         return res.render('error', { appTitle: config.appTitle, errorMsg: err.message });
       }
       else {
-        return res.render('invoice', { appTitle: config.appTitle, invoice: invoice });
+        invoice.appTitle = config.appTitle;
+        return res.render('invoice', invoice);
       }
     });
   });

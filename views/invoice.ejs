@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title><%= appTitle %> - Invoice <%= invoice._id %></title>
+  <title><%= appTitle %> - Invoice <%= _id %></title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">  
   <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -16,41 +16,30 @@
         <h1><%= appTitle %></h1>
       </div>
     </div>
-    <% if (invoice.is_paid) { %>
-      <div class="row ">
-        <div class="col-sm-12 alert alert-success xsmall-text alert-box"> 
-          <% if (invoice.is_overpaid) { %>
-              Invoice has been <strong>overpaid</strong>.
-          <% } else { %>
-              Invoice has been paid in full.
-          <% } %>
-        </div>
+
+    <div id="status-banner" class="row" style="<% if (!is_paid && !expires) { %>display: none;<% } %>">
+      <div id="status-banner-text" class="col-sm-12 alert xsmall-text alert-box <% if (expires) { %>alert-warning<% } else { %>alert-success<% } %>"> 
+        <% if (expires) { %>
+            Invoice will expire in <%= expires %>.
+        <% } else if (is_overpaid) { %>
+            Invoice has been <strong>overpaid</strong>.
+        <% } else if (is_paid) { %>
+            Invoice has been paid in full.
+        <% } %>
       </div>
-    <% } %>
+    </div>
 
     <!-- Invoice Info -->
-    <% if (invoice.expiration_msg) { %>
-      <div class="row spacer">
-        <div class="col-sm-12 col-md-8">
-          Invoice 
-          <span class="green hidden-xs"> <%= invoice._id %></span>
-          <span class="green visible-xs mobile-text"><%= invoice._id %></span>
-          <span class="mobile-text red right">
-            <%= invoice.expiration_msg %>
-          </span>
-        </div>
-      </div>
-    <% } else { %>
-      <div class="row spacer">
-        <div class="col-sm-12">
-          Invoice 
-          <span class="green hidden-xs"> <%= invoice._id %></span>
-          <span class="green visible-xs mobile-text"><%= invoice._id %></span>
-        </div>
-      </div>
-    <% } %>
 
-    <% invoice.line_items.forEach(function(item){ %>
+    <div class="row spacer">
+      <div class="col-sm-12">
+        Invoice 
+        <span class="green hidden-xs"> <%= _id %></span>
+        <span class="green visible-xs mobile-text"><%= _id %></span>
+      </div>
+    </div>
+
+    <% line_items.forEach(function(item){ %>
       <div class="row line-item thin-underline">
         <div class="col-xs-12 col-sm-4 dark-gray"><%= item.description %></div>
         <% if (item.quantity > 1) { %>
@@ -58,16 +47,16 @@
           <div class="col-xs-8 col-sm-2 right"><%= item.quantity %> &times;</div>
           <div class="col-xs-4 visible-xs mobile-lbl-text">Cost</div>
           <div class="col-xs-8 col-sm-3 right">
-            <%= item.amount %> <%= invoice.currency.toUpperCase() %>
+            <%= item.amount %> <%= currency.toUpperCase() %>
           </div>
           <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>
           <div class="col-xs-8 col-sm-3 right">
-            <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
+            <%= item.line_total %> <%= currency.toUpperCase() %> 
           </div>
         <% } else { %>
           <div class="col-xs-4 visible-xs mobile-lbl-text">Line Total</div>
           <div class="col-xs-8 col-sm-8 right">
-            <%= item.line_total %> <%= invoice.currency.toUpperCase() %> 
+            <%= item.line_total %> <%= currency.toUpperCase() %> 
           </div>
         <% } %>
       </div>
@@ -75,8 +64,8 @@
 
     <div class="row">
       <div class="col-xs-12 col-sm-4">
-        <% if (invoice.remaining_balance > 0) { %>
-          <form method="POST" action="/pay/<%= invoice._id %>">
+        <% if (remaining_balance > 0) { %>
+          <form id="pay-button" method="POST" action="/pay/<%= _id %>">
             <button type="submit" class="btn btn-lg btn-default btn-wide">
               Pay Now
             </button>
@@ -86,15 +75,16 @@
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
         <span class="visible-xs float-left medium-text">Total</span>
         <span class="hidden-xs float-left">Balance Total</span>
-        <span class="visible-xs medium-text"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
-        <span class="hidden-xs"><%= invoice.balance_due %> <%= invoice.currency.toUpperCase() %></span>
+        <span class="visible-xs medium-text"><%= balance_due %> <%= currency.toUpperCase() %></span>
+        <span class="hidden-xs"><%= balance_due %> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Paid</span>
-          <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="amount-paid-text green"><%= total_paid %></span>
+          <span class="green"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
@@ -102,14 +92,16 @@
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Amount Paid</span>
-          <span class="green"><%= invoice.total_paid %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="amount-paid-text green"><%= total_paid %></span>
+          <span class="green"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Due</span>
-          <span class="red"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="amount-due-text red"><%= remaining_balance %></span>
+          <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
@@ -117,7 +109,8 @@
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Amount Due</span>
-          <span class="red"><%= invoice.remaining_balance %> <%= invoice.currency.toUpperCase() %></span>
+          <span class="amount-due-text red"><%= remaining_balance %></span>
+          <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
@@ -125,14 +118,14 @@
     <br />
 
     <!-- Payment History -->
-    <% if (invoice.payment_history.length > 0) { %>
-      <div class="row">
-        <div class="col-sm-12">
-          Payment History
-        </div>
+    <div id="payment-history-header" class="row" style="<% if (payment_history.length < 1) { %>display: none;<% } %>">
+      <div class="col-sm-12">
+        Payment History
       </div>
+    </div>
 
-      <% invoice.payment_history.forEach(function(payment) { %>
+    <span id="payment-history-content">
+      <% payment_history.forEach(function(payment) { %>
         <div class="row line-item thin-underline">
           <div class="col-xs-12 col-sm-5 col-md-4">
             <span class="visible-xs mobile-address-text"><a href="<%= payment.url %>"><%= payment.tx_id.substring(0, 25) %>...</a></span>
@@ -149,8 +142,7 @@
           <div class="col-xs-3 visible-xs mobile-lbl-text">Amount</div>
           <div class="col-xs-9 col-sm-5 col-md-5 right">
             <% if (payment.amount_usd) { %>
-              <%= payment.amount_usd %> USD
-              <br />
+              <%= payment.amount_usd %> USD<br />
               (<%= payment.amount_paid %> BTC)
             <% } else { %>
               <% if (!payment.amount_paid) { %>
@@ -184,10 +176,17 @@
             <% }); %>
           <% } %>
         <% } %>
-
       <% }); %>
-    <% } %>
+    </span>
 
   </div>
+  <script src="/js/reloadinvoice.js"></script>
+  <script type="text/javascript">
+    var expiration =  Number('<%= expiration %>');
+    var paymentHistLen = Number('<%= payment_history.length %>');
+    var isPaid = 'true' === '<%= is_paid %>';
+    var queryUrl = '/api/invoices/<%= _id %>';
+    reloadInvoice(queryUrl, expiration === 0 ? null : expiration, isPaid);
+  </script>
 </body>
 </html>

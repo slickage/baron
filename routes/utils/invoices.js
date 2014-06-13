@@ -22,12 +22,17 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     invoice.remaining_balance = invoiceHelper.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
 
     var invoiceExpired = validate.invoiceExpired(invoice);
+
     if (invoiceExpired && invoice.remaining_balance > 0) {
       var expiredErr = new Error('Error: Invoice is expired.');
       return cb(expiredErr, null);
     }
     else if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
-      invoice.expiration_msg = 'Expires: ' + helper.getExpirationCountDown(invoice.expiration);
+      invoice.expires = helper.getExpirationCountDown(invoice.expiration);
+    }
+    else {
+      invoice.expiration = invoice.expiration ? invoice.expiration : null;
+      invoice.expires = null;
     }
 
     // Is the invoice paid in full?
@@ -47,7 +52,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
       delete payment.spot_rate;
     });
 
-    paymentHistory = _.sortBy(paymentHistory, function(payment) {
+    invoice.payment_history = _.sortBy(paymentHistory, function(payment) {
       return payment.created;
     });
 

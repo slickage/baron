@@ -17,13 +17,15 @@
       </div>
     </div>
     
-      <div class="row" style="<% if (!invoicePaid) { %>display: none;<% } %>">
-        <div id="status-banner" class="col-sm-12 alert alert-success xsmall-text alert-box"> 
-          <% if (remainingBalance < 0) { %>
-              Invoice has been <strong>overpaid</strong>.
-          <% } else if(invoicePaid) { %>
-              Invoice has been paid in full.
-          <% } %>
+      <div id="status-banner" class="row" style="<% if (!invoicePaid) { %>display: none;<% } %>">
+        <div class="col-sm-12 alert alert-success xsmall-text alert-box"> 
+          <span id="status-banner-text">
+            <% if (remainingBalance < 0) { %>
+                Invoice has been <strong>overpaid</strong>.
+            <% } else if (invoicePaid) { %>
+                Invoice has been paid in full.
+            <% } %>
+          </span>
           <a href="/invoices/<%= invoiceId %>">
             View Invoice
           </a>
@@ -89,7 +91,7 @@
             </a>
           <% } %>
         </span>
-        <input type="text" class="form-control address-spacer" value="<%= address %>" />
+        <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
         <div>
           <% if (!txId && isUSD) { %>
             <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
@@ -107,11 +109,11 @@
             <% } else if (status === 'unpaid') { %>
               Balance is Unpaid
             <% } else if (status === 'paid') { %>
-              Balance has been Paid
+              Balance is Paid
             <% } else if (status === 'partial') { %>
-              Balance has been Underpaid
+              Balance is Underpaid
             <% } else if (status === 'overpaid') { %>
-              Balance has been Overpaid
+              Balance is Overpaid
             <% } else if (status === 'expired') { %>
               Payment is Expired
             <% } else { %>
@@ -143,7 +145,7 @@
                 </a>
               <% } %>
             </span>
-            <input type="text" class="form-control address-spacer" value="<%= address %>" />
+            <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
           </div>
           <div>
             <% if (!txId && isUSD) { %>
