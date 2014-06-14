@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/slickage/baron.git"
   },
-  "author": "James Wang <jw@slickage.com>",
+  "author": "Slickage <info@slickage.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/slickage/baron/issues"
@@ -27,7 +27,7 @@
     "lodash": "^2.4.1",
     "nano": "^5.7.1",
     "qr-image": "^1.1.0",
-    "request": "^2.34.0",
+    "request": "^2.34.0"
   },
   "devDependencies": {
     "couchapp": "^0.11.0",
