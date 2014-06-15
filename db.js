@@ -36,26 +36,32 @@ function checkUUIDAlg() {
 
 var instantiateDb = function () {
   nano.db.get(dbName, function(err) {
-    if (err && err.code && err.code === 'ECONNREFUSED') {
-      console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
-      return process.exit(1);
-    }
-    else if (err && err.reason && err.reason === 'no_db_file') {
-      nano.db.create(dbName, function(err) {
-        if (err) {
-          console.log('Error: Failed to create database:\n' + err);
-          return process.exit(1);
-        }
-        else {
-          console.log('Database created.');
-          baronDb = nano.use(dbName);
-          var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
-          couchapp.createApp(ddoc, dbUrl, function(app) {
-            app.push();
-          });
-          checkUUIDAlg();
-        }
-      });
+    if (err) {
+      if (err.code && err.code === 'ECONNREFUSED') {
+        console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
+        return process.exit(1);
+      }
+      else if (err.reason && err.reason === 'no_db_file') {
+        nano.db.create(dbName, function(err) {
+          if (err) {
+            console.log('Error: Failed to create database:\n' + err);
+            return process.exit(1);
+          }
+          else {
+            console.log('Database created.');
+            baronDb = nano.use(dbName);
+            var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
+            couchapp.createApp(ddoc, dbUrl, function(app) {
+              app.push();
+            });
+            checkUUIDAlg();
+          }
+        });
+      }
+      else {
+        console.log(err);
+        return process.exit(1);
+      }
     }
     else {
       baronDb = nano.use(dbName);
