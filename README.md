@@ -117,7 +117,7 @@ http://localhost:8080/invoices/8c945af08f257c1417f4c21992586d33
 
 ### Invoice Data Model
 Invoices have the following properties:
-* `access_token` - The API key for Baron to verify that invoice creator is trusted <sup>[1]</sup>
+* `api_key` - The API key for Baron to verify that invoice creator is trusted <sup>[1]</sup>
 * `currency` - Currency of the invoice, can be either USD or BTC
 * `min_confirmations` - Minimum confirmations before a payment is considered paid
 * `expiration` ***(optional)*** - Expiration time for invoice (unix timestamp)
@@ -130,14 +130,14 @@ Invoices have the following properties:
   * `id` - **(Special)** If exists, submission an identical metadata.id will return the existing matching invoice instead of creating a new invoice.
 
 **NOTES:**
-* <sup>[1]</sup> The access token is not stored with the invoice, it is just used for Baron to verify that the invoice creator is trusted. This access token must match the `baronAPIKey` property in config.js.
+* <sup>[1]</sup> The api_key is not stored with the invoice, it is just used for Baron to verify that the invoice creator is trusted.  The api_key of the submitted invoice is compared against the `baronAPIKey` property in config.js.
 * <sup>[2]</sup> See the [Webhooks](#webhooks) section below for a more detailed description
 * <sup>[3]</sup> Line item amounts are stored in whatever currency the invoice is set to.
 
 An example of a new Invoice object:
 ```js
 var newInvoice = {
-    "access_token" : "268f84b93a69bbdf4c5f37dd67196eac75fdcda86dad301cc3fb4aed0670c2cb",
+    "api_key" : "268f84b93a69bbdf4c5f37dd67196eac75fdcda86dad301cc3fb4aed0670c2cb",
     "currency" : "BTC",
     "min_confirmations" : 3,
     "expiration" : 1399997753000, // Optional

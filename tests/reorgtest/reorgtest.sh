@@ -155,7 +155,7 @@ cd $BARONDIR
 echo "[STARTING BARON]"
 export BITCOIND_USER=user
 export BITCOIND_PASS=password
-export BARON_API_KEY=postaccesstoken
+export BARON_API_KEY=secretapikey
 export DB_NAME=baronregtest
 export PORT=$BARONPORT
 export BITCOIND_PORT=20013

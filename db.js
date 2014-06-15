@@ -225,7 +225,7 @@ var createInvoice = function(invoice, cb) {
     }
     else {
       // Create New Invoice
-      invoice.access_token = undefined;
+      invoice.api_key = undefined;
       invoice.created = new Date().getTime();
       invoice.type = 'invoice';
       var balanceDue = new BigNumber(0);

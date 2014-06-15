@@ -21,7 +21,7 @@ var invoices = function(app) {
   // Post invoice object to /invoice to create new invoice
   app.post('/invoices', function(req, res) {
     var invoice = req.body;
-    if (!invoice.access_token || invoice.access_token && invoice.access_token !== config.baronAPIKey) {
+    if (!invoice.api_key || invoice.api_key && invoice.api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid access token.');
       console.log(req.ip + ' attempted to create an invoice with an invalid access token.');
       res.status(401).write(err.message);
