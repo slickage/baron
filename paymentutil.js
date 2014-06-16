@@ -1,7 +1,7 @@
 var helper = require(__dirname + '/helper');
 var validate = require(__dirname + '/validate');
 var BigNumber = require('bignumber.js');
-var bitstamped = require('bitstamped');
+var bitstamped = require(__dirname + '/bitstamped');
 var bitcoinUtil = require(__dirname + '/bitcoinutil');
 var db = require(__dirname + '/db');
 var config = require(__dirname + '/config');

@@ -5,6 +5,7 @@ var webhooksJob = require(__dirname + '/jobs/webhooksjob');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
+var bitstamped = require(__dirname + '/bitstamped');
 var app = express();
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
@@ -13,7 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 require(__dirname + '/db').instantiateDb();
 require(__dirname + '/routes')(app);
-require('bitstamped');
+bitstamped.init(config.couchdb.url);
 blockJob.runLastBlockJob();
 watchJob.runWatchPaymentsJob();
 webhooksJob.runWebhooksJob();

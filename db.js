@@ -1,7 +1,6 @@
 var validate = require(__dirname + '/validate');
 var config = require(__dirname + '/config');
-var couchapp = require('couchapp');
-var ddoc = require(__dirname + '/couchapp');
+var ddoc = require(__dirname + '/ddoc');
 var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
@@ -50,11 +49,15 @@ var instantiateDb = function () {
           else {
             console.log('Database created.');
             baronDb = nano.use(dbName);
-            var dbUrl = config.couchdb.url + '/' + config.couchdb.name;
-            couchapp.createApp(ddoc, dbUrl, function(app) {
-              app.push();
+            baronDb.insert(ddoc, function(err) {
+              if (err) {
+                console.log('Error: Failed to push design document:\n' + err);
+                return process.exit(1);
+              }
+              else {
+                checkUUIDAlg();
+              }
             });
-            checkUUIDAlg();
           }
         });
       }

@@ -1,6 +1,6 @@
 var helper = require(__dirname + '/helper');
 var BigNumber = require('bignumber.js');
-var bitstamped = require('bitstamped');
+var bitstamped = require(__dirname + '/bitstamped');
 
 // Calculates line totals for invoice line items
 var calculateLineTotals = function(invoice) {
