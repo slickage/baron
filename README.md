@@ -122,12 +122,12 @@ Invoices have the following properties:
 * `min_confirmations` - Minimum confirmations before a payment is considered paid
 * `expiration` ***(optional)*** - Expiration time for invoice (unix timestamp)
 * `webhooks` - ***(optional)*** An object containing event webhooks <sup>[2]</sup>
+* `metadata` - ***(optional)*** Container for arbitrary fields, the entire object is passed back to your app in the webhooks.  This can be helpful for apps that do not track invoice ID's.
+  * `id` - ***(special)*** If provided, a submission with an identical metadata.id will return the existing matching invoice instead of creating a new invoice.
 * `line_items` - Array storing line items
   * `description` - Line item description text
   * `quantity` - Quantity of the item purchased
   * `amount` - The unit cost of the line item <sup>[3]</sup>
-* `metadata` - ***(optional)*** Container for arbitrary fields, the entire object is passed back to your app in the webhooks.  This can be helpful for apps that do not track invoice ID's.
-  * `id` - **(Special)** If exists, submission an identical metadata.id will return the existing matching invoice instead of creating a new invoice.
 
 **NOTES:**
 * <sup>[1]</sup> The api_key is not stored with the invoice, it is just used for Baron to verify that the invoice creator is trusted.  The api_key of the submitted invoice is compared against the `baronAPIKey` property in config.js.
@@ -142,7 +142,11 @@ var newInvoice = {
     "min_confirmations" : 3,
     "expiration" : 1399997753000, // Optional
     "webhooks" : { // Optional
-      "paid": { "url": "http://somesite.com/notifypaid", "token": "268f84b93a69bbd" }
+      "token" : "268f84b93a69bbd",
+      "paid" : { "url": "http://somesite.com/notifypaid" }
+    },
+    "metadata" : { // Optional
+      "id" : "someuser@somesite.com" 
     },
     "line_items" : [
         {
