@@ -42,10 +42,10 @@ var watchPaymentsJob = function () {
     var paidCount = 0;
     var unpaidCount = 0;
     paymentsArr.forEach(function(payment) {
-      if (payment.tx_id) { // payment received, now watching
+      if (payment.txid) { // payment received, now watching
         paidCount++;
 
-        bitcoinUtil.getTransaction(payment.tx_id, function (err, transaction) {
+        bitcoinUtil.getTransaction(payment.txid, function (err, transaction) {
           if (err) {
             console.log(err);
           }

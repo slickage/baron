@@ -93,10 +93,10 @@ describe('invoicehelper', function() {
   describe('#getPaymentHistory', function() {
     it('should return payment history array [everything but unpaid payments]', function() {
       var curTime = new Date().getTime();
-      var paymentA = { status: 'partial', tx_id: 1, amount_paid: 0.4, created: (curTime - 10000) };
-      var paymentB = { status: 'invalid', tx_id: 2, amount_paid: 1.5535, created: (curTime - 5000) };
-      var paymentC = { status: 'unpaid', tx_id: null, amount_paid: 0.2433, created: curTime };
-      var paymentD = { status: 'overpaid', tx_id: 4, amount_paid: 5.123456789, created: (curTime + 10000) };
+      var paymentA = { status: 'partial', txid: 1, amount_paid: 0.4, created: (curTime - 10000) };
+      var paymentB = { status: 'invalid', txid: 2, amount_paid: 1.5535, created: (curTime - 5000) };
+      var paymentC = { status: 'unpaid', txid: null, amount_paid: 0.2433, created: curTime };
+      var paymentD = { status: 'overpaid', txid: 4, amount_paid: 5.123456789, created: (curTime + 10000) };
 
       var payments = [ paymentA, paymentB, paymentC, paymentD ];
       var resultArray = invoiceHelper.getPaymentHistory(payments);

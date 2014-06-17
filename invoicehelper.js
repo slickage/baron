@@ -109,7 +109,7 @@ var getPaymentHistory = function(paymentsArr) {
   var history = [];
   paymentsArr.forEach(function(payment) {
     var status = payment.status;
-    if(status.toLowerCase() !== 'unpaid' && payment.tx_id) {
+    if(status.toLowerCase() !== 'unpaid' && payment.txid) {
       history.push(payment);
     }
     // Capitalizing first letter of payment status for display in invoice view

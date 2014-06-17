@@ -68,7 +68,7 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
         status: 'unpaid',
         created: new Date().getTime(),
         paid_timestamp: null,
-        tx_id: null, // Bitcoind txid for transaction
+        txid: null, // Bitcoind txid for transaction
         watched: true, // Watch payments till 100 conf or expired
         type: 'payment'
       };
@@ -231,7 +231,7 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           }
           var amount = transaction.amount;
           payment.amount_paid = amount;
-          payment.tx_id = transaction.txid;
+          payment.txid = transaction.txid;
           payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
           payment.paid_timestamp = transaction.time * 1000;
           payment.watched = newConfirmations === -1 ? false : newConfirmations < config.trackPaymentUntilConf;
@@ -317,7 +317,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           spot_rate: Number(rate.valueOf()), // Exchange rate at time of payment
           created: new Date().getTime(),
           paid_timestamp: paidTime,
-          tx_id: transaction.txid, // Bitcoind txid for transaction
+          txid: transaction.txid, // Bitcoind txid for transaction
           watched: true,
           type: 'payment'
         };
@@ -330,7 +330,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           var latestConflictingTx = transaction.walletconflicts[transaction.walletconflicts.length - 1];
           // Need to grab spot rate and expected_amount from conflicting payment
           paymentsArr.forEach(function(curPayment) {
-            if (curPayment.tx_id === latestConflictingTx) {
+            if (curPayment.txid === latestConflictingTx) {
               payment.expected_amount = curPayment.expected_amount;
               payment.spot_rate = curPayment.spot_rate;
             }
@@ -369,7 +369,7 @@ var updatePayment = function(transaction, cb) {
         }
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
-          if (!payment.tx_id) {
+          if (!payment.txid) {
             // Initial update from walletnotify
             updatePaymentWithTransaction(payment, transaction, cb);
           }

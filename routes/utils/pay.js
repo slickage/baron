@@ -78,8 +78,8 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var expiration = activePayment.created + validMins;
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
-    var chainExplorerUrl = activePayment.tx_id ? config.chainExplorerUrl + '/' + activePayment.tx_id : null;
-    var txId = activePayment.tx_id ? activePayment.tx_id : null;
+    var chainExplorerUrl = activePayment.txid ? config.chainExplorerUrl + '/' + activePayment.txid : null;
+    var txId = activePayment.txid ? activePayment.txid : null;
     var paymentData = {
       appTitle: config.appTitle,
       minConfirmations: invoice.min_confirmations,

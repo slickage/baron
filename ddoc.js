@@ -55,7 +55,7 @@ ddoc.views.paymentsBlockHash = {
 ddoc.views.paymentsTxId = {
   map: function(doc) {
     if (doc.type === 'payment') {
-      emit(doc.tx_id, doc);
+      emit(doc.txid, doc);
     }
   }
 };

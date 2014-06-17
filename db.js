@@ -140,7 +140,7 @@ var findPaymentByTxId = function(txId, cb) {
       return cb(null, payment);
     }
     else if (!payment)  {
-      var error = new Error('No invoice matching tx_id: ' + txId);
+      var error = new Error('No invoice matching txid: ' + txId);
       return cb(error, null);
     } else {
       return cb(err, null);

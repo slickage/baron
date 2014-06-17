@@ -38,7 +38,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     // Is the invoice paid in full?
     var hasPending = false;
     paymentHistory.forEach(function(payment) {
-      payment.url = config.chainExplorerUrl + '/' + payment.tx_id; // populate chain explorer url
+      payment.url = config.chainExplorerUrl + '/' + payment.txid; // populate chain explorer url
       if(isUSD) {
         var amountUSD = new BigNumber(payment.amount_paid).times(payment.spot_rate);
         amountUSD = helper.roundToDecimal(amountUSD, 2);
