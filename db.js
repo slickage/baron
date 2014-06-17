@@ -6,34 +6,37 @@ var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
 var baronDb;
 
-function cleanupDummyRecords(dummyRecords, exit) {
-  destroy(dummyRecords[0].id, dummyRecords[0].rev, function(err) {
-    if(!err) {
-      destroy(dummyRecords[1].id, dummyRecords[1].rev, function(err) {
-        if (!err && exit) {
-          console.log('Error:  CouchDB\'s UUID Algorithm must be random: http://docs.couchdb.org/en/latest/config/misc.html#uuids/algorithm');
-          return process.exit(1);
-        }
-      });
-    }
-  });
-}
-
-function checkUUIDAlg() {
+// Abort if CouchDB is not using the random UUID algorithm
+// It would otherwise be unsafe because the Invoice ID's would be easily guessable.
+function abortIfNotRandomAlgorithm(cb) {
+  function cleanupAndAbortIfNotRandom(dummyRecords, exit, cb) {
+    destroy(dummyRecords[0].id, dummyRecords[0].rev, function(err) {
+      if(!err) {
+        destroy(dummyRecords[1].id, dummyRecords[1].rev, function(err) {
+          if (!err && exit) {
+            console.log('Error:  CouchDB\'s UUID Algorithm must be random: http://docs.couchdb.org/en/latest/config/misc.html#uuids/algorithm');
+            return process.exit(1);
+          }
+          else { cb(); }
+        });
+      }
+    });
+  }
+  // Insert two dummy records, abort if their first nine characters are equal (not random)
   insert({}, function(err, recordA){
     if (!err) {
       insert({}, function(err, recordB){
         if (!err) {
           var prefixA = recordA.id.substring(0,9);
           var prefixB = recordB.id.substring(0,9);
-          cleanupDummyRecords([recordA, recordB], prefixA === prefixB);
+          cleanupAndAbortIfNotRandom([recordA, recordB], prefixA === prefixB, cb);
         }
       });
     }
   });
 }
 
-var instantiateDb = function () {
+var instantiateDb = function (cb) {
   nano.db.get(dbName, function(err) {
     if (err) {
       if (err.code && err.code === 'ECONNREFUSED') {
@@ -55,7 +58,7 @@ var instantiateDb = function () {
                 return process.exit(1);
               }
               else {
-                checkUUIDAlg();
+                abortIfNotRandomAlgorithm(cb);
               }
             });
           }
@@ -68,7 +71,7 @@ var instantiateDb = function () {
     }
     else {
       baronDb = nano.use(dbName);
-      checkUUIDAlg();
+      abortIfNotRandomAlgorithm(cb);
     }
   });
 };
