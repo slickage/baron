@@ -1,3 +1,5 @@
+var config = require(__dirname + '/config');
+
 var invoice = function(invoice) {
   var curTime = new Date().getTime();
   var invalidLineItems = false;
@@ -41,10 +43,11 @@ var paymentChanged = function(payment, transaction, newStatus) {
   var oldStatus = payment.status;
   var oldDoubleSpentHist = payment.double_spent_history ? payment.double_spent_history : [];
   var newDoubleSpentHist = transaction.walletconflicts ? transaction.walletconflicts : [];
-
+  var oldPaymentWatched = payment.watched;
+  var newPaymentWatched = transaction.confirmations === -1 ? false : transaction.confirmations < config.trackPaymentUntilConf;
   return oldAmount !== newAmount || oldTxId !== newTxId ||
     oldBlockHash !== newBlockHash || oldPaidTime !== newPaidTime ||
-    oldStatus !== newStatus || oldDoubleSpentHist.length !== newDoubleSpentHist.length;
+    oldStatus !== newStatus || oldPaymentWatched !== newPaymentWatched || oldDoubleSpentHist.length !== newDoubleSpentHist.length;
 };
 
 module.exports = {

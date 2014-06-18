@@ -23,7 +23,11 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
 
     var invoiceExpired = validate.invoiceExpired(invoice);
 
-    if (invoiceExpired && invoice.remaining_balance > 0) {
+    if (invoice.void) {
+      var voidErr = new Error('Error: Invoice is void.');
+      return cb(voidErr, null);
+    }
+    else if (invoiceExpired && invoice.remaining_balance > 0) {
       var expiredErr = new Error('Error: Invoice is expired.');
       return cb(expiredErr, null);
     }

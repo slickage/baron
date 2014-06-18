@@ -251,7 +251,6 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           db.insert(payment, function (err) {
             if (err && err.error === 'conflict' ) {
               console.log('updatePaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
-              //console.log(err);
               return cb();
             }
             else if (isReorg) {
