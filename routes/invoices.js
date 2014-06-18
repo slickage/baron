@@ -41,6 +41,7 @@ var invoices = function(app) {
     }
   });
 
+  // Post api_key to /invoices/:invoiceId/void to void an invoice
   app.post('/invoices/:invoiceId/void', function(req, res) {
     var invoiceId = req.params.invoiceId;
     var apiKey = req.body.api_key;
@@ -56,7 +57,7 @@ var invoices = function(app) {
           res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
           res.end();
         }
-        else if (invoice.void) {
+        else if (invoice.is_void) {
           res.status(200).write('Invoice ' + invoiceId + ' is already void.');
           res.end();
         }
@@ -65,15 +66,23 @@ var invoices = function(app) {
           res.end();
         }
         else {
-          invoice.void = true;
-          db.insert(invoice, function(err) {
+          db.findInvoice(invoiceId, function(err, origInvoice) {
             if (err) {
               res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
               res.end();
             }
             else {
-              res.status(200).write('Invoice ' + invoiceId + ' has been void.');
-              res.end();
+              origInvoice.is_void = true;
+              db.insert(origInvoice, function(err) {
+                if (err) {
+                  res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
+                  res.end();
+                }
+                else {
+                  res.status(200).write('Invoice ' + invoiceId + ' has been void.');
+                  res.end();
+                }
+              });
             }
           });
         }
