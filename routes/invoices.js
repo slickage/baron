@@ -53,7 +53,7 @@ var invoices = function(app) {
       res.end();
     }
     else {
-      invoiceRouteUtil.findInvoiceAndPaymentHistory(invoiceId, function(err, invoice) {
+      invoiceRouteUtil.findInvoiceAndPaymentHistory(invoiceId, function(err, invoice, origInvoice) {
         if (err) {
           res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
           res.end();
@@ -67,23 +67,15 @@ var invoices = function(app) {
           res.end();
         }
         else {
-          db.findInvoice(invoiceId, function(err, origInvoice) {
+          origInvoice.is_void = true;
+          db.insert(origInvoice, function(err) {
             if (err) {
               res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
               res.end();
             }
             else {
-              origInvoice.is_void = true;
-              db.insert(origInvoice, function(err) {
-                if (err) {
-                  res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
-                  res.end();
-                }
-                else {
-                  res.status(200).write('Invoice ' + invoiceId + ' has been void.');
-                  res.end();
-                }
-              });
+              res.status(200).write('Invoice ' + invoiceId + ' has been void.');
+              res.end();
             }
           });
         }

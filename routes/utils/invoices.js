@@ -11,7 +11,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     if (err) {
       return cb(err, null);
     }
-    
+    var origInvoice = _.cloneDeep(invoice);
     var paymentHistory = invoiceHelper.getPaymentHistory(paymentsArr);
     invoice.payment_history = paymentHistory;
 
@@ -61,7 +61,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     delete invoice.webhooks;
     delete invoice.metadata;
     delete invoice._rev;
-    return cb(null, invoice);
+    return cb(null, invoice, origInvoice);
   });
 };
 
