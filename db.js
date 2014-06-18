@@ -4,6 +4,7 @@ var ddoc = require(__dirname + '/ddoc');
 var nano = require('nano')(config.couchdb.url);
 var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
+var async = require('async');
 var baronDb;
 
 // Abort if CouchDB is not using the random UUID algorithm
@@ -105,7 +106,7 @@ var findMatchingMetadataId = function(metadataId, cb) {
     }
   return cb(err, null);
   });
-}
+};
 
 var findPaymentById = function(paymentId, cb) {
   baronDb.view(dbName, 'paymentsById', { key:paymentId }, function(err, body) {
@@ -201,35 +202,43 @@ var getLastKnownBlockHash = function(cb) {
   });
 };
 
-function reuseInvoice(invoice, cb) {
-  if (invoice.metadata && invoice.metadata.id) {
-    findMatchingMetadataId(invoice.metadata.id, function(err, result) {
-      return cb(err, result);
-    });
-  }
-  else {
-    return cb(undefined, null);
-  }
-}
-
-var createInvoice = function(invoice, cb) {
-  // Validate
-  if (!validate.invoice(invoice)) {
-    var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
-      ' object being sent conforms to the specifications in the API');
-    return cb(invalidErr, null);
-  }
-
-  // If metadata.id is already known in database, return existing invoice instead of create new.
-  reuseInvoice(invoice, function (err, existingInvoice) {
-    if (existingInvoice) {
-      // Override expiration time of the existing invoice
-      if (invoice.expiration) {
-        existingInvoice.expiration = invoice.expiration;
-      }
-      baronDb.insert(existingInvoice, cb);
+var createInvoice = function(invoice, callback) {
+  // Helper: find invoice with matching metadata.id
+  function reuseInvoice(invoice, cb) {
+    if (invoice.metadata && invoice.metadata.id) {
+      findMatchingMetadataId(invoice.metadata.id, function(err, result) {
+        cb(err, result);
+      });
     }
     else {
+      cb(undefined, null);
+    }
+  }
+
+  async.waterfall([
+    function(cb) {
+      // Validate Invoice
+      if (!validate.invoice(invoice)) {
+        var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
+          ' object being sent conforms to the specifications in the API');
+        cb(invalidErr, null);
+      }
+      else { cb(); }
+    },
+    function(cb) {
+      // Special Case: Reuse existing invoice of matching metadata.id
+      reuseInvoice(invoice, function (err, existingInvoice) {
+        if (existingInvoice) {
+          // Override expiration time of the existing invoice
+          if (invoice.expiration) {
+            existingInvoice.expiration = invoice.expiration;
+          }
+          return baronDb.insert(existingInvoice, callback);
+        }
+        else { cb(); }
+      });
+    },
+    function(cb) {
       // Create New Invoice
       invoice.api_key = undefined;
       invoice.created = new Date().getTime();
@@ -241,7 +250,9 @@ var createInvoice = function(invoice, cb) {
       });
       invoice.balance_due = Number(balanceDue.valueOf());
       baronDb.insert(invoice, cb);
-    }
+    },
+  ], function (err, result) {
+    callback(err, result);
   });
 };
 

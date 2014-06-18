@@ -30,6 +30,7 @@ var invoices = function(app) {
     else {
       db.createInvoice(req.body, function(err, invoiceData) {
         if(err) {
+          console.log(req.ip + ' createInvoice err: ' + require('util').inspect(err));
           res.status(400).write(err.message + '\n' + JSON.stringify(invoice));
           res.end();
         }
