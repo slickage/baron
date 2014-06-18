@@ -1,4 +1,3 @@
-var config = require(__dirname + '/config');
 var bitcoinUtil = require(__dirname + '/bitcoinutil');
 var async = require('async');
 
@@ -31,8 +30,8 @@ var proceedWhenBitcoindIsReady = function(cb) {
       cb();
 	  }
 	);
-}
+};
 
 module.exports = {
 	proceedWhenBitcoindIsReady: proceedWhenBitcoindIsReady
-}
+};
