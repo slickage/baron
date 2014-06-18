@@ -6,6 +6,9 @@ module.exports = function(api) {
       if (!err) {
         res.json(invoice);
       }
+      else {
+        res.json(err);
+      }
     });
   });
 };

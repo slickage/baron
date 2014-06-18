@@ -7,13 +7,20 @@ h1 {
    text-shadow: 0px 1px #fff;
  }
 
+html {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   /* Debut pattern from http://subtlepatterns.com/debut-light/ by user Luke McDonald (http://lukemcdonald.com) */
   background: url(../images/subtlenet2.png);
   font-family: "HelveticaNeue-Thin", "Helvetica Neue Thin", "Helvetica Neue", Helvetica, sans-serif;
   font-weight: 300;
   font-size: 34px;
-  text-shadow: 0px 1px #fff;  
+  text-shadow: 0px 1px #fff;
+  width: 100%;
+  height: 100%;
 }
 
 a, a:link, a:visited {
@@ -24,6 +31,29 @@ a, a:link, a:visited {
 a:hover, a:active {
   color: #999;
 }
+
+.page-overlay {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+#page-overlay-image {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 9999;
+  background-repeat: no-repeat;
+  background-position: 50% 20%;
+}
+
+.page-overlay-void {
+  background-image: url(../images/void.png);
+}
+
+.page-overlay-expired {
+  background-image: url(../images/expired.png);
+}
+
 
 .btn {
   font-weight: 300;

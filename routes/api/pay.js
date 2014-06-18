@@ -7,6 +7,9 @@ module.exports = function(api) {
       if (!err) {
         res.json(paymentData);
       }
+      else {
+        res.json(err);
+      }
     });
   });
 };

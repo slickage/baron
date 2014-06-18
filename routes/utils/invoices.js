@@ -20,23 +20,18 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     invoice.total_paid = invoiceHelper.getTotalPaid(invoice, paymentsArr);
     invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : Number(invoice.balance_due);
     invoice.remaining_balance = invoiceHelper.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
+    invoice.is_expired = false;
+    invoice.is_void = invoice.is_void ? invoice.is_void : false;
+    invoice.expiration_time = null;
+    invoice.expiration = invoice.expiration ? invoice.expiration : null;
 
     var invoiceExpired = validate.invoiceExpired(invoice);
 
-    if (invoice.void) {
-      var voidErr = new Error('Error: Invoice is void.');
-      return cb(voidErr, null);
-    }
-    else if (invoiceExpired && invoice.remaining_balance > 0) {
-      var expiredErr = new Error('Error: Invoice is expired.');
-      return cb(expiredErr, null);
+    if (invoiceExpired && invoice.remaining_balance > 0) {
+      invoice.is_expired = true;
     }
     else if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
-      invoice.expires = helper.getExpirationCountDown(invoice.expiration);
-    }
-    else {
-      invoice.expiration = invoice.expiration ? invoice.expiration : null;
-      invoice.expires = null;
+      invoice.expiration_time = helper.getExpirationCountDown(invoice.expiration);
     }
 
     // Is the invoice paid in full?

@@ -8,9 +8,8 @@
   <link href="/css/styles.css" rel="stylesheet">
 </head>
 <body>
-<div id="overlay" style="z-index:999; width:100%; height:100%; background-color:rgba(0,0,0,0.5);"></div>
-  <div class="container">
-
+  <div id="page-overlay-image" class="<% if (is_void) { %>page-overlay-void<% } else if (is_expired) { %>page-overlay-expired<% } %>"></div>
+  <div class="container <% if (is_void || is_expired) { %>page-overlay<% } %>">
     <!-- header -->
     <div class="row underline">
       <div class="col-md-12">
@@ -18,10 +17,14 @@
       </div>
     </div>
 
-    <div id="status-banner" class="row" style="<% if (!is_paid && !expires) { %>display: none;<% } %>">
-      <div id="status-banner-text" class="col-sm-12 alert xsmall-text alert-box <% if (expires) { %>alert-warning<% } else { %>alert-success<% } %>"> 
-        <% if (expires) { %>
-            Invoice will expire in <%= expires %>.
+    <div id="status-banner" class="row">
+      <div id="status-banner-text" class="col-sm-12 alert xsmall-text alert-box <% if (expiration_time || is_expired || is_void) { %>alert-warning<% } else { %>alert-success<% } %>"> 
+        <% if (expiration_time) { %>
+            Invoice will expire in <%= expiration_time %>.
+        <% } else if (is_void) { %>
+            Invoice has been void. Payments will no longer be accepted.  
+        <% } else if (is_expired) { %>
+            Invoice is expired. Payments will no longer be accepted.
         <% } else if (is_overpaid) { %>
             Invoice has been <strong>overpaid</strong>.
         <% } else if (is_paid) { %>
@@ -65,7 +68,7 @@
 
     <div class="row">
       <div class="col-xs-12 col-sm-4">
-        <form id="pay-button" style="<% if (remaining_balance <= 0) { %>display: none;<% } %>" method="POST" action="/pay/<%= _id %>">
+        <form id="pay-button" style="<% if (is_paid || is_void || is_expired) { %>display: none;<% } %>" method="POST" action="/pay/<%= _id %>">
           <button type="submit" class="btn btn-lg btn-default btn-wide">
             Pay Now
           </button>
@@ -184,8 +187,10 @@
     var expiration =  Number('<%= expiration %>');
     var paymentHistLen = Number('<%= payment_history.length %>');
     var isPaid = 'true' === '<%= is_paid %>';
+    var isExpired = 'true' === '<%= is_expired %>';
+    var isVoid = 'true' === '<%= is_void %>';
     var queryUrl = '/api/invoices/<%= _id %>';
-    reloadInvoice(queryUrl, expiration === 0 ? null : expiration, isPaid);
+    reloadInvoice(queryUrl, expiration === 0 ? null : expiration, isExpired, isPaid, isVoid);
   </script>
 </body>
 </html>
