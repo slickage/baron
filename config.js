@@ -17,7 +17,7 @@ var config = {
   lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   paymentValidForMinutes: process.env.PAYMENT_VALID_FOR_MINUTES || 5,
-  trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 1
+  trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100
 };
 
 module.exports = config;
