@@ -15,7 +15,7 @@ var findOrCreatePayment = function(invoiceId, cb) {
     var activePayment = invoiceHelper.getActivePayment(paymentsArr);
 
     // Invoice is expired and unpaid
-    if (invoice.void) {
+    if (invoice.is_void) {
       var voidErr = new Error('Error: Invoice associated with payment is void.');
       return cb(voidErr, null);
     }
