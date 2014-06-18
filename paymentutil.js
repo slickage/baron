@@ -59,6 +59,7 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
       var tickerData = docs.rows[0].value;
       var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
       var payment = {
+        invoice_id: invoiceId,
         address: address,
         amount_paid: 0, // Always stored in BTC
         expected_amount: expectedAmount,
@@ -307,7 +308,6 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
         }
         remainingBalance = helper.roundToDecimal(remainingBalance, 8);
         var payment = {
-          _id: invoiceId + '_' + transaction.txid,
           invoice_id: invoiceId,
           address: transaction.address,
           amount_paid: Number(transaction.amount),
