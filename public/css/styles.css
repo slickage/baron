@@ -37,23 +37,25 @@ a:hover, a:active {
   pointer-events: none;
 }
 
-#page-overlay-image {
+.page-overlay-void {
   width: 100%;
   height: 100%;
   position: absolute;
   z-index: 9999;
   background-repeat: no-repeat;
   background-position: 50% 20%;
-}
-
-.page-overlay-void {
   background-image: url(../images/void.png);
 }
 
 .page-overlay-expired {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 9999;
+  background-repeat: no-repeat;
+  background-position: 50% 20%;
   background-image: url(../images/expired.png);
 }
-
 
 .btn {
   font-weight: 300;
