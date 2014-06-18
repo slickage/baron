@@ -51,13 +51,17 @@ var invoices = function(app) {
       res.end();
     }
     else {
-      db.findInvoice(invoiceId, function(err, invoice) {
+      invoiceRouteUtil.findInvoiceAndPaymentHistory(invoiceId, function(err, invoice) {
         if (err) {
           res.status(400).write(err.message + '\nAPI KEY: ' + apiKey + '\nInvoice ID: ' + invoiceId);
           res.end();
         }
         else if (invoice.void) {
           res.status(200).write('Invoice ' + invoiceId + ' is already void.');
+          res.end();
+        }
+        else if (Number(invoice.total_paid) > 0) {
+          res.status(400).write('Invoice ' + invoiceId + ' has payments, cannot be void.');
           res.end();
         }
         else {
