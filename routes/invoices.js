@@ -22,8 +22,8 @@ var invoices = function(app) {
   app.post('/invoices', function(req, res) {
     var invoice = req.body;
     if (!invoice.api_key || invoice.api_key && invoice.api_key !== config.baronAPIKey) {
-      var err = new Error('Access Denied: Invalid access token.');
-      console.log(req.ip + ' attempted to create an invoice with an invalid access token.');
+      var err = new Error('Access Denied: Invalid API key.');
+      console.log(req.ip + ' attempted to create an invoice with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
