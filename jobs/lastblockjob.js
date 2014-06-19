@@ -98,9 +98,7 @@ var lastBlockJob = function() {
     else if (!lastBlockHashObj.hash) {
       return console.log('Last block object missing hash, check Baron\'s database');
     }
-    console.log('===========================');
-    console.log('Processing Last Block: ' + lastBlockHashObj.hash);
-    console.log('===========================');
+    console.log('lastBlockJob: ' + lastBlockHashObj.hash);
     processBlockHash(lastBlockHashObj);
   });
 };

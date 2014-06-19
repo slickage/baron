@@ -36,9 +36,6 @@ var watchPaymentsJob = function () {
       return err ? console.log(err) : null;
     }
     // Process all watched payments
-    console.log('===========================');
-    console.log('Watch Payments Job: ' + paymentsArr.length);
-    console.log('===========================');
     var paidCount = 0;
     var unpaidCount = 0;
     paymentsArr.forEach(function(payment) {
@@ -59,8 +56,7 @@ var watchPaymentsJob = function () {
         checkPaymentExpiration(payment);
       }
     });
-    console.log('> Watched Paid Count: ' + paidCount);
-    console.log('> Watched Unpaid Count: ' + unpaidCount);
+    console.log('watchPaymentsJob: total: ' + paymentsArr.length + ' paid: ' + paidCount + ' unpaid: ' + unpaidCount);
   });
 };
 
