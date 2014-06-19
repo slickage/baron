@@ -64,12 +64,31 @@ startbtc() {
     btc $1 getinfo > /dev/null 2>&1
     [ "$?" == "0" ] && break
   done
+  set -e
 }
 
-waitfor() {
+waitforbtc() {
   while true; do
-    CHECK=$(btc $1 $2 | jq ".$3")
+    CHECK=$(btc $1 $2 2> /dev/null | jq -r ".$3")
     [ "$CHECK" == "$4" ] && break
+    sleep 0.2
+  done
+}
+
+waitfortx() {
+  while true; do
+    CHECK=$(btc $1 getrawmempool |jq -r '.[0]')
+    [ "$CHECK" == "$2" ] && break
+    #echo "waitfortx $2 on node $1"
+    sleep 0.2
+  done
+}
+
+waitforpaid() {
+  while true; do
+    CHECK=$(curl -s -X GET http://localhost:8080/api/invoices/$1 | jq '.is_paid')
+    [ "$CHECK" == "true" ] && break
+    #echo "waitforpaid Invoice $1"
     sleep 0.25
   done
 }
@@ -80,16 +99,17 @@ spendfrom() {
   ADDR=$3
   UNSIGNED=$(btc $WHICH createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":0}]" "{\"$ADDR\":50}")
   SIGNED=$(btc $WHICH signrawtransaction $UNSIGNED | jq -r '.hex')
-  btc $WHICH sendrawtransaction $SIGNED
-  echo "spendfrom: Sent 50 BTC from $TXID to $ADDR."
+  TXIDSENT=$(btc $WHICH sendrawtransaction $SIGNED)
+  echo "spendfrom: Sent 50 BTC from $TXID to $ADDR in $TXIDSENT"
 }
-
 
 printalias() {
   echo "alias btc${1}='bitcoind -datadir=$BARONTMPDIR/$1'"
 }
 
-printhashes() {
+printtitle() {
+  echo "###############################"
+  echo "$1"
   echo "###############################"
 }
 
@@ -102,21 +122,36 @@ detectwhichopen() {
 
 openurl() {
   echo "URL: $1"
-  [ -n "$OPEN" ] && $OPEN $1
+  [ -n "$OPEN" ] && $OPEN $1 > /dev/null 2>&1 ||:
+}
+
+setuppartitions() {
+  echo "[STOPPING BITCOIND 3,4]"
+  btc 3 stop
+  btc 4 stop
+  sleep 2
+  echo "[COPYING WALLETS from 1,2 to 3,4]"
+  btc 1 backupwallet $BARONTMPDIR/3/regtest/wallet.dat
+  btc 2 backupwallet $BARONTMPDIR/4/regtest/wallet.dat
+  echo "[STARTING BITCOIND 3,4]"
+  startbtc 3
+  startbtc 4
+  btc 4 addnode localhost:20034 onetry
+  waitforbtc 3 getinfo connections 1
 }
 
 #### CLEAR BITCOIND AND NODE ####
 killall bitcoind 2> /dev/null
 killall node     2> /dev/null
 curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
-sleep 3
+sleep 1
 
 rm -rf $BARONTMPDIR
 mkdir -p $BARONTMPDIR
 mkdir -p $LOGDIR
 
 # Exit handler: killall node and bitcoind instances along with tester
-trap "set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM
+trap "echo 'BARONTESTER DONE'; set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM EXIT
 echo "Use CTRL-C to kill tester, Baron and bitcoind."
 
 # Detect browser
@@ -134,16 +169,15 @@ set -e # exit on error
 # Connect all nodes
 btc 2 addnode localhost:20014 onetry
 btc 3 addnode localhost:20014 onetry
-btc 4 addnode localhost:20014 onetry
-sleep 1
+btc 4 addnode localhost:20034 onetry
 
-# Generate blocks to have spendable outputs
+# Generate blocks to obtain spendable outputs
 btc 1 setgenerate true
-sleep 1
+waitforbtc 2 getinfo blocks 1
 btc 2 setgenerate true 106
-waitfor 1 getinfo blocks 107
-waitfor 3 getinfo blocks 107
-waitfor 4 getinfo blocks 107
+waitforbtc 1 getinfo blocks 107
+waitforbtc 3 getinfo blocks 107
+waitforbtc 4 getinfo blocks 107
 TXID1=$(btc 2 listunspent | jq -r '.[1].txid')
 TXID2=$(btc 2 listunspent | jq -r '.[2].txid')
 TXID3=$(btc 2 listunspent | jq -r '.[3].txid')
@@ -177,161 +211,115 @@ sleep 1
 
 ### Test #1: Reorg unconfirm then reconfirm into another block
 test1() {
-printhashes
-echo "TEST #1: Reorg unconfirm then reconfirm into another block"
-printhashes
-echo "[STOPPING BITCOIND 3 & 4]"
-btc 3 stop
-btc 4 stop
-sleep 3
-echo "[COPYING WALLET 1 to 3]"
-cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
-echo "[STARTING BITCOIND 3 & 4]"
-startbtc 3
-startbtc 4
-
-btc 4 addnode localhost:20034 onetry
+printtitle "TEST #1: Reorg unconfirm then reconfirm into another block"
+setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
-if [ "$PAYADDRESS" == "null" ]; then
-  errorexit "ERROR: route/status.js must expose payment.address."
-fi
-echo "[PAY $PAYADDRESS using wallet 2]"
+echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID1 $PAYADDRESS
-sleep 1
+waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
-echo "[Wait 6 seconds to ensure that baron had processed the payment."
-sleep 6
+waitforpaid $INVOICEID
 echo "[GENERATE block on node 3]"
 btc 3 setgenerate true
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
-sleep 1
+waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg.  Payment should now be unconfirmed.]"
 btc 3 setgenerate true
 sleep 6
 echo "[GENERATE block on node 1 to reconfirm transaction.]"
 btc 1 setgenerate true
-sleep 1
+sleep 2
+echo "[END TEST #1]"
 }
 
 ### Test #2: Double Spend (Replace Payment to Same Address)
 test2() {
-printhashes
-echo "TEST #2: Double Spend Replace (payment to same address)"
-printhashes
-echo "[STOPPING BITCOIND 3 & 4]"
-btc 3 stop
-btc 4 stop
-sleep 3
-echo "[COPYING WALLET 1 to 3]"
-cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
-echo "[STARTING BITCOIND 3 & 4]"
-startbtc 3
-startbtc 4
-btc 4 addnode localhost:20034 onetry
-sleep 0.5
+printtitle "TEST #2: Double Spend Replace (payment to same address)"
+setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
-if [ "$PAYADDRESS" == "null" ]; then
-  errorexit "ERROR: route/status.js must expose payment.address."
-fi
-echo "[PAY $PAYADDRESS using wallet 2]"
+echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID2 $PAYADDRESS
-sleep 1
+waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
-echo "[Wait 6 seconds to ensure that baron had processed the payment."
-sleep 6
-echo "[Double Spend Replace using wallet 3]"
-spendfrom 3 $TXID2 $PAYADDRESS
-sleep 1
+waitforpaid $INVOICEID
+echo "[Double Spend Replace from wallet 4]"
+spendfrom 4 $TXID2 $PAYADDRESS
+waitfortx 3 $TXIDSENT
 echo "[GENERATE block on node 3]"
 btc 3 setgenerate true
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
-sleep 1
+waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg]"
 btc 3 setgenerate true
-sleep 1
+# FIXME: Huge sleep because Baron experiences a major delay in processing this reorg
+sleep 6
+echo "[END TEST #2]"
 }
 
-### Test #3: Double Spend (Payment to address elsewhere)
+### Test #3: Double Spend Theft
 test3() {
-printhashes
-echo "Test #3: Double Spend (Payment to address elsewhere)"
-printhashes
-echo "[STOPPING BITCOIND 3 & 4]"
-btc 3 stop
-btc 4 stop
-sleep 3
-echo "[COPYING WALLET 1 to 3]"
-cp $BARONTMPDIR/2/regtest/wallet.dat $BARONTMPDIR/3/regtest/wallet.dat
-echo "[STARTING BITCOIND 3 & 4]"
-startbtc 3
-startbtc 4
-btc 4 addnode localhost:20034 onetry
-sleep 0.5
+printtitle "Test #3: Double Spend Theft"
+setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
-if [ "$PAYADDRESS" == "null" ]; then
-  errorexit "ERROR: route/status.js must expose payment.address."
-fi
 echo "[PAY $PAYADDRESS using wallet 2]"
 spendfrom 2 $TXID3 $PAYADDRESS
-sleep 1
+waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
-echo "[Wait 6 seconds to ensure that baron had processed the payment."
-sleep 6
-echo "[Double Spend to mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 using wallet 3]"
-spendfrom 3 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1
-sleep 1
+waitforpaid $INVOICEID
+echo "[Double Spend Theft from wallet 4]"
+spendfrom 4 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1
+waitfortx 3 $TXIDSENT
 echo "[GENERATE block on node 3]"
 btc 3 setgenerate true
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
-sleep 1
+waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg]"
 btc 3 setgenerate true
-sleep 1
+# FIXME: Huge sleep because Baron experiences a major delay in processing this reorg
+sleep 6
+echo "[END TEST #3]"
 }
 
 ### Test #4: Payment with Metadata ID
 test4() {
-printhashes
-echo "Test #4: Payment with Metadata ID"
-printhashes
+printtitle "Test #4: Payment with Metadata ID"
 echo "[SUBMIT INVOICE TO BARON]"
 INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
-if [ "$PAYADDRESS" == "null" ]; then
-  errorexit "ERROR: route/status.js must expose payment.address."
-fi
-echo "[PAY $PAYADDRESS using wallet 2]"
+echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID4 $PAYADDRESS
-sleep 1
+waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
+sleep 1
+echo "[END TEST #4]"
 }
 
 [ -z "$1" ] && TESTS="test1 test2 test3 test4"
