@@ -2,13 +2,13 @@ var request = require('request');
 var db = require(__dirname + '/db');
 
 function postToWebhook(webhookObj, cb) {
-  console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
+  //console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
   var postData = {};
   postData.token = webhookObj.token;
   if (webhookObj.metadata) {
     postData.metadata = webhookObj.metadata;
   }
-  var form = { form: postData }
+  var form = { form: postData };
   request.post(webhookObj.url, { form: postData },
     function (error, response) {
       try {
