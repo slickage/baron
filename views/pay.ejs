@@ -91,7 +91,7 @@
             </a>
           <% } %>
         </span>
-        <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
+        <input type="text" spellcheck="false" onclick="this.select()" class="address-input form-control address-spacer" value="<%= address %>" />
         <div>
           <% if (!txid && isUSD) { %>
             <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
@@ -145,7 +145,7 @@
                 </a>
               <% } %>
             </span>
-            <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
+            <input type="text" spellcheck="false" onclick="this.select()" class="address-input form-control address-spacer" value="<%= address %>" />
           </div>
           <div>
             <% if (!txid && isUSD) { %>
