@@ -1,0 +1,18 @@
+{
+  "api_key": "secretapikey",
+  "currency": "BTC",
+  "expiration": 1499097633000,
+  "min_confirmations": 1,
+  "line_items": [
+      {
+          "description": "Invoice 2 of 2",
+          "quantity": 1,
+          "amount": 25
+      }
+  ],
+  "webhooks":{ 
+    "token": "token", 
+    "paid": {"url": "http://localhost:9242/paid"},
+    "invalid": {"url": "http://localhost:9242/invalid" }
+  }
+}

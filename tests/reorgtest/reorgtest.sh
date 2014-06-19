@@ -103,6 +103,17 @@ spendfrom() {
   echo "spendfrom: Sent 50 BTC from $TXID to $ADDR in $TXIDSENT"
 }
 
+spendfrommulti() {
+  WHICH=$1
+  TXID=$2
+  ADDR1=$3
+  ADDR2=$4
+  UNSIGNED=$(btc $WHICH createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":0}]" "{\"$ADDR1\":25,\"$ADDR2\":25}")
+  SIGNED=$(btc $WHICH signrawtransaction $UNSIGNED | jq -r '.hex')
+  TXIDSENT=$(btc $WHICH sendrawtransaction $SIGNED)
+  echo "spendfrom: Sent 25 BTC from $TXID to $ADDR1 and $ADDR2 in $TXIDSENT"
+}
+
 printalias() {
   echo "alias btc${1}='bitcoind -datadir=$BARONTMPDIR/$1'"
 }
@@ -322,7 +333,31 @@ sleep 1
 echo "[END TEST #4]"
 }
 
-[ -z "$1" ] && TESTS="test1 test2 test3 test4"
+### Test #5: Payment of two Invoices with the same Transaction
+test5() {
+printtitle "Test #5: Payment of two Invoices with the same Transaction"
+echo "[SUBMIT INVOICE 1 TO BARON]"
+INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
+# Poke payment page so the payment is created
+curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
+PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
+echo "[SUBMIT INVOICE 2 TO BARON]"
+INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
+# Poke payment page so the payment is created
+curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
+PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
+echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
+spendfrommulti 2 $TXID4 $PAYADDRESS1 $PAYADDRESS2
+waitfortx 1 $TXIDSENT
+echo "[GENERATE block on node 1]"
+btc 1 setgenerate true
+sleep 1
+echo "[END TEST #5]"
+}
+
+[ -z "$1" ] && TESTS="test1 test2 test3 test4 test5"
 for x in $@; do
   TESTS="$TESTS $x"
 done
