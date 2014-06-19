@@ -72,7 +72,7 @@ var config = {
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
 * Properties in config.js can be overriden using a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file and [foreman](https://github.com/ddollar/foreman).
 
-### Bitcoin Configuration
+### Example Bitcoin Configuration
 Modify bitcoin's [bitcoin.conf](https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File):
 ```sh
 # (optional) connects bitcoin client to testnet
@@ -87,9 +87,12 @@ rpcpassword=password
 
 # tells bitcoind to post wallet/block notifications to baron
 # the addresses below should match baron's address and port.
-walletnotify=curl --data "txId=%s" http://localhost:8080/notify
-blocknotify=curl --data "blockHash=%s" http://localhost:8080/blocknotify
+walletnotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"txid\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }" http://localhost:8080/notify
+blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"blockhash\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }" http://localhost:8080/blocknotify
+
 ```
+
+Note: Be sure the two instances of `api_key` within bitcoin.conf match the `BARON_API_KEY` configuration of Baron.
 
 ### Running Baron
 First ensure that both insight-api and bitcoin are running and that their connection properties are correctly set in Baron's config.

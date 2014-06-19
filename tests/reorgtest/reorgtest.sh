@@ -44,8 +44,8 @@ EOF
 
   if [ "$1" == "1" ]; then
   cat <<EOF >> bitcoin.conf
-walletnotify=curl -o /dev/null -s --data "txId=%s" http://localhost:$BARONPORT/notify
-blocknotify=curl -o /dev/null -s --data "blockHash=%s" http://localhost:$BARONPORT/blocknotify
+walletnotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \\"txid\\": \\"%s\\", \\"api_key\\": \\"secretapikey\\" }" http://localhost:$BARONPORT/notify
+blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \\"blockhash\\": \\"%s\\", \\"api_key\\": \\"secretapikey\\" }" http://localhost:$BARONPORT/blocknotify
 EOF
 fi
 }
