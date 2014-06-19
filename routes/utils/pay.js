@@ -83,7 +83,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
     var chainExplorerUrl = activePayment.txid ? config.chainExplorerUrl + '/' + activePayment.txid : null;
-    var txId = activePayment.txid ? activePayment.txid : null;
+    var txid = activePayment.txid ? activePayment.txid : null;
     var paymentData = {
       appTitle: config.appTitle,
       minConfirmations: invoice.min_confirmations,
@@ -97,13 +97,13 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       status: activePayment.status,
       address: activePayment.address,
       confirmations: confirmations,
-      txId: txId,
+      txid: txid,
       amount: amountToDisplay,
       amountFirstFour: helper.toFourDecimals(amountToDisplay),
       amountLastFour: helper.getLastFourDecimals(amountToDisplay),
       chainExplorerUrl: chainExplorerUrl,
-      qrImageUrl: txId ? null : '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay,
-      bitcoinUrl: txId ? null : 'bitcoin:' + activePayment.address + '?amount=' +  amountToDisplay,
+      qrImageUrl: txid ? null : '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay,
+      bitcoinUrl: txid ? null : 'bitcoin:' + activePayment.address + '?amount=' +  amountToDisplay,
     };
 
     return cb(null, paymentData);

@@ -37,7 +37,7 @@
 
       <!-- QR Code for xsmall screens -->
       <div class="qrcode col-md-5 col-sm-6 center-margin visible-xs no-padding">
-        <% if (!txId) { %>
+        <% if (!txid) { %>
           <a href="<%= bitcoinUrl %>">
             <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
           </a>
@@ -74,9 +74,9 @@
            <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
           <% } %>
         </span>
-        <span style="<% if (!txId) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
+        <span style="<% if (!txid) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
         <span class="refresh-link">
-          <% if (!txId && isUSD) { %>
+          <% if (!txid && isUSD) { %>
             <a href="<%= invoiceId %>">
               <img class="right-icon" src="/images/refresh.png" />
             </a>
@@ -93,7 +93,7 @@
         </span>
         <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
         <div>
-          <% if (!txId && isUSD) { %>
+          <% if (!txid && isUSD) { %>
             <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
           <% } %>
         </div>
@@ -128,9 +128,9 @@
                <%= amountFirstFour %><span class="gray"><%= amountLastFour %></span> BTC
               <% } %>
             </span>
-            <span style="<% if (!txId) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
+            <span style="<% if (!txid) { %>display: none;<% } %>" class="sent-text green"> Sent</span>
             <span class="refresh-link">
-              <% if (!txId && isUSD) { %>
+              <% if (!txid && isUSD) { %>
                 <a href="<%= invoiceId %>">
                   <img class="right-icon" src="/images/refresh.png" />
                 </a>
@@ -148,7 +148,7 @@
             <input type="text" class="address-input form-control address-spacer" value="<%= address %>" />
           </div>
           <div>
-            <% if (!txId && isUSD) { %>
+            <% if (!txid && isUSD) { %>
               <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
             <% } %>
           </div>
@@ -156,7 +156,7 @@
 
       <!-- QR Code for non mobile -->
       <div class="qrcode col-md-5 col-sm-6 col-lg-4 right hidden-xs">
-        <% if (!txId) { %>
+        <% if (!txid) { %>
           <a href="<%= bitcoinUrl %>">
             <img width="320" height="320" src="<%= qrImageUrl %>" alt="" title="" />
           </a>

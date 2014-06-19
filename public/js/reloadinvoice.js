@@ -128,12 +128,12 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
       }
 
       if (payment.status.toLowerCase() === 'invalid' && payment.double_spent_history) {
-        payment.double_spent_history.forEach(function(txId) {
+        payment.double_spent_history.forEach(function(txid) {
           paymentHtml = paymentHtml +
             '<div class="row indent line-item thin-underline">' +
               '<div class="col-xs-12 xsmall-text">' +
                 '<span class="red">Payment was double spent by transaction: </span>' +
-                txId +
+                txid +
               '</div>' +
             '</div>';
         });

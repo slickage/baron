@@ -134,8 +134,8 @@ var findPayments = function(address, cb) {
   });
 };
 
-var findPaymentByTxId = function(txId, cb) {
-  baronDb.view(dbName, 'paymentsTxId', { key:txId }, function(err, body) {
+var findPaymentByTxId = function(txid, cb) {
+  baronDb.view(dbName, 'paymentsTxId', { key:txid }, function(err, body) {
     var payment = null;
     if (!err && body.rows && body.rows.length > 0) {
       payment = body.rows[0].value;
@@ -144,7 +144,7 @@ var findPaymentByTxId = function(txId, cb) {
       return cb(null, payment);
     }
     else if (!payment)  {
-      var error = new Error('No invoice matching txid: ' + txId);
+      var error = new Error('No invoice matching txid: ' + txid);
       return cb(error, null);
     } else {
       return cb(err, null);

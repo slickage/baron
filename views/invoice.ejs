@@ -168,11 +168,11 @@
         <% } %>
         <% if (payment.status.toLowerCase() === 'invalid') { %>
           <% if (payment.double_spent_history) { %>
-            <% payment.double_spent_history.forEach(function(txId) { %>
+            <% payment.double_spent_history.forEach(function(txid) { %>
               <div class="row indent line-item thin-underline">
                 <div class="col-xs-12 xsmall-text">
                   <span class="red">Payment was double spent by transaction: </span>
-                  <%= txId %>
+                  <%= txid %>
                 </div>
               </div>
             <% }); %>
