@@ -46,6 +46,9 @@ var reloadPayment = function (queryUrl, expiration) {
     request.open('GET', queryUrl, isAsynchronous);
     request.onload = function(){
       var payment = JSON.parse(request.response);
+      if (payment.stack) {
+        return location.reload();
+      }
       updatePaymentData(payment);
       requestLocked = false;
     };
