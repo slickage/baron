@@ -22,30 +22,25 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     invoice.remaining_balance = invoiceHelper.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
     invoice.is_expired = false;
     invoice.is_void = invoice.is_void ? invoice.is_void : false;
-    invoice.expiration_time = null;
     invoice.expiration = invoice.expiration ? invoice.expiration : null;
 
     var invoiceExpired = validate.invoiceExpired(invoice);
-
-    if (invoiceExpired && invoice.remaining_balance > 0) {
-      invoice.is_expired = true;
-    }
-    else if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
+    invoice.is_expired = invoiceExpired && invoice.remaining_balance > 0;
+    invoice.expiration_time = null;
+    if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
       invoice.expiration_time = helper.getExpirationCountDown(invoice.expiration);
     }
 
     // Is the invoice paid in full?
     var hasPending = false;
     paymentHistory.forEach(function(payment) {
-      payment.url = config.chainExplorerUrl + '/' + payment.txid; // populate chain explorer url
       if(isUSD) {
         var amountUSD = new BigNumber(payment.amount_paid).times(payment.spot_rate);
         amountUSD = helper.roundToDecimal(amountUSD, 2);
         payment.amount_usd = amountUSD;
       }
-      if (payment.status.toLowerCase() === 'pending') {
-        hasPending = true;
-      }
+      payment.url = config.chainExplorerUrl + '/' + payment.txid; // populate chain explorer url
+      hasPending = payment.status.toLowerCase() === 'pending';
       delete payment._id;
       delete payment._rev;
       delete payment.spot_rate;
@@ -65,4 +60,6 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
   });
 };
 
-module.exports = { findInvoiceAndPaymentHistory: findInvoiceAndPaymentHistory };
+module.exports = {
+  findInvoiceAndPaymentHistory: findInvoiceAndPaymentHistory
+};

@@ -24,17 +24,16 @@ var notify = function(app) {
         else {
           var transaction = info.result;
           var receiveDetails = helper.getReceiveDetails(transaction.details);
+          var count = 0;
           receiveDetails.forEach(function(receiveDetail) {
-            if (receiveDetail) {
-              var clonedTransaction = _.clone(transaction, true);
-              clonedTransaction.address = receiveDetail.address;
-              clonedTransaction.amount = receiveDetail.amount;
-              paymentUtil.updatePayment(clonedTransaction, function(err) {
-                if (err) {
-                  console.log(err);
-                }
-              });
-            }
+            var txToProcess = count++ > 0 ? _.cloneDeep(transaction) : transaction;
+            txToProcess.address = receiveDetail.address;
+            txToProcess.amount = receiveDetail.amount;
+            paymentUtil.updatePayment(txToProcess, function(err) {
+              if (err) {
+                console.log(err);
+              }
+            });
           });
           res.end();
         }
