@@ -1,16 +1,19 @@
 # Baron [![Gitter chat](http://img.shields.io/badge/gitter-slickage%2Fbaron-1dce73.svg?style=flat)](https://gitter.im/slickage/baron)[![Build Status](http://img.shields.io/travis/slickage/baron.svg?style=flat)](https://travis-ci.org/slickage/baron)
-Baron is a bitcoin payment processor that makes it easy to manage bitcoin transactions. 
+Baron is a Bitcoin payment processor that anyone can deploy
 
-* Allows for invoice creation in USD or BTC
-* Invoice balances created in USD are converted to BTC at time of payment
-* Records BTC exchange rates when payments are made
-* Keeps a history of all invoices and payments
+* Allow creation of invoices denominated in USD or BTC from any other application with the API key.
+* Invoices denominated in USD are quoted at market-rate in BTC at the time of payment.
+* Records BTC exchange rates when payments are made, useful for accounting.
+* Keeps history of all invoices and payments.
+* Keeps history of unusual events like reorg, double-spend, etc.
+* Properly handles incoming payments after recovering from downtime.
+* Notifies external applications via webhooks when an invoice is paid or rendered invalid.
+* No lost notifications: monitors for success/failure of webhooks with a retry queue.
 
 ## External Dependencies
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
 * [bitcoin](https://bitcoin.org/en/download)
-* [insight-api](https://github.com/bitpay/insight-api)
 * [foreman](https://github.com/ddollar/foreman)
 * [nodemon](https://github.com/remy/nodemon)
 
@@ -40,11 +43,6 @@ var config = {
     user: process.env.BITCOIND_USER || 'username',
     pass: process.env.BITCOIND_PASS || 'password'
   },
-  insight: {
-    host: process.env.INSIGHT_HOST || 'localhost',
-    port: process.env.INSIGHT_PORT || '3001',
-    protocol: process.env.INSIGHT_PROTOCOL || 'http'
-  },
   port: process.env.PORT || 8080,
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
@@ -58,7 +56,6 @@ var config = {
 
 * `couchdb` - Database connection configs
 * `bitcoind` - Bitcoin client connetion configs
-* `insight` - Insight connection configs
 * `port` - The port that Baron should run on
 * `baronAPIKey` - A secret key that is used to validate invoice creation <sup>[1]</sup>
 * `chainExplorerUrl` - A link to the tx route of a chain explorer
@@ -70,7 +67,7 @@ var config = {
 
 **NOTES:** 
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
-* Properties in config.js can be overriden using a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file and [foreman](https://github.com/ddollar/foreman).
+* Properties in config.js can be overriden with environment variables.  Common ways to do this is with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file and [foreman](https://github.com/ddollar/foreman) or an [EnvironmentFile with systemd](http://fedoraproject.org/wiki/Packaging%3aSystemd#EnvironmentFiles_and_support_for_.2Fetc.2Fsysconfig_files).
 
 ### Example Bitcoin Configuration
 Modify bitcoin's [bitcoin.conf](https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File):
@@ -92,10 +89,10 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 
 ```
 
-Note: Be sure the two instances of `api_key` within bitcoin.conf match the `BARON_API_KEY` configuration of Baron.
+Note: Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/notify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
 
 ### Running Baron
-First ensure that both insight-api and bitcoin are running and that their connection properties are correctly set in Baron's config.
+Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.
 
 Running Baron with [node](http://nodejs.org)
 ```sh
