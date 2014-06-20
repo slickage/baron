@@ -86,7 +86,7 @@ waitfortx() {
 
 waitforpaid() {
   while true; do
-    CHECK=$(curl -s -X GET http://localhost:8080/api/invoices/$1 | jq '.is_paid')
+    CHECK=$(curl -s -X GET http://localhost:$BARONPORT/api/invoices/$1 | jq '.is_paid')
     [ "$CHECK" == "true" ] && break
     #echo "waitforpaid Invoice $1"
     sleep 0.25
