@@ -8,6 +8,7 @@ var config = require(__dirname + '/config');
 var invoiceHelper = require(__dirname + '/invoicehelper');
 var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 var _ = require('lodash');
+var async = require('async');
 
 // ===============================================
 // Creating New Payments with Transaction Data
@@ -178,26 +179,32 @@ var processReorgedPayments = function (blockHash) {
 
 var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
   if (transaction.txid && transaction.walletconflicts.length > 0) {
-    db.findPaymentByTxId(transaction.txid, function(err, payment) {
+    db.findPaymentsByTxId(transaction.txid, function(err, payments) {
       if (err) {
+        console.log('processReorgAndCheckDoubleSpent ' + JSON.stringify(err));
         return cb ? cb(err) : null;
       }
-      var origStatus = payment.status;
-      //TODO: Notify Admin of Double Spend
-      if (transaction.walletconflicts.length > 0) {
-        payment.double_spent_history = transaction.walletconflicts;
-      }
-      if (blockHash) {
-        processReorgedPayment(payment, blockHash);
-      }
-      db.insert(payment, function(err) {
-        if (err) {
-          cb(err);
+      async.each(payments, function(payment, asyncCallback) {
+        var origStatus = payment.status;
+        //TODO: Notify Admin of Double Spend
+        if (transaction.walletconflicts.length > 0) {
+          payment.double_spent_history = transaction.walletconflicts;
         }
-        else {
-          invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
-          cb();
+        if (blockHash) {
+          processReorgedPayment(payment, blockHash);
         }
+        db.insert(payment, function(err) {
+          if (err) {
+            console.log('processReorgAndCheckDoubleSpent ' + JSON.stringify(err));
+          }
+          else {
+            invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+          }
+          asyncCallback();
+        });
+      },
+      function() {
+        return cb ? cb(err) : null;
       });
     });
   }
@@ -268,12 +275,10 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
       }
       else if (isReorg) {
         // Check for doublespend
-        processReorgAndCheckDoubleSpent(transaction, payment.block_hash, function(err) {
-          if (err) {
-            return cb(err);
-          }
+        processReorgAndCheckDoubleSpent(transaction, payment.block_hash, function() {
           // If no double spend process reorg for all payments with block hash
           processReorgedPayments(payment.block_hash);
+          return cb();
         });
       }
     });
@@ -355,8 +360,14 @@ var updatePayment = function(transaction, cb) {
     var error = new Error('Ignoring irrelevant transaction.');
     return cb(error, null);
   }
-  db.findPaymentByTxId(transaction.txid, function(err, payment) {
-    if (!err && payment) {
+  db.findPaymentsByTxId(transaction.txid, function(err, payments) {
+    var payment;
+    payments.forEach(function(curPayment) {
+      if (curPayment.address === transaction.address) {
+        payment = curPayment;
+      }
+    });
+    if (payment) {
       // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, cb);
     }

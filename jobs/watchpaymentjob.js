@@ -9,10 +9,16 @@ var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 // last known block. Remove in the future.
 
 function updateWatchedPayment(payment, transaction) {
-  var receiveDetail = helper.getReceiveDetail(transaction.details);
-  if (receiveDetail || (!receiveDetail && (transaction.confirmations === -1))) {
-    transaction.address = receiveDetail ? receiveDetail.address : payment.address;
-    transaction.amount = receiveDetail ? receiveDetail.amount : payment.amount_paid;
+  var receiveDetails = helper.getReceiveDetails(transaction.details);
+  var matchingDetail;
+  receiveDetails.forEach(function(receiveDetail) {
+    if (receiveDetail.address === payment.address) {
+      matchingDetail = receiveDetail;
+    }
+  });
+  if (matchingDetail || (!matchingDetail && (transaction.confirmations === -1))) {
+    transaction.address = matchingDetail ? matchingDetail.address : payment.address;
+    transaction.amount = matchingDetail ? matchingDetail.amount : payment.amount_paid;
     paymentUtil.updatePaymentWithTransaction(payment, transaction, function(err) {
       if (err) {
         console.log(err);

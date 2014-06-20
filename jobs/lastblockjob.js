@@ -62,7 +62,7 @@ function processBlockHash(blockHashObj) {
       // If valid get transactions since last block (bitcore)
       if (validate.block(block)) {
         async.eachSeries(transactions, function(transaction, cb) {
-          paymentUtil.updatePayment(transaction, function(err) {
+          paymentUtil.updatePayment(transaction, function() {
             cb(); // We dont care if update fails just run everthing in series until completion
           });
         }, function(err) {

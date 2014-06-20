@@ -67,19 +67,19 @@ describe('helper', function() {
   });
 });
 
-describe('helper', function() {
-  describe('#getReceiveDetail', function() {
-    it('should return the receive detail portion of an object', function() {
-      var transaction = {
-        details: [
-          { category: 'send' },
-          { category: 'receive' }
-        ]
-      };
-      assert.equal(transaction.details[1], helper.getReceiveDetail(transaction.details));
-    });
-  });
-});
+// describe('helper', function() {
+//   describe('#getReceiveDetails', function() {
+//     it('should return an array of the receive detail portion of an object', function() {
+//       var transaction = {
+//         details: [
+//           { category: 'send' },
+//           { category: 'receive' }
+//         ]
+//       };
+//       assert.equal(transaction.details[1], helper.getReceiveDetail(transaction.details));
+//     });
+//   });
+// });
 
 // Probably need to remove this test due to reliance on timestamp
 describe('helper', function() {

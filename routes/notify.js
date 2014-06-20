@@ -3,6 +3,7 @@ var paymentUtil = require(__dirname + '/../paymentutil');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var blockJob = require(__dirname + '/../jobs/lastblockjob');
 var helper = require(__dirname + '/../helper');
+var _ = require('lodash');
 
 var notify = function(app) {
 
@@ -22,26 +23,22 @@ var notify = function(app) {
         }
         else {
           var transaction = info.result;
-          var receiveDetail = helper.getReceiveDetail(transaction.details);
-          if (receiveDetail) {
-            transaction.address = receiveDetail.address;
-            transaction.amount = receiveDetail.amount;
-            paymentUtil.updatePayment(transaction, function(err) {
-              if (err) {
-                res.send(500);
-                console.log(err);
-              }
-              else {
-                res.end();
-              }
-            });
-          }
-          else {
-            res.end();
-          }
+          var receiveDetails = helper.getReceiveDetails(transaction.details);
+          receiveDetails.forEach(function(receiveDetail) {
+            if (receiveDetail) {
+              var clonedTransaction = _.clone(transaction, true);
+              clonedTransaction.address = receiveDetail.address;
+              clonedTransaction.amount = receiveDetail.amount;
+              paymentUtil.updatePayment(clonedTransaction, function(err) {
+                if (err) {
+                  console.log(err);
+                }
+              });
+            }
+          });
+          res.end();
         }
       });
-
     }
   });
 

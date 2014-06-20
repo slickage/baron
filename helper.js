@@ -1,4 +1,5 @@
 var BigNumber = require('bignumber.js');
+var _ = require('lodash');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
@@ -28,14 +29,18 @@ var roundToDecimal = function(number, decimalPlaces) {
 };
 
 // Returns receiveDetail portion of transaction json from wallet notify
-var getReceiveDetail = function(details) {
-  var receiveDetail;
+var getReceiveDetails = function(details) {
+  var receiveDetails = {};
   details.forEach(function(detail) {
     if(detail.category === 'receive') {
-      receiveDetail = detail;
+      if (receiveDetails[detail.address]) {
+        var amount = receiveDetails[detail.address].amount;
+        detail.amount = detail.amount + amount;
+      }
+      receiveDetails[detail.address] = detail;
     }
   });
-  return receiveDetail;
+  return _.values(receiveDetails);
 };
 
 // Returns the difference in days, hours, mins, and secs between parameter
@@ -102,7 +107,7 @@ module.exports = {
   toFourDecimals: toFourDecimals,
   getLastFourDecimals: getLastFourDecimals,
   roundToDecimal: roundToDecimal,
-  getReceiveDetail: getReceiveDetail,
+  getReceiveDetails: getReceiveDetails,
   getExpirationCountDown: getExpirationCountDown,
   getPaymentStatus: getPaymentStatus
 };

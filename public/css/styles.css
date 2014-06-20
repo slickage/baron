@@ -44,7 +44,7 @@ a:hover, a:active {
   position: absolute;
   z-index: 9999;
   background-repeat: no-repeat;
-  background-position: 50% 20%;
+  background-position: 50% 100px;
   background-image: url(../images/void.png);
 }
 
@@ -55,7 +55,7 @@ a:hover, a:active {
   position: absolute;
   z-index: 9999;
   background-repeat: no-repeat;
-  background-position: 50% 20%;
+  background-position: 50% 100px;
   background-image: url(../images/expired.png);
 }
 
