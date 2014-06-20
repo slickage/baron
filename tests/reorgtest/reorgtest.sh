@@ -69,8 +69,15 @@ startbtc() {
 
 waitforbtc() {
   while true; do
-    CHECK=$(btc $1 $2 2> /dev/null | jq -r ".$3")
-    [ "$CHECK" == "$4" ] && break
+    if [ -n "$5" ]; then
+      # RPC command with arg
+      CHECK=$(btc $1 $2 $3 2> /dev/null | jq -r ".$4")
+      [ "$CHECK" == "$5" ] && break
+    else
+      # RPC command without arg
+      CHECK=$(btc $1 $2 2> /dev/null | jq -r ".$3")
+      [ "$CHECK" == "$4" ] && break
+    fi
     sleep 0.2
   done
 }
@@ -90,6 +97,12 @@ waitforpaid() {
     [ "$CHECK" == "true" ] && break
     #echo "waitforpaid Invoice $1"
     sleep 0.25
+  done
+}
+
+waitforbaron() {
+  while true; do
+    curl -s -o /dev/null -X POST http://0.0.0.0:$BARONPORT/notify && break
   done
 }
 
@@ -182,15 +195,19 @@ btc 4 addnode localhost:20034 onetry
 # Generate blocks to obtain spendable outputs
 btc 1 setgenerate true
 waitforbtc 2 getinfo blocks 1
-btc 2 setgenerate true 106
-waitforbtc 1 getinfo blocks 107
-waitforbtc 3 getinfo blocks 107
-waitforbtc 4 getinfo blocks 107
+btc 2 setgenerate true 109
+waitforbtc 1 getinfo blocks 110
+waitforbtc 3 getinfo blocks 110
+waitforbtc 4 getinfo blocks 110
 TXID1=$(btc 2 listunspent | jq -r '.[1].txid')
 TXID2=$(btc 2 listunspent | jq -r '.[2].txid')
 TXID3=$(btc 2 listunspent | jq -r '.[3].txid')
 TXID4=$(btc 2 listunspent | jq -r '.[4].txid')
 TXID5=$(btc 2 listunspent | jq -r '.[5].txid')
+TXID6=$(btc 2 listunspent | jq -r '.[6].txid')
+TXID7=$(btc 2 listunspent | jq -r '.[7].txid')
+TXID8=$(btc 2 listunspent | jq -r '.[8].txid')
+TXID9=$(btc 2 listunspent | jq -r '.[9].txid')
 
 # START BARON
 cd $BARONDIR
@@ -213,7 +230,7 @@ export PORT=9242
 cd $SCRIPTDIR
 node postwatcher.js &
 cd - > /dev/null
-sleep 1
+waitforbaron
 
 ### STARTUP COMPLETE
 
@@ -326,7 +343,7 @@ spendfrom 2 $TXID4 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
-sleep 1
+waitforbtc 1 gettransaction $TXIDSENT confirmations 1
 echo "[END TEST #4]"
 }
 
@@ -346,15 +363,42 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
-spendfrommulti 2 $TXID4 $PAYADDRESS1 25 $PAYADDRESS2 25
+spendfrom 2 $TXID4 $PAYADDRESS1 25 $PAYADDRESS2 25
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
-sleep 1
+waitforbtc 1 gettransaction $TXIDSENT confirmations 1
 echo "[END TEST #5]"
 }
 
-[ -z "$1" ] && TESTS="test1 test2 test3 test4 test5"
+### Test #6: Partial Payments from same Transactions
+test6() {
+printtitle "Test #6: Partial Payments from same Transactions"
+echo "[SUBMIT INVOICE 1 TO BARON]"
+INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
+# Poke payment page so the payment is created
+curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
+PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
+echo "[SUBMIT INVOICE 2 TO BARON]"
+INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
+# Poke payment page so the payment is created
+curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
+PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
+echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
+spendfrom 2 $TXID5 $PAYADDRESS1 10 $PAYADDRESS2 10 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 30
+waitfortx 1 $TXIDSENT
+echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
+spendfrom 2 $TXID6 $PAYADDRESS1 15 $PAYADDRESS2 15 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 20
+waitfortx 1 $TXIDSENT
+echo "[GENERATE block on node 1]"
+btc 1 setgenerate true
+waitforbtc 1 gettransaction $TXIDSENT confirmations 1
+echo "[END TEST #6]"
+}
+
+[ -z "$1" ] && TESTS="test1 test2 test3 test4 test5 test6"
 for x in $@; do
   TESTS="$TESTS $x"
 done
