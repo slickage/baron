@@ -95,23 +95,20 @@ waitforpaid() {
 
 spendfrom() {
   WHICH=$1
-  TXID=$2
-  ADDR=$3
-  UNSIGNED=$(btc $WHICH createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":0}]" "{\"$ADDR\":50}")
+  shift
+  TXID=$1
+  shift
+  unset OUTPUTS
+  while [ -n "$1" ]; do
+    [ -n "$OUTPUTS" ] && OUTPUTS="$OUTPUTS,"
+    OUTPUTS="$OUTPUTS\"$1\":$2"
+    shift
+    shift
+  done
+  UNSIGNED=$(btc $WHICH createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":0}]" "{$OUTPUTS}")
   SIGNED=$(btc $WHICH signrawtransaction $UNSIGNED | jq -r '.hex')
   TXIDSENT=$(btc $WHICH sendrawtransaction $SIGNED)
-  echo "spendfrom: Sent 50 BTC from $TXID to $ADDR in $TXIDSENT"
-}
-
-spendfrommulti() {
-  WHICH=$1
-  TXID=$2
-  ADDR1=$3
-  ADDR2=$4
-  UNSIGNED=$(btc $WHICH createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":0}]" "{\"$ADDR1\":25,\"$ADDR2\":25}")
-  SIGNED=$(btc $WHICH signrawtransaction $UNSIGNED | jq -r '.hex')
-  TXIDSENT=$(btc $WHICH sendrawtransaction $SIGNED)
-  echo "spendfrom: Sent 25 BTC from $TXID to $ADDR1 and $ADDR2 in $TXIDSENT"
+  echo "spendfrom: Sent to $OUTPUTS in $TXIDSENT"
 }
 
 printalias() {
@@ -231,7 +228,7 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
-spendfrom 2 $TXID1 $PAYADDRESS
+spendfrom 2 $TXID1 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
@@ -262,13 +259,13 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
-spendfrom 2 $TXID2 $PAYADDRESS
+spendfrom 2 $TXID2 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
 waitforpaid $INVOICEID
 echo "[Double Spend Replace from wallet 4]"
-spendfrom 4 $TXID2 $PAYADDRESS
+spendfrom 4 $TXID2 $PAYADDRESS 50
 waitfortx 3 $TXIDSENT
 echo "[GENERATE block on node 3]"
 btc 3 setgenerate true
@@ -294,13 +291,13 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS using wallet 2]"
-spendfrom 2 $TXID3 $PAYADDRESS
+spendfrom 2 $TXID3 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
 waitforpaid $INVOICEID
 echo "[Double Spend Theft from wallet 4]"
-spendfrom 4 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1
+spendfrom 4 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 50
 waitfortx 3 $TXIDSENT
 echo "[GENERATE block on node 3]"
 btc 3 setgenerate true
@@ -325,7 +322,7 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
-spendfrom 2 $TXID4 $PAYADDRESS
+spendfrom 2 $TXID4 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
@@ -349,7 +346,7 @@ openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
-spendfrommulti 2 $TXID4 $PAYADDRESS1 $PAYADDRESS2
+spendfrommulti 2 $TXID4 $PAYADDRESS1 25 $PAYADDRESS2 25
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
