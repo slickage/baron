@@ -84,12 +84,12 @@ rpcpassword=password
 
 # tells bitcoind to post wallet/block notifications to baron
 # the addresses below should match baron's address and port.
-walletnotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"txid\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }" http://localhost:8080/notify
+walletnotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"txid\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }" http://localhost:8080/walletnotify
 blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"blockhash\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }" http://localhost:8080/blocknotify
 
 ```
 
-Note: Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/notify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
+Note: Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
 
 ### Running Baron
 Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.

@@ -7,12 +7,12 @@ var _ = require('lodash');
 
 var notify = function(app) {
 
-  app.post('/notify', function(req, res) {
+  app.post('/walletnotify', function(req, res) {
     var txid = req.body.txid;
     var api_key = req.body.api_key;
     if (!api_key || api_key && api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      console.log(req.ip + ' attempted to /notify with an invalid API key.');
+      console.log(req.ip + ' attempted to /walletnotify with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
