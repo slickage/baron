@@ -143,10 +143,10 @@ var newInvoice = {
     "expiration" : 1399997753000, // Optional
     "webhooks" : { // Optional
       "token" : "268f84b93a69bbd",
-      "paid" : { "url": "http://somesite.com/notifypaid" }
+      "paid" : { "url": "http://example.com/notifypaid" }
     },
     "metadata" : { // Optional
-      "id" : "someuser@somesite.com" 
+      "id" : "someuser@example.com"
     },
     "line_items" : [
         {
@@ -224,10 +224,10 @@ var newInvoice = {
   //...
   "webhooks": {
     "token": "93a69bbdf4c5f37dd6"
-    "paid": { "url": "http://somesite.com/notifypaid" },
-    "partial": { "url": "http://somesite.com/notifypartial" },
-    "invalid": { "url": "http://somesite.com/notifyinvalid" },
-    "pending": { "url": "http://somesite.com/notifypending" }
+    "paid": { "url": "http://example.com/notifypaid" },
+    "partial": { "url": "http://example.com/notifypartial" },
+    "invalid": { "url": "http://example.com/notifyinvalid" },
+    "pending": { "url": "http://example.com/notifypending" }
   }
   //...
 };
