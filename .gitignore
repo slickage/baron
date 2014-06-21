@@ -13,3 +13,5 @@ README.html
 tests/reorgtest/logs/*
 tests/reorgtest/tmp/*
 tests/reorgtest/reorgtest.conf
+tests/barontester/*
+tests/tmp/*

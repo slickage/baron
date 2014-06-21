@@ -83,7 +83,12 @@
           <% } %>
         </span>
         <br />
-        <span class="green confirmations"><%= confirmations %></span> Confirmations
+        <span class="send-payment-text green" style="<% if (status !== 'unpaid') { %>display: none<% } %>">
+          Please send payment to
+        </span>
+        <span class="confirmations-text gray" style="<% if (status === 'unpaid') { %>display: none<% } %>">
+          <span class="green confirmations"><%= confirmations %></span> Confirmations
+        </span>
         <span class="info-link">
           <% if (chainExplorerUrl) { %>
             <a target="_blank" href="<%= chainExplorerUrl %>">
@@ -137,7 +142,12 @@
               <% } %>
             </span>
             <br />
-            <span class="green confirmations"><%= confirmations %></span> Confirmations
+            <span class="send-payment-text gray" style="<% if (status !== 'unpaid') { %>display: none<% } %>">
+                Please send payment to
+            </span>
+            <span class="confirmations-text" style="<% if (status === 'unpaid') { %>display: none<% } %>">
+              <span class="green confirmations"><%= confirmations %></span> Confirmations
+            </span>
             <span class="info-link">
               <% if (chainExplorerUrl) { %>
                 <a target="_blank" href="<%= chainExplorerUrl %>">

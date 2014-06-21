@@ -3,6 +3,8 @@ var reloadPayment = function (queryUrl, expiration) {
   var statusBannerText = document.getElementById('status-banner-text');
   var addressInputs = document.getElementsByClassName('address-input');
   var expirationTextSpans = document.getElementsByClassName('expiration-text');
+  var sendTextSpans = document.getElementsByClassName('send-payment-text');
+  var confirmationTextSpans = document.getElementsByClassName('confirmations-text');
   var confirmationSpans = document.getElementsByClassName('confirmations');
   var qrCodeDivs = document.getElementsByClassName('qrcode');
   var sentTextSpans = document.getElementsByClassName('sent-text');
@@ -77,7 +79,6 @@ var reloadPayment = function (queryUrl, expiration) {
         if (ellipsis.length >= 3) {
           ellipsis = '';
         }
-
         ellipsis = '.'.repeat(ellipsis.length + 1);
         expirationTextSpans.item(0).innerText = 'Fetching new exchange rate' + ellipsis;
         expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
@@ -169,11 +170,21 @@ var reloadPayment = function (queryUrl, expiration) {
         var newStatusText;
         var statusBannerDisplay = 'none';
         var sentTextDisplay = 'none';
+        if (newStatus !== 'unpaid') {
+          sendTextSpans[0].style.display = 'none';
+          sendTextSpans[1].style.display = 'none';
+          confirmationTextSpans[0].style.display = 'inline';
+          confirmationTextSpans[1].style.display = 'inline';
+        }
         if (newStatus === 'pending') {
           sentTextDisplay = 'inline-block';
           newStatusText = 'Payment is Pending';
         }
         else if (newStatus === 'unpaid') {
+          sendTextSpans[0].style.display = 'inline';
+          sendTextSpans[1].style.display = 'inline';
+          confirmationTextSpans[0].style.display = 'none';
+          confirmationTextSpans[1].style.display = 'none';
           newStatusText = 'Balance is Unpaid';
         }
         else if (newStatus === 'paid') {
