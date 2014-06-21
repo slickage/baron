@@ -102,7 +102,7 @@ waitforpaid() {
 
 waitforbaron() {
   while true; do
-    curl -s -o /dev/null -X POST http://0.0.0.0:$BARONPORT/notify && break
+    curl -s -o /dev/null http://0.0.0.0:$BARONPORT && break
   done
 }
 
