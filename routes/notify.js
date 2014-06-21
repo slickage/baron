@@ -8,7 +8,6 @@ var _ = require('lodash');
 var notify = function(app) {
 
   app.post('/notify', function(req, res) {
-    console.log(require('util').inspect(res.body));
     var txid = req.body.txid;
     var api_key = req.body.api_key;
     if (!api_key || api_key && api_key !== config.baronAPIKey) {
@@ -18,6 +17,7 @@ var notify = function(app) {
       res.end();
     }
     else {
+      //console.log(txid);
       bitcoinUtil.getTransaction(txid, function(err, info) {
         if (err) {
           res.send(500);
