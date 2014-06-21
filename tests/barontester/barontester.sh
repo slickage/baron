@@ -43,8 +43,8 @@ EOF
 
   if [ "$1" == "1" ]; then
   cat <<EOF >> bitcoin.conf
-walletnotify=curl -o /dev/null -s -X POST -H "Content-Type: application/json" --data "{ \"txid\": \"%s\", \"api_key\": \"secretapikey\" }" http://localhost:$BARONPORT/walletnotify
-blocknotify=curl -o /dev/null -s -X POST -H "Content-Type: application/json" --data "{ \"blockhash\": \"%s\", \"api_key\": \"secretapikey\" }" http://localhost:$BARONPORT/blocknotify
+walletnotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"txid\": \"%s\", \"api_key\": \"secretapikey\" }" http://localhost:$BARONPORT/walletnotify
+blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \"blockhash\": \"%s\", \"api_key\": \"secretapikey\" }" http://localhost:$BARONPORT/blocknotify
 EOF
 fi
 }
@@ -83,8 +83,7 @@ waitforbtc() {
 
 waitfortx() {
   while true; do
-    CHECK=$(btc $1 getrawmempool |jq -r '.[0]')
-    [ "$CHECK" == "$2" ] && break
+    btc $1 getrawmempool |grep -q $2 && break
     #echo "waitfortx $2 on node $1"
     sleep 0.2
   done
@@ -236,7 +235,7 @@ test1() {
 printtitle "TEST #1: Reorg unconfirm then reconfirm into another block"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -267,7 +266,7 @@ test2() {
 printtitle "TEST #2: Double Spend Replace (payment to same address)"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -299,7 +298,7 @@ test3() {
 printtitle "Test #3: Double Spend Theft"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -330,7 +329,7 @@ echo "[END TEST #3]"
 test4() {
 printtitle "Test #4: Payment with Metadata ID"
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -341,6 +340,7 @@ waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
+sleep 1
 echo "[END TEST #4]"
 }
 
@@ -348,23 +348,24 @@ echo "[END TEST #4]"
 test5() {
 printtitle "Test #5: Payment of two Invoices with the same Transaction"
 echo "[SUBMIT INVOICE 1 TO BARON]"
-INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID1=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
-INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID2=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
-spendfrom 2 $TXID4 $PAYADDRESS1 25 $PAYADDRESS2 25
+spendfrom 2 $TXID5 $PAYADDRESS1 25 $PAYADDRESS2 25
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
+sleep 1
 echo "[END TEST #5]"
 }
 
@@ -372,26 +373,27 @@ echo "[END TEST #5]"
 test6() {
 printtitle "Test #6: Partial Payments from same Transactions"
 echo "[SUBMIT INVOICE 1 TO BARON]"
-INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID1=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
-INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID2=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
-spendfrom 2 $TXID5 $PAYADDRESS1 10 $PAYADDRESS2 10 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 30
+spendfrom 2 $TXID6 $PAYADDRESS1 10 $PAYADDRESS2 10 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 30
 waitfortx 1 $TXIDSENT
 echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
-spendfrom 2 $TXID6 $PAYADDRESS1 15 $PAYADDRESS2 15 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 20
+spendfrom 2 $TXID7 $PAYADDRESS1 15 $PAYADDRESS2 15 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 20
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
 btc 1 setgenerate true
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
+sleep 1
 echo "[END TEST #6]"
 }
 
