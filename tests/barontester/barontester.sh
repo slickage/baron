@@ -1,17 +1,16 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )"
 
-# Read reorgtest.conf
-if [ ! -e reorgtest.conf ]; then
-  echo "ERROR: reorgtest.conf not found."
+# Read barontester.conf
+if [ ! -e barontester.conf ]; then
+  echo "ERROR: barontester.conf not found."
   exit 255
 else
-  . $SCRIPTDIR/reorgtest.conf
-  [ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in reorgtest.conf."
+  . $SCRIPTDIR/barontester.conf
+  [ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in barontester.conf."
   [ -n "$BARONPORT" ]   || BARONPORT=8080
   [ -n "$DBNAME" ]      || DB_NAME=baronregtest
-  [ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/reorgtest/tmp
-  LOGDIR=$BARONDIR/tests/reorgtest/logs
+  [ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/barontester/tmp
 fi
 
 errorexit() {
@@ -169,7 +168,6 @@ sleep 1
 
 rm -rf $BARONTMPDIR
 mkdir -p $BARONTMPDIR
-mkdir -p $LOGDIR
 
 # Exit handler: killall node and bitcoind instances along with tester
 trap "echo 'BARONTESTER DONE'; set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM EXIT
@@ -220,7 +218,6 @@ export PORT=$BARONPORT
 export BITCOIND_PORT=20013
 export LAST_BLOCK_JOB_INTERVAL=4133
 export UPDATE_WATCH_LIST_INTERVAL=5000
-#npm start > $LOGDIR/baron.log 2>&1 &
 node server.js &
 cd - > /dev/null
 
@@ -239,7 +236,7 @@ test1() {
 printtitle "TEST #1: Reorg unconfirm then reconfirm into another block"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -270,7 +267,7 @@ test2() {
 printtitle "TEST #2: Double Spend Replace (payment to same address)"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -302,7 +299,7 @@ test3() {
 printtitle "Test #3: Double Spend Theft"
 setuppartitions
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -333,7 +330,7 @@ echo "[END TEST #3]"
 test4() {
 printtitle "Test #4: Payment with Metadata ID"
 echo "[SUBMIT INVOICE TO BARON]"
-INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE2 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
@@ -351,13 +348,13 @@ echo "[END TEST #4]"
 test5() {
 printtitle "Test #5: Payment of two Invoices with the same Transaction"
 echo "[SUBMIT INVOICE 1 TO BARON]"
-INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
-INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
@@ -375,13 +372,13 @@ echo "[END TEST #5]"
 test6() {
 printtitle "Test #6: Partial Payments from same Transactions"
 echo "[SUBMIT INVOICE 1 TO BARON]"
-INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID1=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE3 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
-INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/reorgtest/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
+INVOICEID2=$(curl -s -X POST -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/TESTINVOICE4 http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
 # Poke payment page so the payment is created
 curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
