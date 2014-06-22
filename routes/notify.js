@@ -51,6 +51,7 @@ var notify = function(app) {
       res.end();
     }
     else {
+      //console.log(req.body.blockhash);
       blockJob.lastBlockJob();
       res.end();
     }

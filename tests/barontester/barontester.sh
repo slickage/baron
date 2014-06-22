@@ -274,14 +274,14 @@ PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.ad
 echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID2 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
-echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+echo "[GENERATE six blocks on node 1]"
+btc 1 setgenerate true 6
 waitforpaid $INVOICEID
 echo "[Double Spend Replace from wallet 4]"
 spendfrom 4 $TXID2 $PAYADDRESS 50
 waitfortx 3 $TXIDSENT
-echo "[GENERATE block on node 3]"
-btc 3 setgenerate true
+echo "[GENERATE six blocks on node 3]"
+btc 3 setgenerate true 6
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
@@ -306,14 +306,14 @@ PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.ad
 echo "[PAY $PAYADDRESS using wallet 2]"
 spendfrom 2 $TXID3 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
-echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+echo "[GENERATE six blocks on node 1]"
+btc 1 setgenerate true 6
 waitforpaid $INVOICEID
 echo "[Double Spend Theft from wallet 4]"
 spendfrom 4 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 50
 waitfortx 3 $TXIDSENT
-echo "[GENERATE block on node 3]"
-btc 3 setgenerate true
+echo "[GENERATE six blocks on node 3]"
+btc 3 setgenerate true 6
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry

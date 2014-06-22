@@ -89,18 +89,30 @@ function processBlockHash(blockHashObj) {
   });
 }
 
+// Milliseconds since previous lastBlockJob
+var lastBlockJobTime;
+
 var lastBlockJob = function() {
-  // Get Last Block, create it if baron isnt aware of one.
-  getLastBlockHash(function(err, lastBlockHashObj) {
-    if (err) {
-      return console.log(err);
-    }
-    else if (!lastBlockHashObj.hash) {
-      return console.log('Last block object missing hash, check Baron\'s database');
-    }
-    console.log('lastBlockJob: ' + lastBlockHashObj.hash);
-    processBlockHash(lastBlockHashObj);
-  });
+  var currentTime = new Date().getTime();
+  // Skip lastBlockJob if previous was less than 1 second ago
+  if (!lastBlockJobTime || currentTime > lastBlockJobTime + 1000) {
+    lastBlockJobTime = currentTime;
+
+	  // Get Last Block, create it if baron isnt aware of one.
+	  getLastBlockHash(function(err, lastBlockHashObj) {
+	    if (err) {
+	      return console.log(err);
+	    }
+	    else if (!lastBlockHashObj.hash) {
+	      return console.log('Last block object missing hash, check Baron\'s database');
+	    }
+	    console.log('lastBlockJob: ' + lastBlockHashObj.hash);
+	    processBlockHash(lastBlockHashObj);
+	  });
+	}
+	else {
+    //console.log('DEBUG Skipping lastBlockJob: ' + (currentTime - lastBlockJobTime));
+	}
 };
 
 var runLastBlockJob = function () {
