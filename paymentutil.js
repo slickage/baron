@@ -256,8 +256,14 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           // Update status after updating amounts to see if it changed.
           payment.status = helper.getPaymentStatus(payment, newConfirmations, invoice);
           db.insert(payment, function (err) {
-            if (err && err.error === 'conflict' ) {
-              console.log('updatePaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+            if (err) {
+              if (err.error && err.error === 'conflict' ) {
+                // Expected and harmless
+                //console.log('DEBUG updatePaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+              }
+              else {
+                console.log('DEBUG updatePaymentWithTransaction: ' + require('util').inspect(err));
+              }
               return cb();
             }
             else if (isReorg) {
@@ -341,8 +347,14 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           });
         }
         db.insert(payment, function(err) {
-          if (err && err.error === 'conflict' ) {
-            console.log('createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+          if (err) {
+            if (err.error && err.error === 'conflict' ) {
+              // Expected and harmless
+              //console.log('DEBUG createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+            }
+            else {
+              console.log('DEBUG createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err));
+            }
             return cb();
           }
         });
