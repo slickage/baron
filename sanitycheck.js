@@ -15,7 +15,7 @@ var proceedWhenBitcoindIsReady = function(cb) {
 	        }
 	        else {
 	          // FATAL: unknown other error
-	          console.log('FATAL bitcoind ' + err);
+	          console.log('FATAL bitcoind ' + JSON.stringify(err));
 	          process.exit(1);
 	        }
 	      }
