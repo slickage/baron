@@ -1,9 +1,10 @@
 var config = require(__dirname + '/../config');
-var validate = require(__dirname + '/../validate');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var paymentUtil = require(__dirname + '/../paymentutil');
 var db = require(__dirname + '/../db');
 var async = require('async');
+var lastBlockHash;
+var lastBlockJobTime; // Milliseconds since previous lastBlockJob
 
 function findPastValidBlock(blockHash, cb) {
   bitcoinUtil.getBlock(blockHash, function(err, block) {
@@ -85,7 +86,8 @@ function updatePaymentsSinceBlock(blockHash, cb) {
       paymentUtil.updatePayment(transaction, function() {
         cbSeries(); // We dont care if update fails just run everything in series until completion
       });
-    }, function(err) {
+    },
+    function() {
       if (blockHash !== newBlockHash) {
         cb(null, newBlockHash);
       } else {
@@ -94,9 +96,6 @@ function updatePaymentsSinceBlock(blockHash, cb) {
     });
   });
 }
-
-var lastBlockHash;
-var lastBlockJobTime; // Milliseconds since previous lastBlockJob
 
 var lastBlockJob = function(callback) {
   var currentTime = new Date().getTime();
@@ -117,12 +116,16 @@ var lastBlockJob = function(callback) {
         } else if (blockHash) {
           lastBlockHash = blockHash;
         }
-        if (callback) callback();
+        if (callback) {
+          callback();
+        }
     });
 	}
 	else {
     //console.log('DEBUG Skipping lastBlockJob: ' + (currentTime - lastBlockJobTime));
-    if (callback) callback();
+    if (callback) {
+      callback();
+    }
 	}
 };
 

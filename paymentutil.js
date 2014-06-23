@@ -8,7 +8,6 @@ var config = require(__dirname + '/config');
 var invoiceHelper = require(__dirname + '/invoicehelper');
 var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 var _ = require('lodash');
-var async = require('async');
 var heckler = require('heckler');
 
 // ===============================================
