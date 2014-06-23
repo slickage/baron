@@ -2,6 +2,7 @@ var config = require(__dirname + '/config');
 var watchJob = require(__dirname + '/jobs/watchpaymentjob');
 var blockJob = require(__dirname + '/jobs/lastblockjob');
 var webhooksJob = require(__dirname + '/jobs/webhooksjob');
+var db = require(__dirname + '/db');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -19,7 +20,7 @@ async.waterfall([
   function (cb) {
     // create baron db
     // abort if unsafe couchdb UUID algorithm or error
-    require(__dirname + '/db').instantiateDb(cb);
+    db.instantiateDb(cb);
   },
   ], function (err) {
     if (err) {
@@ -42,13 +43,13 @@ async.waterfall([
         next();
       });
       require(__dirname + '/routes')(app);
-      bitstamped.init(config.couchdb.url);
+      bitstamped.init(db.getCouchUrl());
       blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
       app.listen(config.port);
-      console.log('CouchDB server:    ' + config.couchdb.url + '/' + config.couchdb.name);
-      console.log('Bitcoind RPC:      ' + config.bitcoind.host + ':' + config.bitcoind.port);
+      console.log('CouchDB server:    http://' + config.couchdb.url + '/' + config.couchdb.name);
+      console.log('Bitcoind RPC:      http://' + config.bitcoind.host + ':' + config.bitcoind.port);
       console.log('Baron listening:   http://0.0.0.0:' + config.port);
     }
   }

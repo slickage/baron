@@ -1,7 +1,10 @@
 var config = {
   couchdb: {
-    url: process.env.DB_URL || 'http://localhost:5984',
-    name: process.env.DB_NAME || 'baron'
+    url: process.env.DB_URL || 'localhost:5984',
+    name: process.env.DB_NAME || 'baron',
+    ssl: process.env.DB_SSL || false,
+    user: process.env.DB_USER || null,
+    pass: process.env.DB_PASS || null
   },
   bitcoind: {
     host: process.env.BITCOIND_HOST || 'localhost',

@@ -1,11 +1,21 @@
 var validate = require(__dirname + '/validate');
 var config = require(__dirname + '/config');
 var ddoc = require(__dirname + '/ddoc');
-var nano = require('nano')(config.couchdb.url);
+var nano;
 var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
 var async = require('async');
 var baronDb;
+
+var getCouchUrl = function() {
+  var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';
+  var credentials = '';
+  if (config.couchdb.user && config.couchdb.pass) {
+    credentials = encodeURIComponent(config.couchdb.user) + ':' + encodeURIComponent(config.couchdb.pass) + '@';
+  }
+  var couchUrl = protocol + credentials + config.couchdb.url;
+  return couchUrl;
+};
 
 // Abort if CouchDB is not using the random UUID algorithm
 // It would otherwise be unsafe because the Invoice ID's would be easily guessable.
@@ -38,9 +48,14 @@ function abortIfNotRandomAlgorithm(cb) {
 }
 
 var instantiateDb = function (cb) {
+  nano = require('nano')(getCouchUrl());
   nano.db.get(dbName, function(err) {
     if (err) {
-      if (err.code && err.code === 'ECONNREFUSED') {
+      if (err.error === 'unauthorized') {
+        console.log('Error: CouchDB credentials are invalid. Attempted connection with credentials [' + config.couchdb.user + ':' + config.couchdb.pass + ']');
+        return process.exit(1);
+      }
+      else if (err.code && err.code === 'ECONNREFUSED') {
         console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
         return process.exit(1);
       }
@@ -291,6 +306,7 @@ var destroy = function(docId, docRev, cb) { // Used to update a payment or invoi
 };
 
 module.exports = {
+  getCouchUrl: getCouchUrl,
   instantiateDb: instantiateDb,
   findInvoiceAndPayments: findInvoiceAndPayments,
   findMatchingMetadataId: findMatchingMetadataId,
