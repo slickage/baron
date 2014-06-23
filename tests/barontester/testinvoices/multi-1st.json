@@ -1,7 +1,6 @@
 {
   "api_key": "secretapikey",
   "currency": "BTC",
-  "expiration": 1499097633000,
   "min_confirmations": 1,
   "line_items": [
       {

@@ -120,6 +120,8 @@ Invoices have the following properties:
 * `api_key` - The API key for Baron to verify that invoice creator is trusted <sup>[1]</sup>
 * `currency` - Currency of the invoice, can be either USD or BTC
 * `min_confirmations` - Minimum confirmations before a payment is considered paid
+* `title`    - ***(optional)*** Title to display at the top of invoices
+* `text`     - ***(optional)*** Text to display at the bottom of invoices, may include HTML links
 * `expiration` ***(optional)*** - Expiration time for invoice (unix timestamp)
 * `webhooks` - ***(optional)*** An object containing event webhooks <sup>[2]</sup>
 * `metadata` - ***(optional)*** Container for arbitrary fields, the entire object is passed back to your app in the webhooks.  This can be helpful for apps that do not track invoice ID's.

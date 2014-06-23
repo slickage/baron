@@ -85,7 +85,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var chainExplorerUrl = activePayment.txid ? config.chainExplorerUrl + '/' + activePayment.txid : null;
     var txid = activePayment.txid ? activePayment.txid : null;
     var paymentData = {
-      appTitle: config.appTitle,
+      title: invoice.title ? invoice.title : config.appTitle,
       minConfirmations: invoice.min_confirmations,
       blockHash: activePayment.block_hash,
       expireTime: expiration,
@@ -97,6 +97,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       status: activePayment.status,
       address: activePayment.address,
       confirmations: confirmations,
+      text: invoice.text ? invoice.text : null,
       txid: txid,
       amount: amountToDisplay,
       amountFirstFour: helper.toFourDecimals(amountToDisplay),

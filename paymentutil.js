@@ -54,14 +54,14 @@ function resetPayment(payment, expectedAmount, cb) {
 }
 
 // Inserts a new payment into the db
-function insertPayment(invoiceId, address, expectedAmount, cb) {
+function insertPayment(invoice, address, expectedAmount, cb) {
   var curTime = new Date().getTime();
   bitstamped.getTicker(curTime, function(err, docs) {
     if (!err && docs.rows && docs.rows.length > 0) {
       var tickerData = docs.rows[0].value;
       var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
       var payment = {
-        invoice_id: invoiceId,
+        invoice_id: invoice._id,
         address: address,
         amount_paid: 0, // Always stored in BTC
         expected_amount: expectedAmount,
@@ -70,6 +70,8 @@ function insertPayment(invoiceId, address, expectedAmount, cb) {
         status: 'unpaid',
         created: new Date().getTime(),
         paid_timestamp: null,
+        text: invoice.text,
+        title: invoice.title,
         txid: null, // Bitcoind txid for transaction
         watched: true, // Watch payments till 100 conf or expired
         type: 'payment'
@@ -106,7 +108,7 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
         return cb(err, null);
       }
       else {
-        insertPayment(invoiceId, info.result, expectedAmount, cb);
+        insertPayment(invoice, info.result, expectedAmount, cb);
       }
     });
   });
@@ -337,6 +339,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           spot_rate: Number(rate.valueOf()), // Exchange rate at time of payment
           created: new Date().getTime(),
           paid_timestamp: paidTime,
+          title: invoice.title,
           txid: transaction.txid, // Bitcoind txid for transaction
           watched: true,
           type: 'payment'

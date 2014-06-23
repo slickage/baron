@@ -10,8 +10,5 @@ TODO.txt
 npm-debug.log
 tags
 README.html
-tests/reorgtest/logs/*
-tests/reorgtest/tmp/*
-tests/reorgtest/reorgtest.conf
-tests/barontester/*
+tests/barontester/barontester.conf
 tests/tmp/*

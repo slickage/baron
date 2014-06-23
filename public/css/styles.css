@@ -217,3 +217,11 @@ a:hover, a:active {
 .show {
   display: block;
 }
+
+#payment-history-header {
+  margin-top: 25px;
+}
+
+.top-margin {
+  margin-top: 20px;
+}

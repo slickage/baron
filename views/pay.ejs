@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title><%= appTitle %> - Payment <%= address %></title>
+  <title><%= title %> - Payment <%= address %></title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">  
   <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -13,7 +13,7 @@
     <!-- header -->
     <div class="row underline">
       <div class="col-md-12">
-        <h1><%= appTitle %></h1>
+        <h1><%= title %></h1>
       </div>
     </div>
     
@@ -172,6 +172,15 @@
           </a>
         <% } %>
       </div>
+
+      <!-- Optional Arbitrary Footer Text -->
+      <% if (text) { %>
+      <div class="row">
+        <div class="col-sm-12 xsmall-text">
+          <%- text %>
+        </div>
+      </div>
+      <% } %>
 
     </div>
   </div>

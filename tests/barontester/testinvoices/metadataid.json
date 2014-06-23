@@ -1,7 +1,8 @@
 {
   "api_key": "secretapikey",
+  "title": "BARONTESTER Invoice with metadata.id",
+  "text": "Instructions for this invoice may be written here, which may include <a href='http://example.com' target='_blank'>HTML links</a>.",
   "currency": "BTC",
-  "expiration": 1499097633000,
   "min_confirmations": 1,
   "line_items": [
       {
@@ -14,5 +15,6 @@
     "token": "token", 
     "paid": {"url": "http://localhost:9242/paid"},
     "invalid": {"url": "http://localhost:9242/invalid" }
-  }
+  },
+  "metadata": { "id": "secretidentifier" }
 }

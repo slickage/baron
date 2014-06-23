@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title><%= appTitle %> - Invoice <%= _id %></title>
+  <title><%= title %> - Invoice <%= _id %></title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">  
   <link href="/css/bootstrap.min.css" rel="stylesheet">
@@ -13,7 +13,7 @@
     <!-- header -->
     <div class="row underline">
       <div class="col-md-12">
-        <h1><%= appTitle %></h1>
+        <h1><%= title %></h1>
       </div>
     </div>
 
@@ -116,9 +116,6 @@
       </div>
     </div>
 
-    <br />
-    <br />
-
     <!-- Payment History -->
     <div id="payment-history-header" class="row" style="<% if (payment_history.length < 1) { %>display: none;<% } %>">
       <div class="col-sm-12">
@@ -180,6 +177,15 @@
         <% } %>
       <% }); %>
     </span>
+
+    <!-- Optional Arbitrary Footer Text -->
+    <% if (text) { %>
+    <div class="row">
+      <div class="top-margin col-sm-12 xsmall-text">
+        <%- text %>
+      </div>
+    </div>
+    <% } %>
 
   </div>
   <script src="/js/reloadinvoice.js"></script>
