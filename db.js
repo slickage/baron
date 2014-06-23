@@ -201,17 +201,7 @@ var getPaymentByBlockHash = function(blockHash, cb) {
   });
 };
 
-var getLastKnownBlockHash = function(cb) {
-  baronDb.view(dbName, 'lastBlockHash', function(err, body) {
-    if (!err && body.rows && body.rows.length > 0) {
-      var lastKnownBlockHash = body.rows[0].value;
-      return cb(err, lastKnownBlockHash);
-    }
-    return cb(err, null);
-  });
-};
-
-var getLatestPaymentWithBlockhash = function(cb) {
+var getLatestPaymentWithBlockHash = function(cb) {
   var filter = {
     limit: 1,
     descending: true,
@@ -222,11 +212,11 @@ var getLatestPaymentWithBlockhash = function(cb) {
     if (!err && body.rows && body.rows.length > 0) {
       var latestPaymentWithBlockhash = body.rows[0].value;
       return cb(err, latestPaymentWithBlockhash);
+    } else {
+      return cb(err, null);
     }
-    return cb(err, null);
   });
 };
-
 
 var createInvoice = function(invoice, callback) {
   // Helper: find invoice with matching metadata.id
@@ -316,8 +306,7 @@ module.exports = {
   findInvoice: findInvoice,
   getWatchedPayments: getWatchedPayments,
   getPaymentByBlockHash: getPaymentByBlockHash,
-  getLastKnownBlockHash: getLastKnownBlockHash,
-  getLatestPaymentWithBlockhash: getLatestPaymentWithBlockhash,
+  getLatestPaymentWithBlockHash: getLatestPaymentWithBlockHash,
   createInvoice: createInvoice,
   getWebhooks: getWebhooks,
   insert: insert,

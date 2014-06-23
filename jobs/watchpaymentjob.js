@@ -17,6 +17,7 @@ function updateWatchedPayment(payment, transaction) {
     }
   });
   if (matchingDetail || (!matchingDetail && (transaction.confirmations === -1))) {
+    // Convert to transaction format matching listsinceblock
     transaction.address = matchingDetail ? matchingDetail.address : payment.address;
     transaction.amount = matchingDetail ? matchingDetail.amount : payment.amount_paid;
     paymentUtil.updatePaymentWithTransaction(payment, transaction, function(err) {

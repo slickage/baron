@@ -5,113 +5,124 @@ var paymentUtil = require(__dirname + '/../paymentutil');
 var db = require(__dirname + '/../db');
 var async = require('async');
 
-// Stores initial "last block hash" if it doesnt exist returns it if it does
-function getLastBlockHash(cb) {
-  db.getLastKnownBlockHash(function(err, lastBlockHash) {
-    if (err) {
+function findPastValidBlock(blockHash, cb) {
+  bitcoinUtil.getBlock(blockHash, function(err, block) {
+    if (block && block.error && block.error.code && block.error.code === -5) {
+      console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.');
+      process.exit(255);
+    } else if (err) {
       return cb(err, null);
     }
-    if (lastBlockHash) {
-      return cb(null, lastBlockHash);
-    }
-    else {
-      bitcoinUtil.getBestBlockHash(function (err, lastBlockHash) {
-        if (err) {
-          return cb(err, null);
-        }
-        lastBlockHash.hash = lastBlockHash.result;
-        lastBlockHash.type = 'blockhash';
-        delete lastBlockHash.id;
-        delete lastBlockHash.error;
-        delete lastBlockHash.result;
-        db.insert(lastBlockHash, function(err) {
-          if (err) {
-            return cb(err, null);
-          }
-          return cb(null, lastBlockHash);
-        });
-      });
+    block = block.result;
+    if (block.confirmations === -1) {
+      // NOTE: Reorg and double-spent handling is in updatePaymentWithTransaction.
+      findPastValidBlock(block.previousblockhash, cb);
+    } else {
+      // Success
+      cb(null, blockHash);
     }
   });
 }
 
-function processBlockHash(blockHashObj) {
-  var blockHash = blockHashObj.hash;
-  bitcoinUtil.getBlock(blockHash, function(err, block) {
-    if (block && block.error && block.error.code && block.error.code === -5) {
-      console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.  Delete lastBlockHash from baron db if you wish to proceed.');
-      process.exit(1);
-    } else if (err) {
-      return console.log(err);
+function findGenesisBlock(cb) {
+  bitcoinUtil.getBlockHash(0, function(err,info) {
+    if (err) {
+      return cb(err);
+    } else {
+      cb(null, info.result);
     }
-    block = block.result;
-    //console.log('> Block Valid: ' + validate.block(block));
-    // Get List Since Block 
-    bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
-      if (err) {
-        return console.log(err);
-      }
-      info = info.result;
-      var transactions = [];
-      info.transactions.forEach(function(transaction) {
-        if (transaction.category === 'receive') { // ignore sent tx's
-          transactions.push(transaction);
-        }
-      });
-      var lastBlockHash = info.lastblock;
-      // If valid get transactions since last block (bitcore)
-      if (validate.block(block)) {
-        async.eachSeries(transactions, function(transaction, cb) {
-          paymentUtil.updatePayment(transaction, function() {
-            cb(); // We dont care if update fails just run everthing in series until completion
-          });
-        }, function(err) {
-          if (!err) {
-            if (blockHash !== lastBlockHash) {
-              blockHashObj.hash = lastBlockHash; // update to latest block
-              db.insert(blockHashObj); // insert updated last block into db
-            }
+  });
+}
+
+// Determine blockHash safe for listSinceBlock
+function pickPastBlockHash(cb) {
+  if (lastBlockHash) {
+    // Use lastBlockHash already known to Baron
+    cb(null, lastBlockHash);
+  } else {
+    db.getLatestPaymentWithBlockHash(function(err,payment) {
+      if (payment) {
+        // Startup: attempt to find recent blockhash from the latest paid transaction
+        findPastValidBlock(payment.block_hash, function(err, blockHash) {
+          if (err) {
+            cb(err);
+          } else {
+            console.log('lastBlockHash Initialized: ' + blockHash);
+            cb(null, blockHash);
           }
         });
       }
-      else { // If invalid update all transactions in block and step back
-        transactions.forEach(function(transaction) {
-          paymentUtil.processReorgAndCheckDoubleSpent(transaction, block.hash);
-        }); // For each should block until complete
-        paymentUtil.processReorgedPayments(block.hash);
-        // Update reorged transactions (set block_hash = null)
-        console.log('> REORG: Recursively processing previous block: ' + block.previousblockhash);
-        // Recursively check previousHash
-        blockHashObj.hash = block.previousblockhash;
-        processBlockHash(blockHashObj);
+      else {
+        // Not found, set to genesis so listSinceBlock does not miss any transactions
+        findGenesisBlock(function(err, blockHash) {
+          if (err) {
+            cb(err);
+          } else {
+            console.log('lastBlockHash Initialized Genesis: ' + blockHash);
+            cb(null, blockHash);
+          }
+        });
+      }
+    });
+  }
+}
+
+// Update all transactions from bitcoind that happened since blockHash
+function updatePaymentsSinceBlock(blockHash, cb) {
+  bitcoinUtil.listSinceBlock(blockHash, 1, function (err, info) {
+    if (err) {
+      return cb(err);
     }
+    info = info.result;
+    var transactions = [];
+    info.transactions.forEach(function(transaction) {
+      if (transaction.category === 'receive') { // we only care about received transactions
+        transactions.push(transaction);
+      }
+    });
+    var newBlockHash = info.lastblock;
+    async.eachSeries(transactions, function(transaction, cbSeries) {
+      paymentUtil.updatePayment(transaction, function() {
+        cbSeries(); // We dont care if update fails just run everything in series until completion
+      });
+    }, function(err) {
+      if (blockHash !== newBlockHash) {
+        cb(null, newBlockHash);
+      } else {
+        cb(null, blockHash);
+      }
     });
   });
 }
 
-// Milliseconds since previous lastBlockJob
-var lastBlockJobTime;
+var lastBlockHash;
+var lastBlockJobTime; // Milliseconds since previous lastBlockJob
 
-var lastBlockJob = function() {
+var lastBlockJob = function(callback) {
   var currentTime = new Date().getTime();
   // Skip lastBlockJob if previous was less than 1 second ago
   if (!lastBlockJobTime || currentTime > lastBlockJobTime + 1000) {
     lastBlockJobTime = currentTime;
-
-	  // Get Last Block, create it if baron isnt aware of one.
-	  getLastBlockHash(function(err, lastBlockHashObj) {
-	    if (err) {
-	      return console.log(err);
-	    }
-	    else if (!lastBlockHashObj.hash) {
-	      return console.log('Last block object missing hash, check Baron\'s database');
-	    }
-	    console.log('lastBlockJob: ' + lastBlockHashObj.hash);
-	    processBlockHash(lastBlockHashObj);
-	  });
+    async.waterfall([
+      function(cb) {
+        pickPastBlockHash(cb);
+      },
+      function(blockHash, cb) {
+        console.log('updatePaymentsSinceBlock:  ' + blockHash);
+        updatePaymentsSinceBlock(blockHash, cb);
+      }
+      ], function(err, blockHash) {
+        if (err) {
+          console.log('lastBlockJob Error: ' + JSON.stringify(err));
+        } else if (blockHash) {
+          lastBlockHash = blockHash;
+        }
+        if (callback) callback();
+    });
 	}
 	else {
     //console.log('DEBUG Skipping lastBlockJob: ' + (currentTime - lastBlockJobTime));
+    if (callback) callback();
 	}
 };
 

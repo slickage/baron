@@ -84,14 +84,6 @@ ddoc.views.paidPaymentsByTime = {
   }
 };
 
-ddoc.views.lastBlockHash = {
-  map: function(doc) {
-    if (doc.type === 'blockhash') {
-      emit(doc.hash, doc);
-    }
-  }
-};
-
 ddoc.views.webhooks = {
   map: function(doc) {
     if (doc.type === 'webhook') {

@@ -22,9 +22,13 @@ async.waterfall([
     // abort if unsafe couchdb UUID algorithm or error
     db.instantiateDb(cb);
   },
+  function (cb) {
+    // Initialize lastBlockHash then use listSinceBlock to look for potential transactions during Baron downtime
+    blockJob.lastBlockJob(cb);
+  }
   ], function (err) {
     if (err) {
-      console.log('Sanity Check Error: ' + require('util').inspect(err));
+      console.log('Baron Startup Error: ' + JSON.stringify(err));
       process.exit(1);
     }
     else {

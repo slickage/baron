@@ -100,7 +100,6 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
       var activePayment = invoiceHelper.getActivePayment(paymentsArr);
       if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
         resetPayment(activePayment, expectedAmount, cb);
-        return;
       }
     }
     bitcoinUtil.getNewAddress(function(err, info) {
@@ -118,188 +117,70 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
 // Updating Payments with Transaction Data
 // ===============================================
 
-function validateTransactionBlock(payment, transaction, cb) {
-  if (transaction.blockhash) {
-    bitcoinUtil.getBlock(transaction.blockhash, function(err, block) {
-      if (err) {
-        return cb(err, false, false);
-      }
-      block = block.result;
-      var blockIsValid = validate.block(block);
-      // Block is invalid and payment and transaction blockhash match
-      var isReorg = !blockIsValid && payment.block_hash === transaction.blockhash;
-      // Incoming block is valid and payment and transaction hash both are populated but dont match
-      var blockHashChanged = (blockIsValid && Boolean(payment.block_hash) && Boolean(transaction.blockhash) && (payment.block_hash !== transaction.blockhash));
-      // Block isnt valid and payment.block_hash === transaction.blockhash.
-      return cb(null, blockIsValid, isReorg || blockHashChanged);
-    });
-  }
-  else if (!transaction.blockhash && payment.block_hash) { // Reorg
-    // No tx blockhash but payment used to have one. Indicates reorg.
-    return cb(null, false, true);
-  }
-  else { // If transaction doesnt have blockhash it is initial notification
-    return cb(null, true, false);
-  }
-}
-
-var processReorgedPayment = function(payment, blockHash) {
-  payment.block_hash = null;
-  if (blockHash) {
-    var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
-    if (!_.contains(reorgHistory, blockHash)) {
-      reorgHistory.push(blockHash);
-    }
-    payment.reorg_history = reorgHistory;
-  }
-  if (payment.confirmations === -1) {
-    payment.status = 'invalid';
-    payment.watched = false;
-  }
-  else { // if confirmations arent -1 could be reorged back in
-    payment.status = 'pending';
-  }
-};
-
-var processReorgedPayments = function (blockHash) {
-  db.getPaymentByBlockHash(blockHash, function(err, paymentsArr) {
-    if (err) {
-      return console.log(err);
-    }
-    if (paymentsArr) {
-      paymentsArr.forEach(function (payment) {
-        var origStatus = payment.status;
-        processReorgedPayment(payment, blockHash);
-        db.insert(payment, function(err) {
-          if (!err) {
-            invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
-            if (payment.status.toLowerCase() === 'invalid') {
-              heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
-            }
-          }
-        });
-      });
-    }
-  });
-};
-
-var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
-  if (transaction.txid && transaction.walletconflicts.length > 0) {
-    db.findPaymentsByTxId(transaction.txid, function(err, payments) {
-      if (err) {
-        console.log('processReorgAndCheckDoubleSpent ' + JSON.stringify(err));
-        return cb ? cb(err) : null;
-      }
-      async.each(payments, function(payment, asyncCallback) {
-        var origStatus = payment.status;
-        //TODO: Notify Admin of Double Spend
-        if (transaction.walletconflicts.length > 0) {
-          payment.double_spent_history = transaction.walletconflicts;
-        }
-        if (blockHash) {
-          processReorgedPayment(payment, blockHash);
-        }
-        db.insert(payment, function(err) {
-          if (err) {
-            console.log('processReorgAndCheckDoubleSpent ' + JSON.stringify(err));
-          }
-          else {
-            invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
-            if (payment.status.toLowerCase() === 'invalid') {
-              heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
-            }
-          }
-          asyncCallback();
-        });
-      },
-      function() {
-        return cb ? cb(err) : null;
-      });
-    });
-  }
-};
-
-// Updates payment with transaction data from listsinceblock or walletnotify
+// Updates payment with transaction from listsinceblock, walletnotify, or watchpaymentjob
 var updatePaymentWithTransaction = function(payment, transaction, cb) {
   db.findInvoice(payment.invoice_id, function(err, invoice) {
     if (err) {
       return cb(err);
     }
-    validateTransactionBlock(payment, transaction, function(err, blockIsValid, isReorg) {
-      if (err) {
+    var origStatus = payment.status;
+    var newConfirmations = transaction.confirmations;
+    var curStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
+    if(validate.paymentChanged(payment, transaction, curStatus)) {
+      console.log('DEBUG Payment changed ' + transaction.txid);
+      // Add Reorg History
+      if (payment.block_hash && transaction.blockhash !== payment.block_hash) {
+        // payment's block hash is no longer in the transaction
+        // record old block hash in reorg_history
+        var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
+        if (!_.contains(reorgHistory, payment.block_hash)) {
+          reorgHistory.push(payment.block_hash);
+          payment.reorg_history = reorgHistory;
+        }
+      }
+      // Add Double-Spend History
+      if (transaction.walletconflicts.length > 0) {
+        payment.double_spent_history = transaction.walletconflicts;
+      }
+
+      // Update payment with transaction data
+      var amount = transaction.amount;
+      payment.amount_paid = amount;
+      payment.txid = transaction.txid;
+      payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
+      payment.paid_timestamp = transaction.time * 1000;
+      payment.watched = newConfirmations === -1 ? false : newConfirmations < config.trackPaymentUntilConf;
+      var isUSD = invoice.currency.toUpperCase() === 'USD';
+      if (isUSD) {
+        var actualPaid = new BigNumber(amount).times(payment.spot_rate);
+        var expectedPaid = new BigNumber(payment.expected_amount).times(payment.spot_rate);
+        actualPaid = helper.roundToDecimal(actualPaid.valueOf(), 2);
+        expectedPaid = helper.roundToDecimal(expectedPaid.valueOf(), 2);
+        var closeEnough = new BigNumber(actualPaid).equals(expectedPaid);
+        if (closeEnough) {
+          payment.expected_amount = amount;
+        }
+      }
+      // Update status after updating amounts
+      payment.status = helper.getPaymentStatus(payment, newConfirmations, invoice);
+      db.insert(payment, function (err) {
+        if (err) {
+          if (err.error && err.error === 'conflict' ) {
+            // Expected and harmless
+            //console.log('DEBUG updatePaymentWithTransaction: Document update conflict: ' + JSON.stringify(err.request.body));
+          } else {
+            console.log('DEBUG updatePaymentWithTransaction: ' + JSON.stringify(err));
+          }
+        } else {
+          invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+          if (payment.status.toLowerCase() === 'invalid') {
+            // TODO: Get rid of capitalized status names, capitalize it in only in the view
+            heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
+          }
+        }
         return cb(err);
-      }
-      var oldBlockHash = payment.block_hash;
-      if (blockIsValid) {
-        var origStatus = payment.status;
-        var newConfirmations = transaction.confirmations;
-        var curStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
-        if(validate.paymentChanged(payment, transaction, curStatus)) {
-          if (isReorg) { // Handle Reorg History.
-            var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
-            if (!_.contains(reorgHistory, oldBlockHash)) {
-              reorgHistory.push(oldBlockHash);
-            }
-            payment.reorgHistory = reorgHistory;
-          }
-          if (transaction.walletconflicts.length > 0) { // Handle Double Spent History.
-            payment.double_spent_history = transaction.walletconflicts;
-          }
-          var amount = transaction.amount;
-          payment.amount_paid = amount;
-          payment.txid = transaction.txid;
-          payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
-          payment.paid_timestamp = transaction.time * 1000;
-          payment.watched = newConfirmations === -1 ? false : newConfirmations < config.trackPaymentUntilConf;
-          var isUSD = invoice.currency.toUpperCase() === 'USD';
-          if (isUSD) {
-            var actualPaid = new BigNumber(amount).times(payment.spot_rate);
-            var expectedPaid = new BigNumber(payment.expected_amount).times(payment.spot_rate);
-            actualPaid = helper.roundToDecimal(actualPaid.valueOf(), 2);
-            expectedPaid = helper.roundToDecimal(expectedPaid.valueOf(), 2);
-            var closeEnough = new BigNumber(actualPaid).equals(expectedPaid);
-            if (closeEnough) {
-              payment.expected_amount = amount;
-            }
-          }
-          // Update status after updating amounts to see if it changed.
-          payment.status = helper.getPaymentStatus(payment, newConfirmations, invoice);
-          db.insert(payment, function (err) {
-            if (err) {
-              if (err.error && err.error === 'conflict' ) {
-                // Expected and harmless
-                //console.log('DEBUG updatePaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
-              }
-              else {
-                console.log('DEBUG updatePaymentWithTransaction: ' + require('util').inspect(err));
-              }
-              return cb();
-            }
-            if (isReorg) {
-              processReorgedPayments(oldBlockHash);
-            }
-            if (!err) {
-              invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
-              if (payment.status.toLowerCase() === 'invalid') {
-                heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
-              }
-            }
-            return cb(err);
-          });
-        }
-        else {
-          return cb();
-        }
-      }
-      else if (isReorg) {
-        // Check for doublespend
-        processReorgAndCheckDoubleSpent(transaction, payment.block_hash, function() {
-          // If no double spend process reorg for all payments with block hash
-          processReorgedPayments(payment.block_hash);
-          return cb();
-        });
-      }
-    });
+      });
+    }
   });
 };
 
@@ -363,10 +244,10 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           if (err) {
             if (err.error && err.error === 'conflict' ) {
               // Expected and harmless
-              //console.log('DEBUG createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err.request.body));
+              //console.log('DEBUG createNewPaymentWithTransaction: Document update conflict: ' + JSON.stringify(err.request.body));
             }
             else {
-              console.log('DEBUG createNewPaymentWithTransaction: Document update conflict: ' + require('util').inspect(err));
+              console.log('DEBUG createNewPaymentWithTransaction: ' + JSON.stringify(err));
             }
             return cb();
           }
@@ -379,7 +260,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
   });
 }
 
-// Updates payment with walletnotify data
+// Updates payment (called by walletnotify and updatePaymentsSinceBlock)
 var updatePayment = function(transaction, cb) {
   if (!transaction.txid || !transaction.address || transaction.amount < 0) {
     var error = new Error('Ignoring irrelevant transaction.');
@@ -424,9 +305,6 @@ var updatePayment = function(transaction, cb) {
 module.exports = {
   createNewPayment: createNewPayment,
   updatePayment: updatePayment,
-  updatePaymentWithTransaction: updatePaymentWithTransaction,
-  processReorgedPayment: processReorgedPayment,
-  processReorgedPayments: processReorgedPayments,
-  processReorgAndCheckDoubleSpent: processReorgAndCheckDoubleSpent
+  updatePaymentWithTransaction: updatePaymentWithTransaction
 };
 
