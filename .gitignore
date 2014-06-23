@@ -11,4 +11,4 @@ npm-debug.log
 tags
 README.html
 tests/barontester/barontester.conf
-tests/tmp/*
+tests/barontester/tmp/*

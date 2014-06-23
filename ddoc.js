@@ -76,10 +76,10 @@ ddoc.views.invoiceMetadataId = {
  }
 };
 
-ddoc.views.lastBlockHash = {
+ddoc.views.paidPaymentsByTime = {
   map: function(doc) {
-    if (doc.type === 'blockhash') {
-      emit(doc.hash, doc);
+    if (doc.type === 'payment' && doc.block_hash) {
+      emit(doc.paid_timestamp, doc);
     }
   }
 };
