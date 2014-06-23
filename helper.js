@@ -1,6 +1,7 @@
 var BigNumber = require('bignumber.js');
 var _ = require('lodash');
 var config = require(__dirname + '/config');
+var crypto = require('crypto');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
@@ -128,6 +129,11 @@ var getInvalidEmail = function(txid, invoiceId) {
   return email;
 };
 
+// Return string of len characters of pseudorandom hex
+var pseudoRandomHex = function(len) {
+  return crypto.pseudoRandomBytes(Math.ceil(len/2)).toString('hex').slice(0,len);
+};
+
 module.exports = {
   decimalPlaces: decimalPlaces,
   toFourDecimals: toFourDecimals,
@@ -136,5 +142,6 @@ module.exports = {
   getReceiveDetails: getReceiveDetails,
   getExpirationCountDown: getExpirationCountDown,
   getPaymentStatus: getPaymentStatus,
-  getInvalidEmail: getInvalidEmail
+  getInvalidEmail: getInvalidEmail,
+  pseudoRandomHex: pseudoRandomHex
 };

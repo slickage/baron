@@ -6,6 +6,7 @@ var dbName = config.couchdb.name;
 var BigNumber = require('bignumber.js');
 var async = require('async');
 var baronDb;
+var helper = require(__dirname + '/helper');
 
 var getCouchUrl = function() {
   var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';
@@ -16,36 +17,6 @@ var getCouchUrl = function() {
   var couchUrl = protocol + credentials + config.couchdb.url;
   return couchUrl;
 };
-
-// Abort if CouchDB is not using the random UUID algorithm
-// It would otherwise be unsafe because the Invoice ID's would be easily guessable.
-function abortIfNotRandomAlgorithm(cb) {
-  function cleanupAndAbortIfNotRandom(dummyRecords, exit, cb) {
-    destroy(dummyRecords[0].id, dummyRecords[0].rev, function(err) {
-      if(!err) {
-        destroy(dummyRecords[1].id, dummyRecords[1].rev, function(err) {
-          if (!err && exit) {
-            console.log('Error:  CouchDB\'s UUID Algorithm must be random: http://docs.couchdb.org/en/latest/config/misc.html#uuids/algorithm');
-            return process.exit(1);
-          }
-          else { cb(); }
-        });
-      }
-    });
-  }
-  // Insert two dummy records, abort if their first nine characters are equal (not random)
-  insert({}, function(err, recordA){
-    if (!err) {
-      insert({}, function(err, recordB){
-        if (!err) {
-          var prefixA = recordA.id.substring(0,9);
-          var prefixB = recordB.id.substring(0,9);
-          cleanupAndAbortIfNotRandom([recordA, recordB], prefixA === prefixB, cb);
-        }
-      });
-    }
-  });
-}
 
 var instantiateDb = function (cb) {
   nano = require('nano')(getCouchUrl());
@@ -74,7 +45,7 @@ var instantiateDb = function (cb) {
                 return process.exit(1);
               }
               else {
-                abortIfNotRandomAlgorithm(cb);
+                cb();
               }
             });
           }
@@ -87,7 +58,7 @@ var instantiateDb = function (cb) {
     }
     else {
       baronDb = nano.use(dbName);
-      abortIfNotRandomAlgorithm(cb);
+      cb();
     }
   });
 };
@@ -256,6 +227,7 @@ var createInvoice = function(invoice, callback) {
     },
     function(cb) {
       // Create New Invoice
+      invoice._id = helper.pseudoRandomHex(32);
       invoice.api_key = undefined;
       invoice.created = new Date().getTime();
       invoice.type = 'invoice';
