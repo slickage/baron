@@ -239,7 +239,6 @@ waitforbaron
 test1() {
 printtitle "TEST #1: Reorg unconfirm then reconfirm into another block"
 setuppartitions
-echo "[SUBMIT INVOICE TO BARON]"
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
@@ -270,7 +269,6 @@ echo "[END TEST #1]"
 test2() {
 printtitle "TEST #2: Double Spend Replace (payment to same address)"
 setuppartitions
-echo "[SUBMIT INVOICE TO BARON]"
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
@@ -302,7 +300,6 @@ echo "[END TEST #2]"
 test3() {
 printtitle "Test #3: Double Spend Theft"
 setuppartitions
-echo "[SUBMIT INVOICE TO BARON]"
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
 # Poke payment page so the payment is created
