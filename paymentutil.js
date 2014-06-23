@@ -178,7 +178,7 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
             heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
           }
         }
-        return cb(err);
+        return cb(); // Discard errors
       });
     }
   });
