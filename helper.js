@@ -1,5 +1,6 @@
 var BigNumber = require('bignumber.js');
 var _ = require('lodash');
+var config = require(__dirname + '/config');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
@@ -102,6 +103,31 @@ var getPaymentStatus = function(payment, confirmations, invoice) {
   return status;
 };
 
+function csvToArray(csv) {
+  var array = csv.split(',');
+  var results = [];
+  array.forEach(function(element) {
+    results.push(element.trim());
+  });
+  return results;
+}
+
+var getInvalidEmail = function(txid, invoiceId) {
+  var port = (config.port === 443 || config.port === 80) ? '' : ':' + config.port;
+  var invoiceUrl = config.publicHostName + port + '/invoices/' + invoiceId;
+  var subject = '[' + config.appTitle + '] Invalid Tx in Invoice ' + invoiceId;
+  var body = 'Transaction ' + txid + ' has been double-spent rendering it invalid, please ' +
+    'check <a href="' + invoiceUrl + '" target="_blank">Invoice ' + invoiceId + '</a>.';
+  var email = {
+    from: config.senderEmail,
+    to: csvToArray(config.adminEmails),
+    subject: subject,
+    html: body
+  };
+  console.log('Notifying admin of invalid transaction: ' + JSON.stringify(email));
+  return email;
+};
+
 module.exports = {
   decimalPlaces: decimalPlaces,
   toFourDecimals: toFourDecimals,
@@ -109,5 +135,6 @@ module.exports = {
   roundToDecimal: roundToDecimal,
   getReceiveDetails: getReceiveDetails,
   getExpirationCountDown: getExpirationCountDown,
-  getPaymentStatus: getPaymentStatus
+  getPaymentStatus: getPaymentStatus,
+  getInvalidEmail: getInvalidEmail
 };

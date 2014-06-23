@@ -9,6 +9,7 @@ var invoiceHelper = require(__dirname + '/invoicehelper');
 var invoiceWebhooks = require(__dirname + '/invoicewebhooks');
 var _ = require('lodash');
 var async = require('async');
+var heckler = require('heckler');
 
 // ===============================================
 // Creating New Payments with Transaction Data
@@ -170,6 +171,9 @@ var processReorgedPayments = function (blockHash) {
         db.insert(payment, function(err) {
           if (!err) {
             invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+            if (payment.status.toLowerCase() === 'invalid') {
+              heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
+            }
           }
         });
       });
@@ -199,6 +203,9 @@ var processReorgAndCheckDoubleSpent = function (transaction, blockHash, cb) {
           }
           else {
             invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+            if (payment.status.toLowerCase() === 'invalid') {
+              heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
+            }
           }
           asyncCallback();
         });
@@ -266,11 +273,14 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
               }
               return cb();
             }
-            else if (isReorg) {
+            if (isReorg) {
               processReorgedPayments(oldBlockHash);
             }
-            else if (!err) {
+            if (!err) {
               invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
+              if (payment.status.toLowerCase() === 'invalid') {
+                heckler.email(helper.getInvalidEmail(payment.txid, payment.invoice_id));
+              }
             }
             return cb(err);
           });

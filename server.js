@@ -31,7 +31,8 @@ async.waterfall([
       var app = express();
       app.set('view engine', 'ejs');
       app.set('views', __dirname + '/views');
-      app.use(bodyParser());
+      app.use(bodyParser.json());
+      app.use(bodyParser.urlencoded({ extended: true }));
       app.use(express.static(path.join(__dirname, 'public')));
       require(__dirname + '/routes')(app);
       bitstamped.init(config.couchdb.url);
