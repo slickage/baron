@@ -276,7 +276,6 @@ var updatePayment = function(transaction, cb) {
       }
     });
     if (payment) {
-      // Updating confirmations of a watched payment
       updatePaymentWithTransaction(payment, transaction, cb);
     }
     else {

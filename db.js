@@ -239,7 +239,9 @@ var createInvoice = function(invoice, callback) {
         balanceDue = balanceDue.plus(lineCost);
       });
       invoice.balance_due = Number(balanceDue.valueOf());
-      invoice.text = sanitizeHtml(invoice.text); // remove hostile elements
+      if (invoice.text) {
+        invoice.text = sanitizeHtml(invoice.text); // remove hostile elements
+      }
       baronDb.insert(invoice, cb);
     },
   ], function (err, result) {

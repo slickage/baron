@@ -25,12 +25,12 @@ function updateWatchedPayment(payment, transaction) {
 }
 
 function checkPaymentExpiration(payment) {
-    var curTime = new Date().getTime();
-    var expirationTime = Number(payment.created) + config.paymentValidForMinutes * 60 * 1000;
-    if(payment.status === 'unpaid' && expirationTime < curTime) {
-      payment.watched = false;
-      db.insert(payment);
-    }
+  var curTime = new Date().getTime();
+  var expirationTime = Number(payment.created) + config.paymentValidForMinutes * 60 * 1000;
+  if(payment.status === 'unpaid' && expirationTime < curTime) {
+    payment.watched = false;
+    db.insert(payment);
+  }
 }
 
 var watchPaymentsJob = function () {
