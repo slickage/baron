@@ -28,7 +28,8 @@
     "lodash": "^2.4.1",
     "nano": "^5.7.1",
     "qr-image": "^1.1.0",
-    "request": "^2.34.0"
+    "request": "^2.34.0",
+    "sanitize-html": "1.1.8"
   },
   "devDependencies": {
     "mocha": "^1.18.2"

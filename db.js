@@ -7,6 +7,7 @@ var BigNumber = require('bignumber.js');
 var async = require('async');
 var baronDb;
 var helper = require(__dirname + '/helper');
+var sanitizeHtml = require('sanitize-html');
 
 var getCouchUrl = function() {
   var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';
@@ -238,6 +239,7 @@ var createInvoice = function(invoice, callback) {
         balanceDue = balanceDue.plus(lineCost);
       });
       invoice.balance_due = Number(balanceDue.valueOf());
+      invoice.text = sanitizeHtml(invoice.text); // remove hostile elements
       baronDb.insert(invoice, cb);
     },
   ], function (err, result) {
