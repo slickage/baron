@@ -11,14 +11,16 @@ function findPastValidBlock(blockHash, cb) {
     if (block && block.error && block.error.code && block.error.code === -5) {
       console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.');
       process.exit(255);
-    } else if (err) {
+    }
+    else if (err) {
       return cb(err, null);
     }
     block = block.result;
     if (block.confirmations === -1) {
       // NOTE: Reorg and double-spent handling is in updatePaymentWithTransaction.
       findPastValidBlock(block.previousblockhash, cb);
-    } else {
+    }
+    else {
       // Success
       cb(null, blockHash);
     }
@@ -29,7 +31,8 @@ function findGenesisBlock(cb) {
   bitcoinUtil.getBlockHash(0, function(err,info) {
     if (err) {
       return cb(err);
-    } else {
+    }
+    else {
       cb(null, info.result);
     }
   });
@@ -40,14 +43,16 @@ function pickPastBlockHash(cb) {
   if (lastBlockHash) {
     // Use lastBlockHash already known to Baron
     cb(null, lastBlockHash);
-  } else {
+  }
+  else {
     db.getLatestPaymentWithBlockHash(function(err,payment) {
       if (payment) {
         // Startup: attempt to find recent blockhash from the latest paid transaction
         findPastValidBlock(payment.block_hash, function(err, blockHash) {
           if (err) {
             cb(err);
-          } else {
+          }
+          else {
             console.log('lastBlockHash Initialized: ' + blockHash);
             cb(null, blockHash);
           }
@@ -58,7 +63,8 @@ function pickPastBlockHash(cb) {
         findGenesisBlock(function(err, blockHash) {
           if (err) {
             cb(err);
-          } else {
+          }
+          else {
             console.log('lastBlockHash Initialized Genesis: ' + blockHash);
             cb(null, blockHash);
           }
@@ -90,7 +96,8 @@ function updatePaymentsSinceBlock(blockHash, cb) {
     function() {
       if (blockHash !== newBlockHash) {
         cb(null, newBlockHash);
-      } else {
+      }
+      else {
         cb(null, blockHash);
       }
     });
@@ -113,7 +120,8 @@ var lastBlockJob = function(callback) {
       ], function(err, blockHash) {
         if (err) {
           console.log('lastBlockJob Error: ' + JSON.stringify(err));
-        } else if (blockHash) {
+        }
+        else if (blockHash) {
           lastBlockHash = blockHash;
         }
         if (callback) {

@@ -168,10 +168,12 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
           if (err.error && err.error === 'conflict' ) {
             // Expected and harmless
             //console.log('DEBUG updatePaymentWithTransaction: Document update conflict: ' + JSON.stringify(err.request.body));
-          } else {
+          }
+          else {
             console.log('DEBUG updatePaymentWithTransaction: ' + JSON.stringify(err));
           }
-        } else {
+        }
+        else {
           invoiceWebhooks.determineWebhookCall(payment.invoice_id, origStatus, payment.status);
           if (payment.status.toLowerCase() === 'invalid') {
             // TODO: Get rid of capitalized status names, capitalize it in only in the view

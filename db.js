@@ -183,7 +183,8 @@ var getLatestPaymentWithBlockHash = function(cb) {
     if (!err && body.rows && body.rows.length > 0) {
       var latestPaymentWithBlockhash = body.rows[0].value;
       return cb(err, latestPaymentWithBlockhash);
-    } else {
+    }
+    else {
       return cb(err, null);
     }
   });
