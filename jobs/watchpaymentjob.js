@@ -4,10 +4,6 @@ var db = require(__dirname + '/../db');
 var paymentUtil = require(__dirname + '/../paymentutil');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 
-// TODO: This job can be removed in the future, we can calculate
-// The confirmations of our watched payments based on our stored
-// last known block. Remove in the future.
-
 function updateWatchedPayment(payment, transaction) {
   var receiveDetails = helper.getReceiveDetails(transaction.details);
   var matchingDetail;

@@ -127,7 +127,7 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
     var newConfirmations = transaction.confirmations;
     var curStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
     if(validate.paymentChanged(payment, transaction, curStatus)) {
-      console.log('DEBUG Payment changed ' + transaction.txid);
+      //console.log('DEBUG Payment changed ' + transaction.txid);
       // Add Reorg History
       if (payment.blockhash && transaction.blockhash !== payment.blockhash) {
         // payment's block hash is no longer in the transaction

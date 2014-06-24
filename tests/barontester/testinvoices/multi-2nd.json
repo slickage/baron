@@ -1,5 +1,6 @@
 {
   "api_key": "secretapikey",
+  "title": "Multi Test",
   "currency": "BTC",
   "min_confirmations": 1,
   "line_items": [
