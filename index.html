@@ -28,37 +28,365 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+          <h1>
+<a name="baron-" class="anchor" href="#baron-"><span class="octicon octicon-link"></span></a>Baron <a href="https://gitter.im/slickage/baron"><img src="http://img.shields.io/badge/gitter-slickage%2Fbaron-1dce73.svg?style=flat" alt="Gitter chat"></a><a href="https://travis-ci.org/slickage/baron"><img src="http://img.shields.io/travis/slickage/baron.svg?style=flat" alt="Build Status"></a>
+</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Baron is a Bitcoin payment processor that anyone can deploy</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<ul>
+<li>Allow creation of invoices denominated in USD or BTC from any other application with the API key.</li>
+<li>Invoices denominated in USD are quoted at market-rate in BTC at the time of payment.</li>
+<li>Records BTC exchange rates when payments are made, useful for accounting.</li>
+<li>Keeps history of all invoices and payments.</li>
+<li>Keeps history of unusual events like reorg, double-spend, etc.</li>
+<li>Properly handles incoming payments after recovering from downtime.</li>
+<li>Notifies external applications via webhooks when an invoice is paid or rendered invalid.</li>
+<li>No lost notifications: monitors for success/failure of webhooks with a retry queue.</li>
+</ul><h2>
+<a name="external-dependencies" class="anchor" href="#external-dependencies"><span class="octicon octicon-link"></span></a>External Dependencies</h2>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<ul>
+<li><a href="http://nodejs.org">node</a></li>
+<li><a href="http://wiki.apache.org/couchdb/Installation">couchdb</a></li>
+<li><a href="https://bitcoin.org/en/download">bitcoin</a></li>
+<li><a href="https://github.com/ddollar/foreman">foreman</a></li>
+<li><a href="https://github.com/remy/nodemon">nodemon</a></li>
+</ul><h2>
+<a name="installation-and-running" class="anchor" href="#installation-and-running"><span class="octicon octicon-link"></span></a>Installation and Running</h2>
+
+<p>Clone the repository:</p>
+
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>git clone https://github.com/slickage/baron.git
+</pre></div>
+
+<p>Change directories to Baron and install dependencies:</p>
+
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>npm install
+</pre></div>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="baron-configuration" class="anchor" href="#baron-configuration"><span class="octicon octicon-link"></span></a>Baron Configuration</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>Configurations can be changed in the config.js file in the root of Baron.</p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">config</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="nx">couchdb</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">url</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DB_URL</span> <span class="o">||</span> <span class="s1">'http://localhost:5984'</span><span class="p">,</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DB_NAME</span> <span class="o">||</span> <span class="s1">'baron'</span>
+  <span class="p">},</span>
+  <span class="nx">bitcoind</span><span class="o">:</span>  <span class="p">{</span>
+    <span class="nx">host</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">BITCOIND_HOST</span> <span class="o">||</span> <span class="s1">'localhost'</span><span class="p">,</span>
+    <span class="nx">port</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">BITCOIND_PORT</span> <span class="o">||</span> <span class="mi">18332</span><span class="p">,</span>
+    <span class="nx">user</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">BITCOIND_USER</span> <span class="o">||</span> <span class="s1">'username'</span><span class="p">,</span>
+    <span class="nx">pass</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">BITCOIND_PASS</span> <span class="o">||</span> <span class="s1">'password'</span>
+  <span class="p">},</span>
+  <span class="nx">port</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PORT</span> <span class="o">||</span> <span class="mi">8080</span><span class="p">,</span>
+  <span class="nx">baronAPIKey</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">BARON_API_KEY</span> <span class="o">||</span> <span class="s1">'youshouldreallychangethis'</span><span class="p">,</span>
+  <span class="nx">chainExplorerUrl</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">CHAIN_EXPLORER_URL</span> <span class="o">||</span> <span class="s1">'http://tbtc.blockr.io/tx/info'</span><span class="p">,</span>
+  <span class="nx">updateWatchListInterval</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">UPDATE_WATCH_LIST_INTERVAL</span> <span class="o">||</span> <span class="mi">15000</span><span class="p">,</span>
+  <span class="nx">lastBlockJobInterval</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">LAST_BLOCK_JOB_INTERVAL</span> <span class="o">||</span> <span class="mi">15000</span><span class="p">,</span>
+  <span class="nx">webhooksJobInterval</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">WEBHOOKS_JOB_INTERVAL</span> <span class="o">||</span> <span class="mi">15000</span><span class="p">,</span>
+  <span class="nx">paymentValidForMinutes</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PAYMENT_VALID_FOR_MINUTES</span> <span class="o">||</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="nx">trackPaymentUntilConf</span><span class="o">:</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">TRACK_PAYMENT_UNTIL_CONF</span> <span class="o">||</span> <span class="mi">100</span>
+<span class="p">};</span>
+</pre></div>
+
+<ul>
+<li>
+<code>couchdb</code> - Database connection configs</li>
+<li>
+<code>bitcoind</code> - Bitcoin client connetion configs</li>
+<li>
+<code>port</code> - The port that Baron should run on</li>
+<li>
+<code>baronAPIKey</code> - A secret key that is used to validate invoice creation <sup>[1]</sup>
+</li>
+<li>
+<code>chainExplorerUrl</code> - A link to the tx route of a chain explorer</li>
+<li>
+<code>updateWatchListInterval</code> - How often the watched payments job should run in ms</li>
+<li>
+<code>lastBlockJobInterval</code> - How often the last block job should run in ms</li>
+<li>
+<code>webhooksJobInterval</code> - How often the webhooks job should run in ms</li>
+<li>
+<code>paymentValidForMinutes</code> - How long before exchange rate refreshes for payment</li>
+<li>
+<code>trackPaymentUntilConf</code> - How long to watch payments for before no longer updating</li>
+</ul><p><strong>NOTES:</strong> </p>
+
+<ul>
+<li>
+<sup>[1]</sup> The <code>baronAPIKey</code> can be generated using <code>node generatetoken.js stringToHash</code>. </li>
+<li>Properties in config.js can be overriden with environment variables.  Common ways to do this is with a <a href="http://ddollar.github.io/foreman/#ENVIRONMENT">.env</a> file and <a href="https://github.com/ddollar/foreman">foreman</a> or an <a href="http://fedoraproject.org/wiki/Packaging%3aSystemd#EnvironmentFiles_and_support_for_.2Fetc.2Fsysconfig_files">EnvironmentFile with systemd</a>.</li>
+</ul><h3>
+<a name="example-bitcoin-configuration" class="anchor" href="#example-bitcoin-configuration"><span class="octicon octicon-link"></span></a>Example Bitcoin Configuration</h3>
+
+<p>Modify bitcoin's <a href="https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File">bitcoin.conf</a>:</p>
+
+<div class="highlight highlight-sh"><pre><span class="c"># (optional) connects bitcoin client to testnet</span>
+<span class="nv">testnet</span><span class="o">=</span>1
+
+<span class="c"># allows json-rpc api calls from Baron</span>
+<span class="nv">server</span><span class="o">=</span>1
+
+<span class="c"># these should match your config or .env bitcoind username and password</span>
+<span class="nv">rpcuser</span><span class="o">=</span>username
+<span class="nv">rpcpassword</span><span class="o">=</span>password
+
+<span class="c"># tells bitcoind to post wallet/block notifications to baron</span>
+<span class="c"># the addresses below should match baron's address and port.</span>
+<span class="nv">walletnotify</span><span class="o">=</span>curl -o /dev/null -s -H <span class="s2">"Content-Type: application/json"</span> --data <span class="s2">"{ \"txid\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }"</span> http://localhost:8080/walletnotify
+<span class="nv">blocknotify</span><span class="o">=</span>curl -o /dev/null -s -H <span class="s2">"Content-Type: application/json"</span> --data <span class="s2">"{ \"blockhash\": \"%s\", \"api_key\": \"youshouldreallychangethis\" }"</span> http://localhost:8080/blocknotify
+
+</pre></div>
+
+<p>Note: Be sure to customize the two instances of <code>api_key</code> within bitcoin.conf to match the <code>BARON_API_KEY</code> configuration of Baron.  Additionally the <code>/walletnotify</code> and <code>/bocknotify</code> URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.</p>
 
 <h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<a name="running-baron" class="anchor" href="#running-baron"><span class="octicon octicon-link"></span></a>Running Baron</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.</p>
+
+<p>Running Baron with <a href="http://nodejs.org">node</a></p>
+
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>node server.js
+</pre></div>
+
+<p>Running Baron with <a href="https://github.com/ddollar/foreman">foreman</a> and <a href="https://github.com/remy/nodemon">nodemon</a></p>
+
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>foreman start -f Procfile-dev
+</pre></div>
+
+<h2>
+<a name="additional-information" class="anchor" href="#additional-information"><span class="octicon octicon-link"></span></a>Additional Information</h2>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="invoices" class="anchor" href="#invoices"><span class="octicon octicon-link"></span></a>Invoices</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p><img src="http://i.imgur.com/9tmBLZL.png" alt="Invoice Screenshot">
+Invoices allow a person to receive payment for goods or services in BTC. The invoice can be created in USD for a fixed price invoice or in BTC. USD invoices are converted to BTC at time of payment using the current exchange rate for BTC. </p>
+
+<p>After an invoice is created, it can be viewed by going to the /invoices/:invoiceId route. For example:</p>
+
+<div class="highlight highlight-sh"><pre>http://localhost:8080/invoices/8c945af08f257c1417f4c21992586d33
+</pre></div>
 
 <h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<a name="invoice-data-model" class="anchor" href="#invoice-data-model"><span class="octicon octicon-link"></span></a>Invoice Data Model</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>Invoices have the following properties:</p>
+
+<ul>
+<li>
+<code>api_key</code> - The API key for Baron to verify that invoice creator is trusted <sup>[1]</sup>
+</li>
+<li>
+<code>currency</code> - Currency of the invoice, can be either USD or BTC</li>
+<li>
+<code>min_confirmations</code> - Minimum confirmations before a payment is considered paid</li>
+<li>
+<code>title</code>    - <strong><em>(optional)</em></strong> Title to display at the top of invoices</li>
+<li>
+<code>text</code>     - <strong><em>(optional)</em></strong> Text to display at the bottom of invoices, may include HTML links</li>
+<li>
+<code>expiration</code> <strong><em>(optional)</em></strong> - Expiration time for invoice (unix timestamp)</li>
+<li>
+<code>webhooks</code> - <strong><em>(optional)</em></strong> An object containing event webhooks <sup>[2]</sup>
+</li>
+<li>
+<code>metadata</code> - <strong><em>(optional)</em></strong> Container for arbitrary fields, the entire object is passed back to your app in the webhooks.  This can be helpful for apps that do not track invoice ID's.
+
+<ul>
+<li>
+<code>id</code> - <strong><em>(special)</em></strong> If provided, a submission with an identical metadata.id will return the existing matching invoice instead of creating a new invoice.</li>
+</ul>
+</li>
+<li>
+<code>line_items</code> - Array storing line items
+
+<ul>
+<li>
+<code>description</code> - Line item description text</li>
+<li>
+<code>quantity</code> - Quantity of the item purchased</li>
+<li>
+<code>amount</code> - The unit cost of the line item <sup>[3]</sup>
+</li>
+</ul>
+</li>
+</ul><p><strong>NOTES:</strong></p>
+
+<ul>
+<li>
+<sup>[1]</sup> The api_key is not stored with the invoice, it is just used for Baron to verify that the invoice creator is trusted.  The api_key of the submitted invoice is compared against the <code>baronAPIKey</code> property in config.js.</li>
+<li>
+<sup>[2]</sup> See the <a href="#webhooks">Webhooks</a> section below for a more detailed description</li>
+<li>
+<sup>[3]</sup> Line item amounts are stored in whatever currency the invoice is set to.</li>
+</ul><p>An example of a new Invoice object:</p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">newInvoice</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"api_key"</span> <span class="o">:</span> <span class="s2">"268f84b93a69bbdf4c5f37dd67196eac75fdcda86dad301cc3fb4aed0670c2cb"</span><span class="p">,</span>
+    <span class="s2">"currency"</span> <span class="o">:</span> <span class="s2">"BTC"</span><span class="p">,</span>
+    <span class="s2">"min_confirmations"</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">"expiration"</span> <span class="o">:</span> <span class="mi">1399997753000</span><span class="p">,</span> <span class="c1">// Optional</span>
+    <span class="s2">"webhooks"</span> <span class="o">:</span> <span class="p">{</span> <span class="c1">// Optional</span>
+      <span class="s2">"token"</span> <span class="o">:</span> <span class="s2">"268f84b93a69bbd"</span><span class="p">,</span>
+      <span class="s2">"paid"</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">"url"</span><span class="o">:</span> <span class="s2">"http://example.com/notifypaid"</span> <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s2">"metadata"</span> <span class="o">:</span> <span class="p">{</span> <span class="c1">// Optional</span>
+      <span class="s2">"id"</span> <span class="o">:</span> <span class="s2">"someuser@example.com"</span>
+    <span class="p">},</span>
+    <span class="s2">"line_items"</span> <span class="o">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"description"</span> <span class="o">:</span> <span class="s2">"Foo"</span><span class="p">,</span>
+            <span class="s2">"quantity"</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">"amount"</span> <span class="o">:</span> <span class="mf">0.125</span>
+        <span class="p">},</span> 
+        <span class="p">{</span>
+            <span class="s2">"description"</span> <span class="o">:</span> <span class="s2">"Bar"</span><span class="p">,</span>
+            <span class="s2">"quantity"</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"amount"</span> <span class="o">:</span> <span class="mf">2.5</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">};</span>
+</pre></div>
+
+<h3>
+<a name="creating-an-invoice" class="anchor" href="#creating-an-invoice"><span class="octicon octicon-link"></span></a>Creating an Invoice</h3>
+
+<p>Invoices can be created by doing a <strong>POST</strong> of the newInvoice object to /invoices route. For example:</p>
+
+<div class="highlight highlight-sh"><pre>http://localhost:8080/invoices
+</pre></div>
+
+<h3>
+<a name="payments" class="anchor" href="#payments"><span class="octicon octicon-link"></span></a>Payments</h3>
+
+<p><img src="http://i.imgur.com/ipEhRmg.png" alt="Payment Screenshot">
+Payments are created when the 'Pay Now' button on an invoice is clicked. User's are redirected to a view that displays the payment information such as amount due, address and QR Code for fulfillment of the invoice.</p>
+
+<p>When a user's payment reaches the invoice's minimum confirmations, the payment is considered to be in the 'paid' status. Baron also handles other payment statuses:</p>
+
+<table>
+<thead><tr>
+<th>Status</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>Paid</code></td>
+<td>When the received payment fully pays off an invoice</td>
+</tr>
+<tr>
+<td><code>Overpaid</code></td>
+<td>When the received payment pays more than the invoice required</td>
+</tr>
+<tr>
+<td><code>Parital</code></td>
+<td>When the received payment pays less than the invoice required</td>
+</tr>
+<tr>
+<td><code>Unpaid</code></td>
+<td>Payments are unpaid when initially created</td>
+</tr>
+<tr>
+<td><code>Pending</code></td>
+<td>Payments are pending until they reach the invoices min confirmations</td>
+</tr>
+<tr>
+<td><code>Invalid</code></td>
+<td>Payments that have been reorged or double spent</td>
+</tr>
+</tbody>
+</table><p>Payments can be viewed by going to the /pay/:invoiceId route. For example:</p>
+
+<div class="highlight highlight-sh"><pre>http://localhost:8080/pay/8c945af08f257c1417f4c21992586d33
+</pre></div>
+
+<h3>
+<a name="payment-data-model" class="anchor" href="#payment-data-model"><span class="octicon octicon-link"></span></a>Payment Data Model</h3>
+
+<p>Payments have the following properties:</p>
+
+<ul>
+<li>
+<code>invoice_id</code> - Invoice that this payment is associated with</li>
+<li>
+<code>address</code> - Address to send BTC to</li>
+<li>
+<code>amount_paid</code> - Stores the amount that was paid (Always stored in BTC)</li>
+<li>
+<code>expected_amount</code> - Stores the amount that the payment expects to receive</li>
+<li>
+<code>block_hash</code> - Stores the blockhash that the transaction was confirmed into</li>
+<li>
+<code>spot_rate</code> - Stores the exchange rate at the time of payment</li>
+<li>
+<code>status</code> - The status of this payment (paid, unpaid, partial, overpaid, pending, invalid)</li>
+<li>
+<code>tx_id</code> - Stores the transaction ID from bitcoind</li>
+<li>
+<code>watched</code> - Indicates if the payment is actively being watched by Baron</li>
+<li>
+<code>created</code> - Time the payment was created</li>
+<li>
+<code>paid_timestamp</code> - Time that payment became 'paid' status</li>
+<li>
+<code>reorg_history</code> - When applicable, contains the history of block hashes that the transaction was reorged out of</li>
+<li>
+<code>double_spent_history</code> - When applicable, contains the history of transaction ID's that double spent this payment</li>
+</ul><p><strong>NOTE:</strong> This is just for reference, all payments are created and handled internally by Baron.</p>
+
+<h3>
+<a name="advanced-payment-handling" class="anchor" href="#advanced-payment-handling"><span class="octicon octicon-link"></span></a>Advanced Payment Handling</h3>
+
+<p>Baron is able to handle when a bitcoin transaction is reorged, double spent, or mutated. For example:
+<img src="http://i.imgur.com/YzszBcQ.png" alt="Invalid Payment Screenshot"></p>
+
+<p>Baron is also able to handle partial payments. When a payment only partially fulfills an invoice the user can click the 'Pay Now' button again, this will create a new payment with the remaining balance. If the user has script enabled the payment page will automatically refresh with an updated remaining balance and payment address. Alternatively user's can also send multiple payments to the same address. </p>
+
+<p>This is an example of an invoice that was paid in full by two separate payments:
+<img src="http://i.imgur.com/sKAsBFu.png" alt="Partial Payment Screenshot"></p>
+
+<h2>
+<a name="webhooks" class="anchor" href="#webhooks"><span class="octicon octicon-link"></span></a>Webhooks</h2>
+
+<p>Baron is capable of doing a <strong><em>POST</em></strong> to a url when a payment event occurs. A payment event is when a payment goes from one status to anther. If a payment was to go from <code>unpaid</code> to <code>paid</code> status this would trigger the webhook stored in <code>newInvoice.webhooks.paid</code>. Here is a full list of supported webhooks:</p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">newInvoice</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="c1">//...</span>
+  <span class="s2">"webhooks"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"token"</span><span class="o">:</span> <span class="s2">"93a69bbdf4c5f37dd6"</span>
+    <span class="s2">"paid"</span><span class="o">:</span> <span class="p">{</span> <span class="s2">"url"</span><span class="o">:</span> <span class="s2">"http://example.com/notifypaid"</span> <span class="p">},</span>
+    <span class="s2">"partial"</span><span class="o">:</span> <span class="p">{</span> <span class="s2">"url"</span><span class="o">:</span> <span class="s2">"http://example.com/notifypartial"</span> <span class="p">},</span>
+    <span class="s2">"invalid"</span><span class="o">:</span> <span class="p">{</span> <span class="s2">"url"</span><span class="o">:</span> <span class="s2">"http://example.com/notifyinvalid"</span> <span class="p">},</span>
+    <span class="s2">"pending"</span><span class="o">:</span> <span class="p">{</span> <span class="s2">"url"</span><span class="o">:</span> <span class="s2">"http://example.com/notifypending"</span> <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="c1">//...</span>
+<span class="p">};</span>
+</pre></div>
+
+<ul>
+<li>
+<code>token</code> - Secret token is posted to the webhook.  This is typically used to authenticate the connection when Baron posts the status notification to the webhook.  Identifying information about the Invoice may optionally be passed within the <code>metadata</code> field, described above.</li>
+<li>
+<code>url</code> - The url Baron should <strong><em>POST</em></strong> to when the payment event occurs</li>
+</ul><h3>
+<a name="webhook-verification" class="anchor" href="#webhook-verification"><span class="octicon octicon-link"></span></a>Webhook Verification</h3>
+
+<p>The app notified by the webhook can trust the incoming payment notification because it has a matching secret token that was set when the Invoice was created. Further information about the Invoice can optionally be queried from Baron via the <code>/api/invoices/:invoiceId</code> route.  For example, the Invoice can be verified as paid if <code>is_paid</code> is <code>true</code>.</p>
+
+<p><strong>Security Consideration</strong></p>
+
+<p>Both the webhook and payment status check can be subject to attack if intra-app communication is over the Internet without the protection of SSL. Verification with <code>/api/invoices/:invoiceId</code> can successfully guard against a forged payment if at least the Baron side is protected by SSL. You can avoid these issues by communicating over an internal network or VPN between the two apps.</p>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>MIT</p>
         </section>
 
         <aside id="sidebar">
