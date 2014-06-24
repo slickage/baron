@@ -41,7 +41,7 @@ function resetPayment(payment, expectedAmount, cb) {
           return cb(err, null);
         }
         else {
-          setTimeout(stopWatchingPayment, config.paymentValidForMinutes * 60 * 1000, result.id);
+          setTimeout(stopWatchingPayment, config.spotRateValidForMinutes * 60 * 1000, result.id);
           return cb(null, payment);
         }
       });
@@ -81,7 +81,7 @@ function insertPayment(invoice, address, expectedAmount, cb) {
           return cb(err, null);
         }
         else {
-          setTimeout(stopWatchingPayment, config.paymentValidForMinutes * 60 * 1000, result.id);
+          setTimeout(stopWatchingPayment, config.spotRateValidForMinutes * 60 * 1000, result.id);
           payment._id = result.id;
           return cb(null, payment);
         }

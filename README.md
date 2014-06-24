@@ -47,7 +47,7 @@ var config = {
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
-  paymentValidForMinutes: process.env.PAYMENT_VALID_FOR_MINUTES || 5,
+  spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100
 };
 ```
@@ -59,7 +59,7 @@ var config = {
 * `chainExplorerUrl` - A link to the tx route of a chain explorer
 * `updateWatchListInterval` - How often the watched payments job should run in ms
 * `webhooksJobInterval` - How often the webhooks job should run in ms
-* `paymentValidForMinutes` - How long before exchange rate refreshes for payment
+* `spotRateValidForMinutes` - How long before exchange rate refreshes for payment
 * `trackPaymentUntilConf` - How long to watch payments for before no longer updating
 
 **NOTES**

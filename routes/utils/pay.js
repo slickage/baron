@@ -78,7 +78,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
       confirmations = block.confirmations;
     }
 
-    var validMins = config.paymentValidForMinutes * 60 * 1000;
+    var validMins = config.spotRateValidForMinutes * 60 * 1000;
     var expiration = activePayment.created + validMins;
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
