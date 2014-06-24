@@ -52,7 +52,10 @@ var notify = function(app) {
     }
     else {
       //console.log(req.body.blockhash);
-      blockJob.lastBlockJob();
+
+      // Disable lastBlockJob for now.
+      // Keeping this code as blocknotify will likely be useful for something else in the future.
+      //blockJob.lastBlockJob();
       res.end();
     }
   });

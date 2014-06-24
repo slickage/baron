@@ -46,7 +46,6 @@ var config = {
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
-  lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   paymentValidForMinutes: process.env.PAYMENT_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100
@@ -59,12 +58,11 @@ var config = {
 * `baronAPIKey` - A secret key that is used to validate invoice creation <sup>[1]</sup>
 * `chainExplorerUrl` - A link to the tx route of a chain explorer
 * `updateWatchListInterval` - How often the watched payments job should run in ms
-* `lastBlockJobInterval` - How often the last block job should run in ms
 * `webhooksJobInterval` - How often the webhooks job should run in ms
 * `paymentValidForMinutes` - How long before exchange rate refreshes for payment
 * `trackPaymentUntilConf` - How long to watch payments for before no longer updating
 
-**NOTES:** 
+**NOTES**
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
 * Properties in config.js can be overriden with environment variables.  Common ways to do this is with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file and [foreman](https://github.com/ddollar/foreman) or an [EnvironmentFile with systemd](http://fedoraproject.org/wiki/Packaging%3aSystemd#EnvironmentFiles_and_support_for_.2Fetc.2Fsysconfig_files).
 
@@ -88,7 +86,8 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 
 ```
 
-Note: Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
+**NOTES:**
+* Baron is entirely reliant upon walletnotify to learn of transactions.  Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
 
 ### Running Baron
 Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.
@@ -130,7 +129,7 @@ Invoices have the following properties:
   * `quantity` - Quantity of the item purchased
   * `amount` - The unit cost of the line item <sup>[3]</sup>
 
-**NOTES:**
+**NOTES**
 * <sup>[1]</sup> The api_key is not stored with the invoice, it is just used for Baron to verify that the invoice creator is trusted.  The api_key of the submitted invoice is compared against the `baronAPIKey` property in config.js.
 * <sup>[2]</sup> See the [Webhooks](#webhooks) section below for a more detailed description
 * <sup>[3]</sup> Line item amounts are stored in whatever currency the invoice is set to.

@@ -18,7 +18,8 @@ var config = {
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
-  lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
+  // Disabled for now, might come back later
+  //lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   paymentValidForMinutes: process.env.PAYMENT_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,

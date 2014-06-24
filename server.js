@@ -48,7 +48,8 @@ async.waterfall([
       });
       require(__dirname + '/routes')(app);
       bitstamped.init(db.getCouchUrl());
-      blockJob.runLastBlockJob();
+      // Disable lastBlockJob as a background job, using it only once during startup
+      //blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
       app.listen(config.port);
