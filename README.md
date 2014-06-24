@@ -196,7 +196,7 @@ Payments have the following properties:
 * `address` - Address to send BTC to
 * `amount_paid` - Stores the amount that was paid (Always stored in BTC)
 * `expected_amount` - Stores the amount that the payment expects to receive
-* `block_hash` - Stores the blockhash that the transaction was confirmed into
+* `blockhash` - Stores the blockhash that the transaction was confirmed into
 * `spot_rate` - Stores the exchange rate at the time of payment
 * `status` - The status of this payment (paid, unpaid, partial, overpaid, pending, invalid)
 * `tx_id` - Stores the transaction ID from bitcoind

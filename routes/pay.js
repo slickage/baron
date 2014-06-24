@@ -41,7 +41,7 @@ var pay = function(app) {
         res.end();
       }
       else {
-        bitcoinUtil.getBlock(payment.block_hash, function(err, block) {
+        bitcoinUtil.getBlock(payment.blockhash, function(err, block) {
           // TODO: err.code === 0  is ECONNREFUSED, display error to user?
           payment.confirmations = 0;
           block = block.result;

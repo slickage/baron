@@ -47,7 +47,7 @@ ddoc.views.paymentsById = {
 ddoc.views.paymentsBlockHash = {
   map: function(doc) {
     if (doc.type === 'payment') {
-      emit(doc.block_hash, doc);
+      emit(doc.blockhash, doc);
     }
   }
 };
@@ -78,7 +78,7 @@ ddoc.views.invoiceMetadataId = {
 
 ddoc.views.paidPaymentsByTime = {
   map: function(doc) {
-    if (doc.type === 'payment' && doc.block_hash) {
+    if (doc.type === 'payment' && doc.blockhash) {
       emit(doc.paid_timestamp, doc);
     }
   }

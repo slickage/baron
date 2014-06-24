@@ -65,7 +65,7 @@ function insertPayment(invoice, address, expectedAmount, cb) {
         address: address,
         amount_paid: 0, // Always stored in BTC
         expected_amount: expectedAmount,
-        block_hash: null,
+        blockhash: null,
         spot_rate: rate,
         status: 'unpaid',
         created: new Date().getTime(),
@@ -129,12 +129,12 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
     if(validate.paymentChanged(payment, transaction, curStatus)) {
       console.log('DEBUG Payment changed ' + transaction.txid);
       // Add Reorg History
-      if (payment.block_hash && transaction.blockhash !== payment.block_hash) {
+      if (payment.blockhash && transaction.blockhash !== payment.blockhash) {
         // payment's block hash is no longer in the transaction
         // record old block hash in reorg_history
         var reorgHistory = payment.reorg_history ? payment.reorg_history : [];
-        if (!_.contains(reorgHistory, payment.block_hash)) {
-          reorgHistory.push(payment.block_hash);
+        if (!_.contains(reorgHistory, payment.blockhash)) {
+          reorgHistory.push(payment.blockhash);
           payment.reorg_history = reorgHistory;
         }
       }
@@ -147,7 +147,7 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
       var amount = transaction.amount;
       payment.amount_paid = amount;
       payment.txid = transaction.txid;
-      payment.block_hash = transaction.blockhash ? transaction.blockhash : null;
+      payment.blockhash = transaction.blockhash ? transaction.blockhash : null;
       payment.paid_timestamp = transaction.time * 1000;
       payment.watched = newConfirmations === -1 ? false : newConfirmations < config.trackPaymentUntilConf;
       var isUSD = invoice.currency.toUpperCase() === 'USD';
@@ -218,7 +218,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
           address: transaction.address,
           amount_paid: Number(transaction.amount),
           expected_amount: Number(remainingBalance),
-          block_hash: transaction.blockhash ? transaction.blockhash : null,
+          blockhash: transaction.blockhash ? transaction.blockhash : null,
           spot_rate: Number(rate.valueOf()), // Exchange rate at time of payment
           created: new Date().getTime(),
           paid_timestamp: paidTime,

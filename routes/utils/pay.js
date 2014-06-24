@@ -62,12 +62,12 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
   var owedAmount = activePayment.expected_amount;
   // Check if invoice is paid
   var invoicePaid;
-  if (remainingBalance <= 0 && activePayment.status !=='pending' && activePayment.block_hash) {
+  if (remainingBalance <= 0 && activePayment.status !=='pending' && activePayment.blockhash) {
     invoicePaid = true;
   }
 
   // Get Confirmations
-  bitcoinUtil.getBlock(activePayment.block_hash, function(err, block) {
+  bitcoinUtil.getBlock(activePayment.blockhash, function(err, block) {
     // TODO: err.code === 0  is ECONNREFUSED, display error to user?
     var confirmations = 0;
     block = block.result;
@@ -87,7 +87,7 @@ function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb)
     var paymentData = {
       title: invoice.title ? invoice.title : config.appTitle,
       minConfirmations: invoice.min_confirmations,
-      blockHash: activePayment.block_hash,
+      blockHash: activePayment.blockhash,
       expireTime: expiration,
       expires: helper.getExpirationCountDown(expiration),
       remainingBalance: Number(remainingBalance),

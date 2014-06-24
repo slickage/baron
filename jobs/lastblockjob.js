@@ -48,7 +48,7 @@ function pickPastBlockHash(cb) {
     db.getLatestPaymentWithBlockHash(function(err,payment) {
       if (payment) {
         // Startup: attempt to find recent blockhash from the latest paid transaction
-        findPastValidBlock(payment.block_hash, function(err, blockHash) {
+        findPastValidBlock(payment.blockhash, function(err, blockHash) {
           if (err) {
             cb(err);
           }
