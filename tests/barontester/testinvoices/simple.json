@@ -1,4 +1,5 @@
 {
+  "expiration": 1493655465635,
   "api_key": "secretapikey",
   "title": "BARONTESTER Simple Test Invoice",
   "text": "Instructions for this invoice may be written here, which may include <a href='http://example.com' target='_blank'>HTML links</a>.",

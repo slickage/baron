@@ -24,9 +24,7 @@
 
     <div id="status-banner" class="row" style="<% if (!expiration_time && !is_expired && !is_void && !is_paid) { %>display: none;<%} %>">
       <div id="status-banner-text" class="col-sm-12 alert xsmall-text alert-box <% if (expiration_time || is_expired || is_void) { %>alert-warning<% } else { %>alert-success<% } %>"> 
-        <% if (expiration_time) { %>
-            Invoice will expire in <%= expiration_time %>.
-        <% } else if (is_void) { %>
+        <% if (is_void) { %>
             Invoice has been void. Payments will no longer be accepted.  
         <% } else if (is_expired) { %>
             Invoice is expired. Payments will no longer be accepted.
@@ -34,6 +32,8 @@
             Invoice has been <strong>overpaid</strong>.
         <% } else if (is_paid) { %>
             Invoice has been paid in full.
+        <% } else if (expiration_time) { %>
+            Invoice will expire in <%= expiration_time %>.
         <% } %>
       </div>
     </div>

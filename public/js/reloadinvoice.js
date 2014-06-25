@@ -10,7 +10,17 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
   var amountPaidSpans = document.getElementsByClassName('amount-paid-text');
   var amountDueSpans = document.getElementsByClassName('amount-due-text');
 
-  var amountDue, amountPaid;
+  var amountDue, amountPaid, paymentHistory, expirationUpdateJobStarted;
+
+  var watchingAnyPayment = function () {
+    var retval = false;
+    paymentHistory.forEach(function(payment) {
+      if (payment.watched) {
+        retval = true;
+      }
+    });
+    return retval;
+  };
 
   var getExpirationCountDown = function (expiration) {
     var curTime = new Date().getTime();
@@ -33,38 +43,27 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     }
   };
 
-  if (expiration && !isPaid) {
-    var expirationInterval = setInterval(function() {
-      if (isPaid || isVoid || isExpired) {
-        return;
-      }
-      if (isVoid) {
-        clearInterval(expirationInterval);
-        statusBanner.style.display = 'block';
-        payButton.style.display = 'none';
-        statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
-        statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
-        pageOverlayImage.className = 'page-overlay-void';
-        pageOverlayLayer.className = 'container page-overlay';
-      }
-      else if (isExpired) {
-        clearInterval(expirationInterval);
-        statusBanner.style.display = 'block';
-        payButton.style.display = 'none';
-        statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
-        statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
-        pageOverlayImage.className = 'page-overlay-expired';
-        pageOverlayLayer.className = 'container page-overlay';
-      }
-      else if (amountDue <= 0) {
-        statusBanner.style.display = 'none';
-      }
-      else {
-        statusBanner.style.display = 'block';
-        statusBannerText.innerText = 'Invoice will expire in ' + getExpirationCountDown(expiration) + '.';
-      }
-    }, 1000);
-  }
+  var startExpirationUpdateJob = function() {
+    if (!expirationUpdateJobStarted && expiration) {
+      expirationUpdateJobStarted = true;
+      var expirationUpdateJob = setInterval(function() {
+        if (isVoid || isExpired || isPaid && !watchingAnyPayment()) {
+          clearInterval(expirationUpdateJob);
+          return;
+        }
+        else if (isPaid) {
+          return; // Could become unpaid so don't kill expirationUpdateJob
+        }
+        else if (amountDue <= 0) {
+          statusBanner.style.display = 'none';
+        }
+        else {
+          statusBanner.style.display = 'block';
+          statusBannerText.innerText = 'Invoice will expire in ' + getExpirationCountDown(expiration) + '.';
+        }
+      }, 1000);
+    }
+  };
 
   var requestInvoice = function() {
     if (requestLocked) {
@@ -148,7 +147,7 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     isExpired = invoice.is_expired;
     var newAmountPaid = invoice.total_paid;
     var newAmountDue = invoice.remaining_balance;
-    var newPaymentHistory = invoice.payment_history;
+    paymentHistory = invoice.payment_history;
 
     // Update Status Banner
     if (isPaid) {
@@ -201,12 +200,39 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     }
 
     // Update Payment History
-    if (newPaymentHistory) {
-      buildPaymentHistory(newPaymentHistory);
+    if (paymentHistory) {
+      buildPaymentHistory(paymentHistory);
     }
   };
 
-  setInterval(function() {
+  var reloadInvoiceInterval = setInterval(function() {
     requestInvoice();
+    if (isPaid && !watchingAnyPayment()) {
+      clearInterval(reloadInvoiceInterval);
+      return;
+    }
+    else if (isVoid) {
+      clearInterval(reloadInvoiceInterval);
+      statusBanner.style.display = 'block';
+      payButton.style.display = 'none';
+      statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
+      statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
+      pageOverlayImage.className = 'page-overlay-void';
+      pageOverlayLayer.className = 'container page-overlay';
+      return;
+    }
+    else if (isExpired) {
+      clearInterval(reloadInvoiceInterval);
+      statusBanner.style.display = 'block';
+      payButton.style.display = 'none';
+      statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
+      statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
+      pageOverlayImage.className = 'page-overlay-expired';
+      pageOverlayLayer.className = 'container page-overlay';
+      return;
+    }
+    else {
+      startExpirationUpdateJob();
+    }
   }, 15000);
 };
