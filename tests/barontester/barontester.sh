@@ -241,8 +241,6 @@ printtitle "TEST #1: Reorg unconfirm then reconfirm into another block"
 setuppartitions
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID1 $PAYADDRESS 50
@@ -271,8 +269,6 @@ printtitle "TEST #2: Double Spend Replace (payment to same address)"
 setuppartitions
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID2 $PAYADDRESS 50
@@ -302,8 +298,6 @@ printtitle "Test #3: Double Spend Theft"
 setuppartitions
 submitinvoice simple.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS using wallet 2]"
 spendfrom 2 $TXID3 $PAYADDRESS 50
@@ -332,8 +326,6 @@ test4() {
 printtitle "Test #4: Payment with Metadata ID"
 submitinvoice metadataid.json
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID
 PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
 echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID4 $PAYADDRESS 50
@@ -351,14 +343,10 @@ printtitle "Test #5: Payment of two Invoices with the same Transaction"
 echo "[SUBMIT INVOICE 1 TO BARON]"
 INVOICEID1=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/testinvoices/multi-1st.json http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
 INVOICEID2=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/testinvoices/multi-2nd.json http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
 spendfrom 2 $TXID5 $PAYADDRESS1 25 $PAYADDRESS2 25
@@ -376,14 +364,10 @@ printtitle "Test #6: Partial Payments from same Transactions"
 echo "[SUBMIT INVOICE 1 TO BARON]"
 INVOICEID1=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/testinvoices/multi-1st.json http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID1
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID1
 PAYADDRESS1=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID1 | jq -r '.address')
 echo "[SUBMIT INVOICE 2 TO BARON]"
 INVOICEID2=$(curl -s -H "Content-Type: application/json" -d @$BARONDIR/tests/barontester/testinvoices/multi-2nd.json http://localhost:$BARONPORT/invoices |jq -r '.id')
 openurl http://localhost:$BARONPORT/invoices/$INVOICEID2
-# Poke payment page so the payment is created
-curl -s -o /dev/null http://localhost:$BARONPORT/pay/$INVOICEID2
 PAYADDRESS2=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID2 | jq -r '.address')
 echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
 spendfrom 2 $TXID6 $PAYADDRESS1 10 $PAYADDRESS2 10 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 30
