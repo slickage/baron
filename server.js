@@ -23,6 +23,11 @@ async.waterfall([
     db.instantiateDb(cb);
   },
   function (cb) {
+    // Update previously watched payments before getting anything new from bitcoind
+    watchJob.watchPaymentsJob();
+    cb();
+  },
+  function (cb) {
     // Initialize lastBlockHash then use listSinceBlock to look for potential transactions during Baron downtime
     blockJob.lastBlockJob(cb);
   }
