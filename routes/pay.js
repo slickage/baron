@@ -33,42 +33,6 @@ var pay = function(app) {
     });
   });
 
-  app.get('/payment/:paymentId', function(req, res) {
-    var paymentId = req.params.paymentId;
-    db.findPaymentById(paymentId, function(err, payment) {
-      if (err || !payment) {
-        res.send(400);
-        res.end();
-      }
-      else {
-        bitcoinUtil.getBlock(payment.blockhash, function(err, block) {
-          if (err) {
-            console.log(err);
-            res.send(500);
-            res.end();
-          }
-          payment.confirmations = 0;
-          block = block.result;
-          if (!err && block && block.confirmations) {
-            payment.confirmations = block.confirmations;
-          }
-          delete payment._id;
-          delete payment._rev;
-          delete payment.address;
-          delete payment.amount_paid;
-          delete payment.created;
-          delete payment.expected_amount;
-          delete payment.invoice_id;
-          delete payment.paid_timestamp;
-          delete payment.spot_rate;
-          delete payment.type;
-          delete payment.watched;
-          res.json(payment);
-        });
-      }
-    });
-  });
-
 };
 
 module.exports = pay;
