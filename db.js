@@ -210,12 +210,12 @@ var createInvoice = function(invoice, callback) {
   async.waterfall([
     function(cb) {
       // Validate Invoice
-      if (!validate.invoice(invoice)) {
-        var invalidErr = new Error('The received invoice failed validation. Verify that the invoice' +
-          ' object being sent conforms to the specifications in the API');
-        cb(invalidErr, null);
-      }
-      else { cb(); }
+      validate.invoice(invoice, function(err) {
+        if (err) {
+          cb(err, null);
+        }
+        else { cb(); }
+      });
     },
     function(cb) {
       // Special Case: Reuse existing invoice of matching metadata.id
