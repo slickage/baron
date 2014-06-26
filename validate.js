@@ -22,6 +22,26 @@ var invoice = function(invoice, cb) {
       errorMessages.push('expiration must be a number');
     }
   }
+  // Currency
+  if (typeof invoice.currency !== 'string') {
+    errorMessages.push('missing currency');
+  }
+  if (!(invoice.currency === 'USD' || invoice.currency === 'BTC')) {
+    errorMessages.push('currency must be BTC or USD');
+  }
+  // Minimum Price
+  var minimumPrice;
+  switch (invoice.currency) {
+    case ('USD'):
+      minimumPrice = config.minimumUSD;
+      break;
+    case ('BTC'):
+      minimumPrice = config.minimumBTC;
+      break;
+    default:
+      minimumPrice = 0.00000001;
+      break;
+  }
   // Line Items
   if(invoice.line_items && invoice.line_items.length > 0) {
     invoice.line_items.forEach(function(item) {
@@ -30,9 +50,10 @@ var invoice = function(invoice, cb) {
       }
       else {
         var billionCeiling = 999999999999;
+        // Amount
         item.amount = parseFloat(item.amount);
-        if (typeof item.amount !== 'number' || item.amount <= 0) {
-          errorMessages.push('line_item amount must be > 0: ' + JSON.stringify(item));
+        if (typeof item.amount !== 'number' || item.amount < minimumPrice) {
+          errorMessages.push('line_item amount must be >= ' + minimumPrice + ': ' + JSON.stringify(item));
         }
         if (helper.decimalPlaces(item.amount) > 8) {
           errorMessages.push('line_item amount must only have 0-8 decimal digits: ' + JSON.stringify(item));
@@ -40,6 +61,7 @@ var invoice = function(invoice, cb) {
         if (item.amount > billionCeiling) {
           errorMessages.push('line_item amount is too large: ' + JSON.stringify(item));
         }
+        // Quantity
         item.quantity = parseFloat(item.quantity);
         if (typeof item.quantity !== 'number' || item.quantity <= 0) {
           errorMessages.push('line_item quantity must be > 0: ' + JSON.stringify(item));
@@ -50,6 +72,7 @@ var invoice = function(invoice, cb) {
         if (item.quantity > billionCeiling) {
           errorMessages.push('line_item quantity is too large: ' + JSON.stringify(item));
         }
+        // Description
         if (typeof item.description !== 'string') {
           errorMessages.push('line_item description must be a string:' + JSON.stringify(item));
         }
@@ -58,13 +81,6 @@ var invoice = function(invoice, cb) {
   }
   else {
     errorMessages.push('line_items must contain at least one entry');
-  }
-  // Currency
-  if (typeof invoice.currency !== 'string') {
-    errorMessages.push('missing currency');
-  }
-  if (!(invoice.currency === 'USD' || invoice.currency === 'BTC')) {
-    errorMessages.push('currency must be BTC or USD');
   }
 
   // Minimum Confirmations

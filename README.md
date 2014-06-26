@@ -48,7 +48,10 @@ var config = {
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
-  trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100
+  trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
+  minimumBTC: process.env.MIN_BTC || 0.00001,
+  minimumUSD: process.env.MIN_USD || 0.01
+
 };
 ```
 
@@ -61,6 +64,8 @@ var config = {
 * `webhooksJobInterval` - How often the webhooks job should run in ms
 * `spotRateValidForMinutes` - How long before exchange rate refreshes for payment
 * `trackPaymentUntilConf` - How long to watch payments for before no longer updating
+* `minimumBTC` - lowest price in BTC allowed in an invoice
+* `minimumUSD` - lowest price in USD allowed in an invoice
 
 **NOTES**
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 

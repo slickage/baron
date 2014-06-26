@@ -27,7 +27,9 @@ var config = {
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
   senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
-  adminEmails: process.env.ADMIN_EMAILS || 'admin_one@example.com, admin_two@example.com'
+  adminEmails: process.env.ADMIN_EMAILS || 'admin_one@example.com, admin_two@example.com',
+  minimumBTC: process.env.MIN_BTC || 0.00001,
+  minimumUSD: process.env.MIN_USD || 0.01
 };
 
 module.exports = config;
