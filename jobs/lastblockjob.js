@@ -65,7 +65,7 @@ function pickPastBlockHash(cb) {
             cb(err);
           }
           else {
-            console.log('lastBlockHash Initialized Genesis: ' + blockHash);
+            console.log('lastBlockHash Initialized from Genesis: ' + blockHash);
             cb(null, blockHash);
           }
         });
@@ -114,7 +114,7 @@ var lastBlockJob = function(callback) {
         pickPastBlockHash(cb);
       },
       function(blockHash, cb) {
-        console.log('updatePaymentsSinceBlock:  ' + blockHash);
+        //console.log('DEBUG updatePaymentsSinceBlock:  ' + blockHash);
         updatePaymentsSinceBlock(blockHash, cb);
       }
       ], function(err, blockHash) {
@@ -130,7 +130,6 @@ var lastBlockJob = function(callback) {
     });
 	}
 	else {
-    //console.log('DEBUG Skipping lastBlockJob: ' + (currentTime - lastBlockJobTime));
     if (callback) {
       callback();
     }

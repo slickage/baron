@@ -2,7 +2,7 @@ var request = require('request');
 var db = require(__dirname + '/db');
 
 function postToWebhook(webhookObj, cb) {
-  //console.log('[Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
+  //console.log('DEBUG [Webhook: ' + webhookObj.invoice_id + '] Calling webhook ' + webhookObj.url);
   var postData = {};
   postData.token = webhookObj.token;
   if (webhookObj.metadata) {
@@ -42,7 +42,7 @@ function postToWebhookStoreFailure(webhookObj) {
       });
     }
     else {
-        console.log('[Webhook Success: ' + webhookObj.invoice_id + '] successfully notified ' + webhookObj.url);
+        //console.log('DEBUG [Webhook Success: ' + webhookObj.invoice_id + '] successfully notified ' + webhookObj.url);
     }
   });
 }

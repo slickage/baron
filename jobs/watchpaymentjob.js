@@ -59,7 +59,7 @@ var watchPaymentsJob = function () {
         checkPaymentExpiration(payment);
       }
     });
-    console.log('watchPaymentsJob: total: ' + paymentsArr.length + ' paid: ' + paidCount + ' unpaid: ' + unpaidCount);
+    //console.log('DEBUG watchPaymentsJob: total: ' + paymentsArr.length + ' paid: ' + paidCount + ' unpaid: ' + unpaidCount);
   });
 };
 

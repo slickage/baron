@@ -6,14 +6,12 @@ var async = require('async');
 function webhooksJob() {
   db.getWebhooks(function (err, webhooksArr) {
     if (!err && webhooksArr) {
-      console.log('===========================');
       console.log('Retrying Failed Webhooks [' + webhooksArr.length + ']');
-      console.log('===========================');
       async.eachSeries(webhooksArr, function(webhookObj, cb) {
         invoiceWebhooks.postToWebhookIgnoreFailure(webhookObj, cb);
       }, function(err) {
         if (!err) {
-          console.log('> Done processing failed webhooks.');
+          //console.log('DEBUG > Done processing failed webhooks.');
         }
       });
     }
