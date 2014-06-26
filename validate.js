@@ -10,6 +10,7 @@ var isInteger = function(number) {
 var invoice = function(invoice, cb) {
   var errorMessages = [];
   // Expiration
+  invoice.expiration = parseFloat(invoice.expiration);
   if (invoice.expiration !== undefined) {
     if (typeof invoice.expiration === 'number') {
       if (Number(invoice.expiration) < new Date().getTime()) {
@@ -27,9 +28,11 @@ var invoice = function(invoice, cb) {
         errorMessages.push('invalid line_items: ' + JSON.stringify(item));
       }
       else {
+        item.amount = parseFloat(item.amount);
         if (typeof item.amount !== 'number' || item.amount <= 0) {
           errorMessages.push('line_item amount must be > 0: ' + JSON.stringify(item));
         }
+        item.quantity = parseFloat(item.quantity);
         if (typeof item.quantity !== 'number' || item.quantity <= 0) {
           errorMessages.push('line_item quantity must be > 0: ' + JSON.stringify(item));
         }
@@ -51,6 +54,7 @@ var invoice = function(invoice, cb) {
   }
 
   // Minimum Confirmations
+  invoice.min_confirmations = parseFloat(invoice.min_confirmations);
   if (typeof invoice.min_confirmations !== 'number' || !isInteger(invoice.min_confirmations)) {
     errorMessages.push('min_confirmations must be an integer >= 0');
   }
