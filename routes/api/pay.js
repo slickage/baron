@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var payRouteUtils = require(__dirname + '/../utils/pay');
 
 module.exports = function(api) {

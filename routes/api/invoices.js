@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var invoiceRouteUtil = require(__dirname + '/../utils/invoices');
 
 module.exports = function(api) {

@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var config = {
   couchdb: {
     url: process.env.DB_URL || 'localhost:5984',

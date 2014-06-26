@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
 var config = require(__dirname + '/../config');
 var db = require(__dirname + '/../db');

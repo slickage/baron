@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var paymentUtil = require(__dirname + '/../../paymentutil');
 var invoiceHelper = require(__dirname + '/../../invoicehelper');
 var helper = require(__dirname + '/../../helper');

@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var validate = require(__dirname + '/validate');
 var config = require(__dirname + '/config');
 var ddoc = require(__dirname + '/ddoc');

@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var config = require(__dirname + '/config');
 var watchJob = require(__dirname + '/jobs/watchpaymentjob');
 var blockJob = require(__dirname + '/jobs/lastblockjob');

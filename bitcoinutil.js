@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var bitcore = require('bitcore');
 var RpcClient = bitcore.RpcClient;
 var config = require(__dirname + '/config');

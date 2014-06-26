@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var bitcoinUtil = require(__dirname + '/bitcoinutil');
 var async = require('async');
 

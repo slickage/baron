@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var helper = require(__dirname + '/helper');
 var BigNumber = require('bignumber.js');
 var bitstamped = require(__dirname + '/bitstamped');

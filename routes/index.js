@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var api = require(__dirname + '/api');
 var bitstampedApi = require(__dirname + '/../bitstamped').api;
 

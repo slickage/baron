@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var request = require('request');
 var db = require(__dirname + '/db');
 

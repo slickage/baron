@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var config = require(__dirname + '/../config');
 var paymentUtil = require(__dirname + '/../paymentutil');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');

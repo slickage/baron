@@ -1,3 +1,6 @@
+/* jshint node: true, couch: true */
+'use strict';
+
 var config = require(__dirname + '/config');
 
 var ddoc = {

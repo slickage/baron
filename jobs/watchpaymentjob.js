@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var config = require(__dirname + '/../config');
 var helper = require(__dirname + '/../helper');
 var db = require(__dirname + '/../db');

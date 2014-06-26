@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var helper = require(__dirname + '/../../helper');
 var validate = require(__dirname + '/../../validate');
 var db = require(__dirname + '/../../db');

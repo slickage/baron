@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var qr = require('qr-image');
 
 var paymentqr = function(app) {

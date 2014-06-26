@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var BigNumber = require('bignumber.js');
 var _ = require('lodash');
 var config = require(__dirname + '/config');
