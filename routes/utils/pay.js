@@ -6,6 +6,7 @@ var bitcoinUtil = require(__dirname + '/../../bitcoinutil');
 var config = require(__dirname + '/../../config');
 var BigNumber = require('bignumber.js');
 var db = require(__dirname + '/../../db');
+var async = require('async');
 
 var findOrCreatePayment = function(invoiceId, cb) {
   db.findInvoiceAndPayments(invoiceId, function(err, invoice, paymentsArr) {
@@ -58,68 +59,86 @@ var findOrCreatePayment = function(invoiceId, cb) {
   });
 };
 
-function buildFormattedPaymentData(activePayment, invoice, remainingBalance, cb) {
-  var owedAmount = activePayment.expected_amount;
-  // Check if invoice is paid
-  var invoicePaid;
-  if (remainingBalance <= 0 && activePayment.status !=='pending' && activePayment.blockhash) {
-    invoicePaid = true;
-  }
+var createPaymentDataForView = function(invoiceId, callback) {
+  var activePayment, invoice, remainingBalance, confirmations;
 
-  // Get Confirmations
-  bitcoinUtil.getBlock(activePayment.blockhash, function(err, block) {
-    // TODO: err.code === 0  is ECONNREFUSED, display error to user?
-    var confirmations = 0;
-    block = block.result;
-    if (err || !block) {
-      confirmations = 0;
+  async.waterfall([
+    function(cb) {
+      findOrCreatePayment(invoiceId, function(err, result) {
+        if (err) {
+          err.which = 'createPaymentDataForView findOrCreatePayment';
+          cb(err, null);
+        }
+        activePayment = result.payment;
+        invoice = result.invoice;
+        remainingBalance = result.remainingBalance;
+        cb();
+      });
+    },
+    function(cb) {
+      // Get confirmations from getBlock
+      if (activePayment.blockhash) {
+        bitcoinUtil.getBlock(activePayment.blockhash, function(err, block) {
+          if (err) {
+            err.which = 'createPaymentDataForView getBlock';
+            return cb(err, null);
+          }
+          confirmations = block.result.confirmations;
+          cb();
+        });
+      }
+      else {
+        // or 0 if no blockhash
+        confirmations = 0;
+        cb();
+      }
+    },
+    function(cb) {
+      // Construct paymentData
+      var owedAmount = activePayment.expected_amount;
+      var validMins = config.spotRateValidForMinutes * 60 * 1000;
+      var expiration = activePayment.created + validMins;
+      var isUSD = invoice.currency.toUpperCase() === 'USD';
+      var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
+      var chainExplorerUrl = activePayment.txid ? config.chainExplorerUrl + '/' + activePayment.txid : null;
+      var txid = activePayment.txid ? activePayment.txid : null;
+      var invoicePaid;
+      if (activePayment.blockhash && remainingBalance <= 0 && activePayment.status !=='pending') {
+        invoicePaid = true;
+      }
+      var paymentData = {
+        title: invoice.title ? invoice.title : config.appTitle,
+        minConfirmations: invoice.min_confirmations,
+        blockHash: activePayment.blockhash,
+        expireTime: expiration,
+        expires: helper.getExpirationCountDown(expiration),
+        remainingBalance: Number(remainingBalance),
+        invoicePaid: invoicePaid,
+        invoiceId: invoice._id,
+        isUSD: isUSD, // Refresh is only needed for invoices in USD
+        status: activePayment.status,
+        address: activePayment.address,
+        confirmations: confirmations,
+        text: invoice.text ? invoice.text : null,
+        txid: txid,
+        amount: amountToDisplay,
+        amountFirstFour: helper.toFourDecimals(amountToDisplay),
+        amountLastFour: helper.getLastFourDecimals(amountToDisplay),
+        chainExplorerUrl: chainExplorerUrl,
+        qrImageUrl: txid ? null : '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay,
+        bitcoinUrl: txid ? null : 'bitcoin:' + activePayment.address + '?amount=' +  amountToDisplay,
+      };
+      cb(null, paymentData);
     }
-    else if (block) {
-      confirmations = block.confirmations;
-    }
-
-    var validMins = config.spotRateValidForMinutes * 60 * 1000;
-    var expiration = activePayment.created + validMins;
-    var isUSD = invoice.currency.toUpperCase() === 'USD';
-    var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
-    var chainExplorerUrl = activePayment.txid ? config.chainExplorerUrl + '/' + activePayment.txid : null;
-    var txid = activePayment.txid ? activePayment.txid : null;
-    var paymentData = {
-      title: invoice.title ? invoice.title : config.appTitle,
-      minConfirmations: invoice.min_confirmations,
-      blockHash: activePayment.blockhash,
-      expireTime: expiration,
-      expires: helper.getExpirationCountDown(expiration),
-      remainingBalance: Number(remainingBalance),
-      invoicePaid: invoicePaid,
-      invoiceId: invoice._id,
-      isUSD: isUSD, // Refresh is only needed for invoices in USD
-      status: activePayment.status,
-      address: activePayment.address,
-      confirmations: confirmations,
-      text: invoice.text ? invoice.text : null,
-      txid: txid,
-      amount: amountToDisplay,
-      amountFirstFour: helper.toFourDecimals(amountToDisplay),
-      amountLastFour: helper.getLastFourDecimals(amountToDisplay),
-      chainExplorerUrl: chainExplorerUrl,
-      qrImageUrl: txid ? null : '/paymentqr?address=' + activePayment.address + '&amount=' + amountToDisplay,
-      bitcoinUrl: txid ? null : 'bitcoin:' + activePayment.address + '?amount=' +  amountToDisplay,
-    };
-
-    return cb(null, paymentData);
-  });
-}
-
-var createPaymentDataForView = function(invoiceId, cb) {
-  findOrCreatePayment(invoiceId, function(err, result) {
+  ],function (err, result) {
     if (err) {
-      return cb(err, null);
+      return callback(err, null);
     }
     else {
-      buildFormattedPaymentData(result.payment, result.invoice, result.remainingBalance, cb);
+      return callback(null, result);
     }
   });
+
 };
 
 module.exports = {
