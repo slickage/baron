@@ -6,9 +6,11 @@ module.exports = function(api) {
     payRouteUtils.createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (!err) {
         res.json(paymentData);
+        res.end();
       }
       else {
         res.json(err);
+        res.end();
       }
     });
   });
