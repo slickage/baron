@@ -8,10 +8,15 @@ var crypto = require('crypto');
 
 // returns decimal places of provided
 var decimalPlaces = function(number) {
-  if(Math.floor(number) === number) {
+  var numStr = number.toString();
+  if(Math.floor(number) === number || numStr.indexOf('+') > -1) {
     return 0;
   }
-  return number.toString().split('.')[1].length || 0;
+  if (numStr.indexOf('-') > -1) {
+    return numStr.split('-')[1];
+  }
+  var decimalDigits = numStr.split('.')[1];
+  return decimalDigits ? decimalDigits.length : 0;
 };
 
 // Truncates a number to four decimal places 

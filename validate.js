@@ -1,11 +1,12 @@
 /* jshint node: true */
 'use strict';
 
+var helper = require(__dirname + '/helper');
 var config = require(__dirname + '/config');
 
 var isInteger = function(number) {
   return number === Math.round(number);
-}
+};
 
 var invoice = function(invoice, cb) {
   var errorMessages = [];
@@ -28,13 +29,26 @@ var invoice = function(invoice, cb) {
         errorMessages.push('invalid line_items: ' + JSON.stringify(item));
       }
       else {
+        var billionCeiling = 999999999999;
         item.amount = parseFloat(item.amount);
         if (typeof item.amount !== 'number' || item.amount <= 0) {
           errorMessages.push('line_item amount must be > 0: ' + JSON.stringify(item));
         }
+        if (helper.decimalPlaces(item.amount) > 8) {
+          errorMessages.push('line_item amount must only have 0-8 decimal digits: ' + JSON.stringify(item));
+        }
+        if (item.amount > billionCeiling) {
+          errorMessages.push('line_item amount is too large: ' + JSON.stringify(item));
+        }
         item.quantity = parseFloat(item.quantity);
         if (typeof item.quantity !== 'number' || item.quantity <= 0) {
           errorMessages.push('line_item quantity must be > 0: ' + JSON.stringify(item));
+        }
+        if (helper.decimalPlaces(item.quantity) > 8) {
+          errorMessages.push('line_item quantity must only have 0-8 decimal digits: ' + JSON.stringify(item));
+        }
+        if (item.quantity > billionCeiling) {
+          errorMessages.push('line_item quantity is too large: ' + JSON.stringify(item));
         }
         if (typeof item.description !== 'string') {
           errorMessages.push('line_item description must be a string:' + JSON.stringify(item));
@@ -49,7 +63,7 @@ var invoice = function(invoice, cb) {
   if (typeof invoice.currency !== 'string') {
     errorMessages.push('missing currency');
   }
-  if (!(invoice.currency === "USD" || invoice.currency === "BTC")) {
+  if (!(invoice.currency === 'USD' || invoice.currency === 'BTC')) {
     errorMessages.push('currency must be BTC or USD');
   }
 

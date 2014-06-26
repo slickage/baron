@@ -13,6 +13,10 @@ describe('helper', function() {
       assert.equal(6, helper.decimalPlaces(1.123456));
       assert.equal(7, helper.decimalPlaces(1.1234567));
       assert.equal(8, helper.decimalPlaces(1.12345678));
+      var verySmallNumber = Number('1e-21');
+      var veryLargeNumber = Number('1e+21');
+      assert.equal(21, helper.decimalPlaces(verySmallNumber));
+      assert.equal(0, helper.decimalPlaces(veryLargeNumber));
     });
   });
 });
