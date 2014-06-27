@@ -9,6 +9,7 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * Properly handles incoming payments after recovering from downtime.
 * Notifies external applications via webhooks when an invoice is paid or rendered invalid.
 * No lost notifications: monitors for success/failure of webhooks with a retry queue.
+* Responsive web design allows for a better user experience across multiple devices.
 
 ![Baron Screenshot](http://i.imgur.com/vjagTVl.gif)
 
@@ -16,7 +17,7 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
 * [bitcoin](https://bitcoin.org/en/download)
-* [curl](http://curl.haxx.se/dlwiz/?type=bin)
+* [curl](http://curl.haxx.se/dlwiz/?type=bin)image
 * [foreman](https://github.com/ddollar/foreman) (optional)
 
 ## Installation and Running
@@ -108,7 +109,7 @@ $ foreman start -f Procfile-dev
 ## Additional Information
 
 ### Invoices
-![Invoice Screenshot](http://i.imgur.com/9tmBLZL.png)
+![Invoice Screenshot](http://i.imgur.com/IJ5KRKk.png)
 Invoices allow a person to receive payment for goods or services in BTC. The invoice can be created in USD for a fixed price invoice or in BTC. USD invoices are converted to BTC at time of payment using the current exchange rate for BTC. 
 
 After an invoice is created, it can be viewed by going to the /invoices/:invoiceId route. For example:
@@ -173,7 +174,7 @@ http://localhost:8080/invoices
 ```
 
 ### Payments
-![Payment Screenshot](http://i.imgur.com/ipEhRmg.png)
+![Payment Screenshot](http://i.imgur.com/JFsHNGI.png)
 Payments are created when the 'Pay Now' button on an invoice is clicked. User's are redirected to a view that displays the payment information such as amount due, address and QR Code for fulfillment of the invoice.
 
 When a user's payment reaches the invoice's minimum confirmations, the payment is considered to be in the 'paid' status. Baron also handles other payment statuses:
@@ -193,15 +194,13 @@ http://localhost:8080/pay/8c945af08f257c1417f4c21992586d33
 ```
 
 ### Advanced Payment Handling
-Baron is able to handle when a bitcoin transaction is reorged, double spent, or mutated. For example:
-![Invalid Payment Screenshot](http://i.imgur.com/YzszBcQ.png)
+Baron is able to handle when a bitcoin transaction is reorged, double spent, or mutated. Admins will be emailed if Baron detects an invalid transaction. This is an example of an invoice with an invalid transaction:
+![Invalid Payment Screenshot](http://i.imgur.com/4QjD6Bl.png)
 
 Baron is also able to handle partial payments. When a payment only partially fulfills an invoice the user can click the 'Pay Now' button again, this will create a new payment with the remaining balance. If the user has script enabled the payment page will automatically refresh with an updated remaining balance and payment address. Alternatively user's can also send multiple payments to the same address. 
 
 This is an example of an invoice that was paid in full by two separate payments:
-![Partial Payment Screenshot](http://i.imgur.com/sKAsBFu.png)
-
-When a double-spend is detected the admin is sent an e-mail notification.
+![Partial Payment Screenshot](http://i.imgur.com/Zt88hnh.png)
 
 ## Webhooks
 Baron is capable of doing a ***POST*** to a url when a payment event occurs. A payment event is when a payment goes from one status to another. If a payment was to go from `unpaid` to `paid` status this would trigger the webhook stored in `newInvoice.webhooks.paid`. Here is a full list of supported webhooks:

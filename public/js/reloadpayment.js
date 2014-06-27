@@ -124,7 +124,7 @@ var reloadPayment = function (queryUrl, expiration) {
     }
 
     // Update Expiration
-    if (expiration && newExpiration !== expiration) {
+    if (expirationTextSpans && expirationTextSpans.length > 0 && expiration && newExpiration !== expiration) {
       expiration = newExpiration;
       expirationTextSpans.item(0).innerText = 'Payment rate will refresh in ' +
         getExpirationCountDown(expiration) + '.';
