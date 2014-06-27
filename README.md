@@ -29,47 +29,47 @@ $ npm install
 ```
 
 ### Baron Configuration
-Configurations can be changed in the config.js file in the root of Baron.
-```js
-var config = {
-  couchdb: {
-    url: process.env.DB_URL || 'http://localhost:5984',
-    name: process.env.DB_NAME || 'baron'
-  },
-  bitcoind:  {
-    host: process.env.BITCOIND_HOST || 'localhost',
-    port: process.env.BITCOIND_PORT || 18332,
-    user: process.env.BITCOIND_USER || 'username',
-    pass: process.env.BITCOIND_PASS || 'password'
-  },
-  port: process.env.PORT || 8080,
-  baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
-  chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
-  updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
-  webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
-  spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
-  trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
-  minimumBTC: process.env.MIN_BTC || 0.00001,
-  minimumUSD: process.env.MIN_USD || 0.01
+Configurations can be changed by setting the environment variables listed in the tables below. One way of setting environment variables is using [foreman](https://github.com/ddollar/foreman) and an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
 
-};
-```
+#### CouchDB Configs
+| Property | Description                                        | Default Value    |
+|----------|----------------------------------------------------|------------------|
+|`DB_URL`  | CouchDB's connection url (do not specify protocol) | localhost:5984   |
+|`DB_NAME` | The name of Baron's database                       | baron            |
+|`DB_SSL`  | Set to true if couchdb is configured to use SSL    | false            |
+|`DB_USER` | If configured, the database admin username         | null             |
+|`DB_PASS` | If configured, the database admin's password       | null             |
 
-* `couchdb` - Database connection configs
-* `bitcoind` - Bitcoin client connetion configs
-* `port` - The port that Baron should run on
-* `baronAPIKey` - A secret key that is used to validate invoice creation <sup>[1]</sup>
-* `chainExplorerUrl` - A link to the tx route of a chain explorer
-* `updateWatchListInterval` - How often the watched payments job should run in ms
-* `webhooksJobInterval` - How often the webhooks job should run in ms
-* `spotRateValidForMinutes` - How long before exchange rate refreshes for payment
-* `trackPaymentUntilConf` - How long to watch payments for before no longer updating
-* `minimumBTC` - lowest price in BTC allowed in an invoice
-* `minimumUSD` - lowest price in USD allowed in an invoice
+#### Bitcoin Configs
+| Property      | Description                                   | Default Value    |
+|---------------|-----------------------------------------------|------------------|
+|`BITCOIND_HOST`| Bitcoin's connection url                      | localhost        |
+|`BITCOIND_PORT`| Bitcoin's connection port                     | 18332            |
+|`BITCOIND_USER`| RPC username for bitcoin (set in bitcoin.conf)| username         |
+|`BITCOIND_PASS`| RPC password for bitcoin (set in bitcoin.conf)| password         |
+
+#### Baron Configs
+| Property                    | Description                                     | Default Value                                 |
+|-----------------------------|-------------------------------------------------|-----------------------------------------------|
+|`ADMIN_EMAILS`               | Comma separated list of Baron admin emails      | 'admin_one@example.com, admin_two@example.com'|
+|`APP_TITLE`                  | Title to be displayed in Baron's html views     | Baron                                         |
+|`BARON_API_KEY`<sup>[1]</sup>| Secret api key, used to post to Baron           | youshouldreallychangethis                     |
+|`CHAIN_EXPLORER_URL`         | A link to the tx rote of a chain explorer       | http://tbtc.blockr.io/tx/info                 |
+|`MIN_BTC`                    | Minimum BTC amount for invoice line items       | 0.00001                                       |
+|`MIN_USD`                    | Minimum USD amount for invoice line items       | 0.01                                          |
+|`PORT`                       | The port Baron should run on                    | 8080                                          |
+|`PUB_HOST_NAME`              | Should match the public url to access baron     | http://localhost                              |
+|`SENDER_EMAIL`               | Outgoing emails from Baron use this address     | info@example.com                              |
+|`SPOTRATE_VALID_FOR_MINUTES` | How long between updating exchange rate for USD | 5                                             |
+|`SMTP_HOST`                  | SMTP Host for sending outgoing emails           | undefined                                     |
+|`SMTP_USER`                  | SMTP login username                             | undefined                                     |
+|`SMTP_PASS`                  | SMTP login password                             | undefined                                     |
+|`TRACK_PAYMENT_UNTIL_CONF`   | How long to actively watch payments for         | 100                                           |
+|`UPDATE_WATCH_LIST_INTERVAL` | Interval watched payments job runs at in ms     | 15000                                         |
+|`WEBHOOKS_JOB_INTERVAL`      | Interval webbhooks job runs at in ms            | 15000                                         |
 
 **NOTES**
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
-* Properties in config.js can be overriden with environment variables.  Common ways to do this is with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file and [foreman](https://github.com/ddollar/foreman) or an [EnvironmentFile with systemd](http://fedoraproject.org/wiki/Packaging%3aSystemd#EnvironmentFiles_and_support_for_.2Fetc.2Fsysconfig_files).
 
 ### Example Bitcoin Configuration
 Modify bitcoin's [bitcoin.conf](https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File):
@@ -91,7 +91,7 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 
 ```
 
-**NOTES:**
+**NOTES**
 * Baron is entirely reliant upon walletnotify to learn of transactions.  Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
 
 ### Running Baron

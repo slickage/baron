@@ -27,21 +27,22 @@ var config = {
     user: process.env.BITCOIND_USER || 'username',
     pass: process.env.BITCOIND_PASS || 'password'
   },
-  port: process.env.PORT || 8080,
-  publicHostName: 'http://localhost',
+  adminEmails: process.env.ADMIN_EMAILS || 'admin_one@example.com, admin_two@example.com',
   appTitle: process.env.APP_TITLE || 'Baron',
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || guessExplorerURL(process.env.BITCOIND_PORT || 18332),
-  updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
-  // Disabled for now, might come back later
-  //lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
-  webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
+  minimumBTC: process.env.MIN_BTC || 0.00001,
+  minimumUSD: process.env.MIN_USD || 0.01,
+  port: process.env.PORT || 8080,
+  publicHostName: process.env.PUB_HOST_NAME ||  'http://localhost',
+  senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
-  senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
-  adminEmails: process.env.ADMIN_EMAILS || 'admin_one@example.com, admin_two@example.com',
-  minimumBTC: process.env.MIN_BTC || 0.00001,
-  minimumUSD: process.env.MIN_USD || 0.01
+  updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
+  webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000
+
+  // Disabled for now, might come back later
+  //lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
 };
 
 module.exports = config;
