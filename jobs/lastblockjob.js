@@ -131,12 +131,12 @@ var lastBlockJob = function(callback) {
           callback();
         }
     });
-	}
-	else {
+  }
+  else {
     if (callback) {
       callback();
     }
-	}
+  }
 };
 
 var runLastBlockJob = function () {
