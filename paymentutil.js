@@ -102,7 +102,7 @@ var createNewPayment = function(invoiceId, expectedAmount, cb) {
     if (!err && invoice && paymentsArr.length > 0) {
       var activePayment = invoiceHelper.getActivePayment(paymentsArr);
       if(!activePayment.watched && Number(activePayment.amount_paid) === 0) {
-        resetPayment(activePayment, expectedAmount, cb);
+        return resetPayment(activePayment, expectedAmount, cb);
       }
     }
     bitcoinUtil.getNewAddress(function(err, info) {

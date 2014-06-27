@@ -8,7 +8,7 @@ module.exports = function(api) {
     var invoiceId = req.params.invoiceId;
     payRouteUtils.createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
-        console.log(err.which + " Error: " + JSON.stringify(err));
+        console.log(err.which + ' Error: ' + JSON.stringify(err));
         res.json(500, err);
       }
       else {

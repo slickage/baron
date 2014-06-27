@@ -72,10 +72,12 @@ var createPaymentDataForView = function(invoiceId, callback) {
           err.which = 'createPaymentDataForView findOrCreatePayment';
           cb(err, null);
         }
-        activePayment = result.payment;
-        invoice = result.invoice;
-        remainingBalance = result.remainingBalance;
-        cb();
+        else {
+          activePayment = result.payment;
+          invoice = result.invoice;
+          remainingBalance = result.remainingBalance;
+          cb();
+        }
       });
     },
     function(cb) {
@@ -84,10 +86,12 @@ var createPaymentDataForView = function(invoiceId, callback) {
         bitcoinUtil.getBlock(activePayment.blockhash, function(err, block) {
           if (err) {
             err.which = 'createPaymentDataForView getBlock';
-            return cb(err, null);
+            cb(err, null);
           }
-          confirmations = block.result.confirmations;
-          cb();
+          else {
+            confirmations = block.result.confirmations;
+            cb();
+          }
         });
       }
       else {
@@ -133,7 +137,8 @@ var createPaymentDataForView = function(invoiceId, callback) {
       };
       cb(null, paymentData);
     }
-  ],function (err, result) {
+  ],
+  function (err, result) {
     if (err) {
       return callback(err, null);
     }
