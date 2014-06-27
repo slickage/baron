@@ -16,9 +16,8 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
 * [bitcoin](https://bitcoin.org/en/download)
-* [foreman](https://github.com/ddollar/foreman)
-* [nodemon](https://github.com/remy/nodemon)
 * [curl](http://curl.haxx.se/dlwiz/?type=bin)
+* [foreman](https://github.com/ddollar/foreman) (optional)
 
 ## Installation and Running
 Clone the repository:
