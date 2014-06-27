@@ -18,7 +18,7 @@ var getCouchUrl = function() {
   if (config.couchdb.user && config.couchdb.pass) {
     credentials = encodeURIComponent(config.couchdb.user) + ':' + encodeURIComponent(config.couchdb.pass) + '@';
   }
-  var couchUrl = protocol + credentials + config.couchdb.url;
+  var couchUrl = protocol + credentials + config.couchdb.host;
   return couchUrl;
 };
 
@@ -31,7 +31,7 @@ var instantiateDb = function (cb) {
         return process.exit(1);
       }
       else if (err.code && err.code === 'ECONNREFUSED') {
-        console.log('Error: CouchDB connection refused at ' + config.couchdb.url);
+        console.log('Error: CouchDB connection refused at ' + config.couchdb.host);
         return process.exit(1);
       }
       else if (err.reason && err.reason === 'no_db_file') {

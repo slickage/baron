@@ -15,7 +15,7 @@ function guessExplorerURL(port) {
 
 var config = {
   couchdb: {
-    url: process.env.DB_URL || 'localhost:5984',
+    host: process.env.DB_HOST || 'localhost:5984',
     name: process.env.DB_NAME || 'baron',
     ssl: process.env.DB_SSL || false,
     user: process.env.DB_USER || null,

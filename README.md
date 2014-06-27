@@ -31,36 +31,37 @@ $ npm install
 ### Baron Configuration
 Configurations can be changed by setting the environment variables listed in the tables below. One way of setting environment variables is using [foreman](https://github.com/ddollar/foreman) and an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
 
-#### CouchDB Configs
-* `DB_URL` - CouchDB's connection url (do not specify protocol) 
+#### CouchDB Options
+* `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
 * `DB_NAME` - The name of Baron's database
 * `DB_SSL` - Set to true if couchdb is configured to use SSL
 * `DB_USER` - If configured, the database admin username
 * `DB_PASS` - If configured, the database admin's password
 
-#### Bitcoin Configs
-* `BITCOIND_HOST` - Bitcoin's connection url
-* `BITCOIND_PORT` - Bitcoin's connection port
-* `BITCOIND_USER` - RPC username for bitcoin (set in bitcoin.conf)
-* `BITCOIND_PASS` - RPC password for bitcoin (set in bitcoin.conf)
+#### Bitcoind Options
+* `BITCOIND_HOST` - Bitcoind hostname
+* `BITCOIND_PORT` - Bitcoind RPC port
+* `BITCOIND_USER` - RPC username (set in bitcoin.conf)
+* `BITCOIND_PASS` - RPC password (set in bitcoin.conf)
 
-#### Baron Configs
-* `ADMIN_EMAILS` - Comma separated list of Baron admin emails
-* `APP_TITLE`- Title to be displayed in Baron's html views
-* `BARON_API_KEY` - Secret api key, used to post to Baron <sup>[1]</sup>
-* `CHAIN_EXPLORER_URL` - A link to the tx rote of a chain explorer
-* `MIN_BTC` - Minimum BTC amount for invoice line items
-* `MIN_USD` - Minimum USD amount for invoice line items
-* `PORT` - The port Baron should run on
-* `PUBLIC_URL` - Should match Baron's public URL (protocol, hostname and port if needed)
-* `SENDER_EMAIL` - Outgoing emails from Baron use this address
-* `SPOTRATE_VALID_FOR_MINUTES` - How long between updating exchange rate for USD
-* `SMTP_HOST` - SMTP Host for sending outgoing emails
+#### Baron Options (mandatory)
+* `BARON_API_KEY` - Secret api key, used to post invoices to Baron <sup>[1]</sup>
+* `PORT` - Baron listens on this TCP port
+* `PUBLIC_URL` - Should match Baron's public URL (protocol, hostname and optional port)
+* `ADMIN_EMAILS` - Comma separated list of Baron admin email addresses
+* `SENDER_EMAIL` - Outgoing email from Baron use this address
+* `SMTP_HOST` - SMTP Host for sending outgoing email
 * `SMTP_USER` - SMTP login username
 * `SMTP_PASS` - SMTP login password
-* `TRACK_PAYMENT_UNTIL_CONF` - How long to actively watch payments for
-* `UPDATE_WATCH_LIST_INTERVAL` - Interval watched payments job runs at in ms
-* `WEBHOOKS_JOB_INTERVAL` - Interval webbhooks job runs at in ms
+* `SMTP_PORT` - SMTP port (default 465)
+
+#### Baron Options (optional)
+* `APP_TITLE`- Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
+* `CHAIN_EXPLORER_URL` - Address prior to /txid in explorer (defaults to blockr.io)
+* `MIN_BTC` - Minimum BTC amount for invoice line items (default 0.00001 BTC)
+* `MIN_USD` - Minimum USD amount for invoice line items (default 0.01 USD)
+* `SPOTRATE_VALID_FOR_MINUTES` - BTC/USD exchange rate frozen for this duration (default 5 minutes)
+* `TRACK_PAYMENT_UNTIL_CONF` - Stop watching payments for double-spend (default 100 confirmations)
 
 **NOTES**
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
@@ -189,24 +190,6 @@ Payments can be viewed by going to the /pay/:invoiceId route. For example:
 http://localhost:8080/pay/8c945af08f257c1417f4c21992586d33
 ```
 
-### Payment Data Model
-Payments have the following properties:
-* `invoice_id` - Invoice that this payment is associated with
-* `address` - Address to send BTC to
-* `amount_paid` - Stores the amount that was paid (Always stored in BTC)
-* `expected_amount` - Stores the amount that the payment expects to receive
-* `blockhash` - Stores the blockhash that the transaction was confirmed into
-* `spot_rate` - Stores the exchange rate at the time of payment
-* `status` - The status of this payment (paid, unpaid, partial, overpaid, pending, invalid)
-* `tx_id` - Stores the transaction ID from bitcoind
-* `watched` - Indicates if the payment is actively being watched by Baron
-* `created` - Time the payment was created
-* `paid_timestamp` - Time that payment became 'paid' status
-* `reorg_history` - When applicable, contains the history of block hashes that the transaction was reorged out of
-* `double_spent_history` - When applicable, contains the history of transaction ID's that double spent this payment
-
-**NOTE:** This is just for reference, all payments are created and handled internally by Baron.
-
 ### Advanced Payment Handling
 Baron is able to handle when a bitcoin transaction is reorged, double spent, or mutated. For example:
 ![Invalid Payment Screenshot](http://i.imgur.com/YzszBcQ.png)
@@ -215,6 +198,8 @@ Baron is also able to handle partial payments. When a payment only partially ful
 
 This is an example of an invoice that was paid in full by two separate payments:
 ![Partial Payment Screenshot](http://i.imgur.com/sKAsBFu.png)
+
+When a double-spend is detected the admin is sent an e-mail notification.
 
 ## Webhooks
 Baron is capable of doing a ***POST*** to a url when a payment event occurs. A payment event is when a payment goes from one status to anther. If a payment was to go from `unpaid` to `paid` status this would trigger the webhook stored in `newInvoice.webhooks.paid`. Here is a full list of supported webhooks:

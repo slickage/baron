@@ -61,7 +61,7 @@ async.waterfall([
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
       app.listen(config.port);
-      console.log('CouchDB server:    http://' + config.couchdb.url + '/' + config.couchdb.name);
+      console.log('CouchDB server:    http://' + config.couchdb.host + '/' + config.couchdb.name);
       console.log('Bitcoind RPC:      http://' + config.bitcoind.host + ':' + config.bitcoind.port);
       console.log('Baron listening:   http://0.0.0.0:' + config.port);
     }
