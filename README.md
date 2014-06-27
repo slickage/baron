@@ -32,44 +32,45 @@ $ npm install
 Configurations can be changed by setting the environment variables listed in the tables below. One way of setting environment variables is using [foreman](https://github.com/ddollar/foreman) and an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
 
 #### CouchDB Configs
-| Property | Description                                        | Default Value    |
-|----------|----------------------------------------------------|------------------|
-|`DB_URL`  | CouchDB's connection url (do not specify protocol) | localhost:5984   |
-|`DB_NAME` | The name of Baron's database                       | baron            |
-|`DB_SSL`  | Set to true if couchdb is configured to use SSL    | false            |
-|`DB_USER` | If configured, the database admin username         | null             |
-|`DB_PASS` | If configured, the database admin's password       | null             |
+| Property | Description                                        | 
+|----------|----------------------------------------------------|
+|`DB_URL`  | CouchDB's connection url (do not specify protocol) |
+|`DB_NAME` | The name of Baron's database                       |
+|`DB_SSL`  | Set to true if couchdb is configured to use SSL    |
+|`DB_USER` | If configured, the database admin username         |
+|`DB_PASS` | If configured, the database admin's password       |
 
 #### Bitcoin Configs
-| Property      | Description                                   | Default Value    |
-|---------------|-----------------------------------------------|------------------|
-|`BITCOIND_HOST`| Bitcoin's connection url                      | localhost        |
-|`BITCOIND_PORT`| Bitcoin's connection port                     | 18332            |
-|`BITCOIND_USER`| RPC username for bitcoin (set in bitcoin.conf)| username         |
-|`BITCOIND_PASS`| RPC password for bitcoin (set in bitcoin.conf)| password         |
+| Property      | Description                                   | 
+|---------------|-----------------------------------------------|
+|`BITCOIND_HOST`| Bitcoin's connection url                      |
+|`BITCOIND_PORT`| Bitcoin's connection port                     |
+|`BITCOIND_USER`| RPC username for bitcoin (set in bitcoin.conf)|
+|`BITCOIND_PASS`| RPC password for bitcoin (set in bitcoin.conf)|
 
 #### Baron Configs
-| Property                    | Description                                     | Default Value                                 |
-|-----------------------------|-------------------------------------------------|-----------------------------------------------|
-|`ADMIN_EMAILS`               | Comma separated list of Baron admin emails      | 'admin_one@example.com, admin_two@example.com'|
-|`APP_TITLE`                  | Title to be displayed in Baron's html views     | Baron                                         |
-|`BARON_API_KEY`<sup>[1]</sup>| Secret api key, used to post to Baron           | youshouldreallychangethis                     |
-|`CHAIN_EXPLORER_URL`         | A link to the tx rote of a chain explorer       | http://tbtc.blockr.io/tx/info                 |
-|`MIN_BTC`                    | Minimum BTC amount for invoice line items       | 0.00001                                       |
-|`MIN_USD`                    | Minimum USD amount for invoice line items       | 0.01                                          |
-|`PORT`                       | The port Baron should run on                    | 8080                                          |
-|`PUB_HOST_NAME`              | Should match the public url to access baron     | http://localhost                              |
-|`SENDER_EMAIL`               | Outgoing emails from Baron use this address     | info@example.com                              |
-|`SPOTRATE_VALID_FOR_MINUTES` | How long between updating exchange rate for USD | 5                                             |
-|`SMTP_HOST`                  | SMTP Host for sending outgoing emails           | undefined                                     |
-|`SMTP_USER`                  | SMTP login username                             | undefined                                     |
-|`SMTP_PASS`                  | SMTP login password                             | undefined                                     |
-|`TRACK_PAYMENT_UNTIL_CONF`   | How long to actively watch payments for         | 100                                           |
-|`UPDATE_WATCH_LIST_INTERVAL` | Interval watched payments job runs at in ms     | 15000                                         |
-|`WEBHOOKS_JOB_INTERVAL`      | Interval webbhooks job runs at in ms            | 15000                                         |
+| Property                    | Description                                     |
+|-----------------------------|-------------------------------------------------|
+|`ADMIN_EMAILS`               | Comma separated list of Baron admin emails      |
+|`APP_TITLE`                  | Title to be displayed in Baron's html views     |
+|`BARON_API_KEY`<sup>[1]</sup>| Secret api key, used to post to Baron           |
+|`CHAIN_EXPLORER_URL`         | A link to the tx rote of a chain explorer       |
+|`MIN_BTC`                    | Minimum BTC amount for invoice line items       |
+|`MIN_USD`                    | Minimum USD amount for invoice line items       |
+|`PORT`                       | The port Baron should run on                    |
+|`PUB_HOST_NAME`              | Should match the public url to access baron     |
+|`SENDER_EMAIL`               | Outgoing emails from Baron use this address     |
+|`SPOTRATE_VALID_FOR_MINUTES` | How long between updating exchange rate for USD |
+|`SMTP_HOST`                  | SMTP Host for sending outgoing emails           |
+|`SMTP_USER`                  | SMTP login username                             |
+|`SMTP_PASS`                  | SMTP login password                             |
+|`TRACK_PAYMENT_UNTIL_CONF`   | How long to actively watch payments for         |
+|`UPDATE_WATCH_LIST_INTERVAL` | Interval watched payments job runs at in ms     |
+|`WEBHOOKS_JOB_INTERVAL`      | Interval webbhooks job runs at in ms            |
 
 **NOTES**
 * <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
+* See [config.js](https://github.com/slickage/baron/blob/master/config.js) for default configuration values.
 
 ### Example Bitcoin Configuration
 Modify bitcoin's [bitcoin.conf](https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File):
