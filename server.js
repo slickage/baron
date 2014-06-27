@@ -36,7 +36,7 @@ async.waterfall([
   }
   ], function (err) {
     if (err) {
-      console.log('Baron Startup Error: ' + JSON.stringify(err));
+      console.log('Baron Init: Error: ' + JSON.stringify(err));
       process.exit(1);
     }
     else {
