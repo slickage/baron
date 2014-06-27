@@ -10,7 +10,7 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * Notifies external applications via webhooks when an invoice is paid or rendered invalid.
 * No lost notifications: monitors for success/failure of webhooks with a retry queue.
 
-![Baron Invoice Screenshot](http://i.imgur.com/pGQNy1C.png)
+![Baron Screenshot](http://i.imgur.com/vjagTVl.gif)
 
 ## External Dependencies
 * [node](http://nodejs.org)
