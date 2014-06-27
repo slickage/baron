@@ -3,7 +3,6 @@
 
 function guessExplorerURL(port) {
   port = parseInt(port);
-  console.log(port);
   switch (port) {
     case (8332):
       return 'http://blockr.io/tx/info';
