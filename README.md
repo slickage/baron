@@ -10,12 +10,15 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * Notifies external applications via webhooks when an invoice is paid or rendered invalid.
 * No lost notifications: monitors for success/failure of webhooks with a retry queue.
 
+![Baron Invoice Screenshot](http://i.imgur.com/pGQNy1C.png)
+
 ## External Dependencies
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
 * [bitcoin](https://bitcoin.org/en/download)
 * [foreman](https://github.com/ddollar/foreman)
 * [nodemon](https://github.com/remy/nodemon)
+* [curl](http://curl.haxx.se/dlwiz/?type=bin)
 
 ## Installation and Running
 Clone the repository:
@@ -56,7 +59,7 @@ Configurations can be changed by setting the environment variables listed in the
 * `SMTP_PORT` - SMTP port (default 465)
 
 #### Baron Options (optional)
-* `APP_TITLE`- Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
+* `APP_TITLE` - Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
 * `CHAIN_EXPLORER_URL` - Address prior to /txid in explorer (defaults to blockr.io)
 * `MIN_BTC` - Minimum BTC amount for invoice line items (default 0.00001 BTC)
 * `MIN_USD` - Minimum USD amount for invoice line items (default 0.01 USD)
@@ -64,7 +67,7 @@ Configurations can be changed by setting the environment variables listed in the
 * `TRACK_PAYMENT_UNTIL_CONF` - Stop watching payments for double-spend (default 100 confirmations)
 
 **NOTES**
-* <sup>[1]</sup> The `baronAPIKey` can be generated using `node generatetoken.js stringToHash`. 
+* <sup>[1]</sup> The `BARON_API_KEY` can be generated using `node generatetoken.js stringToHash`. 
 * Most properties have sane default values, see [config.js](https://github.com/slickage/baron/blob/master/config.js) for defaults.
 
 ### Example Bitcoin Configuration
@@ -202,7 +205,7 @@ This is an example of an invoice that was paid in full by two separate payments:
 When a double-spend is detected the admin is sent an e-mail notification.
 
 ## Webhooks
-Baron is capable of doing a ***POST*** to a url when a payment event occurs. A payment event is when a payment goes from one status to anther. If a payment was to go from `unpaid` to `paid` status this would trigger the webhook stored in `newInvoice.webhooks.paid`. Here is a full list of supported webhooks:
+Baron is capable of doing a ***POST*** to a url when a payment event occurs. A payment event is when a payment goes from one status to another. If a payment was to go from `unpaid` to `paid` status this would trigger the webhook stored in `newInvoice.webhooks.paid`. Here is a full list of supported webhooks:
 
 ```js
 var newInvoice = {
