@@ -52,7 +52,7 @@ Configurations can be changed by setting the environment variables listed in the
 * `MIN_BTC` - Minimum BTC amount for invoice line items
 * `MIN_USD` - Minimum USD amount for invoice line items
 * `PORT` - The port Baron should run on
-* `PUB_HOST_NAME` - Should match the public url to access baron
+* `PUBLIC_URL` - Should match Baron's public URL (protocol, hostname and port if needed)
 * `SENDER_EMAIL` - Outgoing emails from Baron use this address
 * `SPOTRATE_VALID_FOR_MINUTES` - How long between updating exchange rate for USD
 * `SMTP_HOST` - SMTP Host for sending outgoing emails

@@ -123,7 +123,7 @@ function csvToArray(csv) {
 
 var getInvalidEmail = function(txid, invoiceId) {
   var port = (config.port === 443 || config.port === 80) ? '' : ':' + config.port;
-  var invoiceUrl = config.publicHostName + port + '/invoices/' + invoiceId;
+  var invoiceUrl = config.publicURL + '/invoices/' + invoiceId;
   var subject = '[' + config.appTitle + '] Invalid Tx in Invoice ' + invoiceId;
   var body = 'Transaction ' + txid + ' has been double-spent rendering it invalid, please ' +
     'check <a href="' + invoiceUrl + '" target="_blank">Invoice ' + invoiceId + '</a>.';

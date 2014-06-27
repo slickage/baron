@@ -5,11 +5,11 @@ function guessExplorerURL(port) {
   port = parseInt(port);
   switch (port) {
     case (8332):
-      return 'http://blockr.io/tx/info';
+      return 'https://blockr.io/tx/info';
     case (18332):
-      return 'http://tbtc.blockr.io/tx/info';
+      return 'https://tbtc.blockr.io/tx/info';
     default:
-      return 'http://tbtc.blockr.io/tx/info'; // default to testnet
+      return 'https://tbtc.blockr.io/tx/info'; // default to testnet
   }
 }
 
@@ -34,7 +34,7 @@ var config = {
   minimumBTC: process.env.MIN_BTC || 0.00001,
   minimumUSD: process.env.MIN_USD || 0.01,
   port: process.env.PORT || 8080,
-  publicHostName: process.env.PUB_HOST_NAME ||  'http://localhost',
+  publicURL: process.env.PUBLIC_URL ||  'http://localhost:8080',
   senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
