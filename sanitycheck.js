@@ -41,7 +41,7 @@ var proceedWhenBitcoindIsReady = function(cb) {
         }
       });
     },
-    function (err) {
+    function () {
       console.log('Baron Init: bitcoind is ready.  ');
       cb();
     }
