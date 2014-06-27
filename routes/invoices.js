@@ -40,7 +40,7 @@ var invoices = function(app) {
           res.end();
         }
         else {
-          console.log('Invoice ' + invoiceData.id + ': submitted by ' + req.ip);
+          console.log(req.ip + ' created Invoice ' + invoiceData.id);
           res.json(invoiceData);
         }
       });
