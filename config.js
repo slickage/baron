@@ -1,6 +1,19 @@
 /* jshint node: true */
 'use strict';
 
+function guessExplorerURL(port) {
+  port = parseInt(port);
+  console.log(port);
+  switch (port) {
+    case (8332):
+      return 'http://blockr.io/tx/info';
+    case (18332):
+      return 'http://tbtc.blockr.io/tx/info';
+    default:
+      return 'http://tbtc.blockr.io/tx/info'; // default to testnet
+  }
+}
+
 var config = {
   couchdb: {
     url: process.env.DB_URL || 'localhost:5984',
@@ -19,7 +32,7 @@ var config = {
   publicHostName: 'http://localhost',
   appTitle: process.env.APP_TITLE || 'Baron',
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
-  chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || 'http://tbtc.blockr.io/tx/info',
+  chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || guessExplorerURL(process.env.BITCOIND_PORT || 18332),
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
   // Disabled for now, might come back later
   //lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
