@@ -4,7 +4,6 @@
 var config = require(__dirname + '/../config');
 var paymentUtil = require(__dirname + '/../paymentutil');
 var bitcoinUtil = require(__dirname + '/../bitcoinutil');
-var blockJob = require(__dirname + '/../jobs/lastblockjob');
 var helper = require(__dirname + '/../helper');
 var _ = require('lodash');
 
