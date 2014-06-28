@@ -54,7 +54,18 @@ async.waterfall([
         res.set('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT');
         next();
       });
+      // Position Barons routes above 404 and 500
       require(__dirname + '/routes')(app);
+      // Catches all routes that werent initialized in the /routes directory.
+      app.use(function(req, res) {
+        res.status(404);
+        res.render('error', { appTitle: config.appTitle, errorMsg: '404, these are not the invoices you are looking for.' });
+      });
+      // Catch all for any other errors
+      app.use(function(req, res) {
+         res.render('error', { appTitle: config.appTitle, errorMsg: (err.status || '500') });
+      });
+
       if (config.enableFiat) {
         bitstamped.init(db.getCouchUrl());
       }
