@@ -79,7 +79,7 @@ function pickPastBlockHash(cb) {
 
 // Update all transactions from bitcoind that happened since blockHash
 function updatePaymentsSinceBlock(blockHash, cb) {
-  bitcoinUtil.listSinceBlock(blockHash, 1, function (err, info) {
+  bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
     if (err) {
       return cb(err);
     }

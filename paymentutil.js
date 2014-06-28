@@ -129,7 +129,11 @@ var updatePaymentWithTransaction = function(payment, transaction, cb) {
     var origStatus = payment.status;
     var newConfirmations = transaction.confirmations;
     var curStatus = helper.getPaymentStatus(payment, newConfirmations, invoice);
-    if(validate.paymentChanged(payment, transaction, curStatus)) {
+    if(!validate.paymentChanged(payment, transaction, curStatus)) {
+      // Nothing changed
+      return cb();
+    }
+    else {
       //console.log('DEBUG Payment changed ' + transaction.txid);
       // Add Reorg History
       if (payment.blockhash && transaction.blockhash !== payment.blockhash) {
@@ -279,6 +283,7 @@ var updatePayment = function(transaction, cb) {
       }
     });
     if (payment) {
+      // payment with matching txid and address
       updatePaymentWithTransaction(payment, transaction, cb);
     }
     else {
@@ -290,7 +295,7 @@ var updatePayment = function(transaction, cb) {
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
           if (!payment.txid) {
-            // Initial update from walletnotify
+            // update payment request with of matching address (but not yet txid)
             updatePaymentWithTransaction(payment, transaction, cb);
           }
           else {
@@ -298,7 +303,8 @@ var updatePayment = function(transaction, cb) {
           }
         });
         if (invoiceId) {
-          // Create new payment for same invoice as pre-existing payment
+          // All payment requests of this address already have a txid
+          // Create new payment request to contain this new txid
           createNewPaymentWithTransaction(invoiceId, transaction, cb);
         }
       });
