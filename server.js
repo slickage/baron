@@ -59,11 +59,20 @@ async.waterfall([
       // Catches all routes that werent initialized in the /routes directory.
       app.use(function(req, res) {
         res.status(404);
-        res.render('error', { appTitle: config.appTitle, errorMsg: '404, these are not the invoices you are looking for.' });
+        if (req.accepts('html')) {
+          res.render('error', { appTitle: config.appTitle, errorMsg: '404, these are not the invoices you are looking for.' });
+        }
+        else if (req.accepts('json')) {
+          res.send({ error: 'Not found' });
+        }
+        else {
+          res.type('text').send('Not found');
+        }
       });
       // Catch all for any other errors
       app.use(function(req, res) {
-         res.render('error', { appTitle: config.appTitle, errorMsg: (err.status || '500') });
+        res.status(err.status || 500);
+        res.render('error', { appTitle: config.appTitle, errorMsg: err.message || 'Internal Server Error' });
       });
 
       if (config.enableFiat) {
