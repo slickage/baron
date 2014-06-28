@@ -29,6 +29,9 @@ var invoice = function(invoice, cb) {
   if (!(invoice.currency === 'USD' || invoice.currency === 'BTC')) {
     errorMessages.push('currency must be BTC or USD');
   }
+  if (!config.enableFiat && invoice.currency === 'USD') {
+    errorMessages.push('currency USD requires ENABLE_FIAT in Baron config');
+  }
   // Minimum Price
   var minimumPrice;
   switch (invoice.currency) {

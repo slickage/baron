@@ -55,7 +55,9 @@ async.waterfall([
         next();
       });
       require(__dirname + '/routes')(app);
-      bitstamped.init(db.getCouchUrl());
+      if (config.enableFiat) {
+        bitstamped.init(db.getCouchUrl());
+      }
       // Disable lastBlockJob as a background job, using it only once during startup
       //blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
