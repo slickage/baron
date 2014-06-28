@@ -61,13 +61,15 @@ Configurations can be changed by setting the environment variables listed in the
 #### Baron Options (optional)
 * `APP_TITLE` - Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
 * `CHAIN_EXPLORER_URL` - Address prior to /txid in explorer (defaults to blockr.io)
+* `ENABLE_FIAT` - Set to `true` to enable fiat support <sup>[2]</sup>
 * `MIN_BTC` - Minimum BTC amount for invoice line items (default 0.00001 BTC)
 * `MIN_USD` - Minimum USD amount for invoice line items (default 0.01 USD)
 * `SPOTRATE_VALID_FOR_MINUTES` - BTC/USD exchange rate frozen for this duration (default 5 minutes)
 * `TRACK_PAYMENT_UNTIL_CONF` - Stop watching payments for double-spend (default 100 confirmations)
 
 **NOTES**
-* <sup>[1]</sup> The `BARON_API_KEY` can be generated using `node generatetoken.js stringToHash`. 
+* <sup>[1]</sup> The `BARON_API_KEY` can be generated using `node generatetoken.js stringToHash`.
+* <sup>[2]</sup> Support for USD invoices is experimental at this time. If payments for fiat invoices are made while Baron is down, it cannot retrieve an accurate exchange rate when starting back up. Baron will, however, grab the latest exchange rate it was aware of before going down.
 * Most properties have sane default values, see [config.js](https://github.com/slickage/baron/blob/master/config.js) for defaults.
 
 ### Example Bitcoin Configuration
