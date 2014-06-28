@@ -36,6 +36,10 @@ var invoices = function(app) {
       db.createInvoice(req.body, function(err, invoiceData) {
         if(err) {
           console.log(req.ip + ' createInvoice Error: ' + require('util').inspect(err.message));
+          if (invoice.api_key && typeof invoice.api_key === 'string') {
+            // Hide api_key from reply to reduce risk of leaks to users
+            invoice.api_key = invoice.api_key.replace(/./g, 'X');
+          }
           res.status(400).write(err.message + '\n' + JSON.stringify(invoice));
           res.end();
         }
