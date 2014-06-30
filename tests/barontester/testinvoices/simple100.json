@@ -1,0 +1,19 @@
+{
+  "api_key": "secretapikey",
+  "title": "BARONTESTER Simple Test Invoice 100 BTC",
+  "text": "Instructions for this invoice may be written here, which may include <a href='http://example.com' target='_blank'>HTML links</a>.",
+  "currency": "BTC",
+  "min_confirmations": 1,
+  "line_items": [
+      {
+          "description": "Line Item #1",
+          "quantity": 1,
+          "amount": 100
+      }
+  ],
+  "webhooks":{ 
+    "token": "token", 
+    "paid": {"url": "http://localhost:9242/paid"},
+    "invalid": {"url": "http://localhost:9242/invalid" }
+  }
+}

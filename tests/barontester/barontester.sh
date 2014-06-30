@@ -31,7 +31,6 @@ setupbitcoind() {
   cat <<EOF > bitcoin.conf
 rpcuser=user
 rpcpassword=password
-daemon=1
 discover=0
 server=1
 listen=1
@@ -57,7 +56,8 @@ btc() {
 
 startbtc() {
   set +e
-  btc $1
+  bitcoind -datadir=$BARONTMPDIR/$1 &
+  LASTPID=$!
   while true; do
     sleep 0.1
     btc $1 getinfo > /dev/null 2>&1
@@ -164,6 +164,22 @@ setuppartitions() {
   waitforbtc 3 getinfo connections 1
 }
 
+startbaron() {
+  cd $BARONDIR
+  echo "[STARTING BARON]"
+  export BITCOIND_USER=user
+  export BITCOIND_PASS=password
+  export BARON_API_KEY=secretapikey
+  export DB_NAME=baronregtest
+  export PORT=$BARONPORT
+  export BITCOIND_PORT=20013
+  export LAST_BLOCK_JOB_INTERVAL=4133
+  export UPDATE_WATCH_LIST_INTERVAL=5000
+  node server.js &
+  BARON_PID=$!
+  cd - > /dev/null
+}
+
 #### CLEAR BITCOIND AND NODE ####
 killall bitcoind 2> /dev/null
 killall node     2> /dev/null
@@ -197,10 +213,10 @@ btc 4 addnode localhost:20034 onetry
 # Generate blocks to obtain spendable outputs
 btc 1 setgenerate true
 waitforbtc 2 getinfo blocks 1
-btc 2 setgenerate true 109
-waitforbtc 1 getinfo blocks 110
-waitforbtc 3 getinfo blocks 110
-waitforbtc 4 getinfo blocks 110
+btc 2 setgenerate true 110
+waitforbtc 1 getinfo blocks 111
+waitforbtc 3 getinfo blocks 111
+waitforbtc 4 getinfo blocks 111
 TXID1=$(btc 2 listunspent | jq -r '.[1].txid')
 TXID2=$(btc 2 listunspent | jq -r '.[2].txid')
 TXID3=$(btc 2 listunspent | jq -r '.[3].txid')
@@ -212,18 +228,7 @@ TXID8=$(btc 2 listunspent | jq -r '.[8].txid')
 TXID9=$(btc 2 listunspent | jq -r '.[9].txid')
 
 # START BARON
-cd $BARONDIR
-echo "[STARTING BARON]"
-export BITCOIND_USER=user
-export BITCOIND_PASS=password
-export BARON_API_KEY=secretapikey
-export DB_NAME=baronregtest
-export PORT=$BARONPORT
-export BITCOIND_PORT=20013
-export LAST_BLOCK_JOB_INTERVAL=4133
-export UPDATE_WATCH_LIST_INTERVAL=5000
-node server.js &
-cd - > /dev/null
+startbaron
 
 # START POSTWATCHER
 echo "[STARTING POSTWATCHER]"
@@ -382,7 +387,25 @@ sleep 1
 echo "[END TEST #6]"
 }
 
-[ -z "$1" ] && TESTS="test1 test2 test3 test4 test5 test6"
+### Test #7: Two Payments to the Same Address (Race)
+test7() {
+printtitle "Test #7: Two payments to the Same Address (updatePayment race)"
+setuppartitions
+submitinvoice simple100.json
+openurl http://localhost:$BARONPORT/invoices/$INVOICEID
+PAYADDRESS=$(curl -s http://localhost:$BARONPORT/api/pay/$INVOICEID | jq -r '.address')
+spendfrom 4 $TXID8 $PAYADDRESS 50
+waitfortx 3 $TXIDSENT
+spendfrom 4 $TXID9 $PAYADDRESS 50
+waitfortx 3 $TXIDSENT
+btc 3 addnode localhost:20014 onetry
+waitforbtc 1 getinfo connections 2
+echo "[GENERATE block on node 3 to send transactions to node 1]"
+btc 3 setgenerate true
+echo "[END TEST #7]"
+}
+
+[ -z "$1" ] && TESTS="test1 test2 test3 test4 test5 test6 test7"
 for x in $@; do
   TESTS="$TESTS $x"
 done
