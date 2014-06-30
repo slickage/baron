@@ -31,7 +31,6 @@ var config = {
   appTitle: process.env.APP_TITLE || 'Baron',
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || guessExplorerURL(process.env.BITCOIND_PORT || 18332),
-  enableFiat: process.env.ENABLE_FIAT || false,
   minimumBTC: process.env.MIN_BTC || 0.00001,
   minimumUSD: process.env.MIN_USD || 0.01,
   port: process.env.PORT || 8080,

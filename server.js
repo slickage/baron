@@ -74,10 +74,7 @@ async.waterfall([
         res.status(err.status || 500);
         res.render('error', { appTitle: config.appTitle, errorMsg: err.message || 'Internal Server Error' });
       });
-
-      if (config.enableFiat) {
-        bitstamped.init(db.getCouchUrl());
-      }
+      bitstamped.init(db.getCouchUrl());
       // Disable lastBlockJob as a background job, using it only once during startup
       //blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
