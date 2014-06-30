@@ -295,8 +295,28 @@ var updatePayment = function(transaction, cb) {
         var invoiceId = null;
         paymentsArr.forEach(function(payment) {
           if (!payment.txid) {
-            // update payment request with of matching address (but not yet txid)
-            updatePaymentWithTransaction(payment, transaction, cb);
+            // If payment is not watched update spot rate.
+            if (!payment.watched) {
+              var paidTime = transaction.time * 1000;
+              bitstamped.getTicker(paidTime, function(err, docs) {
+                if (!err && docs.rows && docs.rows.length > 0) {
+                  var tickerData = docs.rows[0].value;
+                  var rate = new BigNumber(tickerData.vwap);
+                  payment.spot_rate = Number(rate.valueOf());
+                  updatePaymentWithTransaction(payment, transaction, cb);
+                }
+                else {
+                  var errMsg = 'Error Updating spot rate for payment ' + payment._id;
+                  var error = err ? err : new Error(errMsg);
+                  console.log(errMsg);
+                  cb(error);
+                }
+              });
+            }
+            else {
+              // update payment request with of matching address (but not yet txid)
+              updatePaymentWithTransaction(payment, transaction, cb);
+            }
           }
           else {
             invoiceId = payment.invoice_id;
