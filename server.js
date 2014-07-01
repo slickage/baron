@@ -75,8 +75,7 @@ async.waterfall([
         res.render('error', { appTitle: config.appTitle, errorMsg: err.message || 'Internal Server Error' });
       });
       bitstamped.init(db.getCouchUrl());
-      // Disable lastBlockJob as a background job, using it only once during startup
-      //blockJob.runLastBlockJob();
+      blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
       app.listen(config.port);

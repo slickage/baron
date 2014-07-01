@@ -402,6 +402,7 @@ btc 3 addnode localhost:20014 onetry
 waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to send transactions to node 1]"
 btc 3 setgenerate true
+sleep 6
 echo "[END TEST #7]"
 }
 
