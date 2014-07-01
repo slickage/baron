@@ -3,7 +3,7 @@
 
 var helper = require(__dirname + '/helper');
 var BigNumber = require('bignumber.js');
-var bitstamped = require(__dirname + '/bitstamped');
+var tickerJob = require(__dirname + '/jobs/tickerjob');
 
 // Calculates line totals for invoice line items
 var calculateLineTotals = function(invoice) {
@@ -89,7 +89,7 @@ var getAmountDueBTC = function(invoice, paymentsArr, cb) {
   var remainingBalance = new BigNumber(invoice.balance_due).minus(totalPaid);
   if (isUSD) {
     var curTime = new Date().getTime();
-    bitstamped.getTicker(curTime, function(err, docs) {
+    tickerJob.getTicker(curTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value; // Get ticker object
         var rate = new BigNumber(tickerData.vwap); // Bitcoin volume weighted average price

@@ -110,7 +110,7 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 ```
 
 **NOTES**
-* Baron is entirely reliant upon walletnotify to learn of transactions.  Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/bocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
+* Baron is entirely reliant upon walletnotify to learn of transactions.  Be sure to customize the two instances of `api_key` within bitcoin.conf to match the `BARON_API_KEY` configuration of Baron.  Additionally the `/walletnotify` and `/blocknotify` URL's must be correct to the hostname and port of your Baron instance and network accessible from the bitcoind.  Please be certain to protect the network between bitcoind and Baron by running it on localhost, within a private network, or VPN.
 
 ### Running Baron
 Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.
@@ -124,6 +124,15 @@ Running Baron with [foreman](https://github.com/ddollar/foreman) and [nodemon](h
 ```sh
 $ foreman start -f Procfile-dev
 ```
+
+### Limitations: USD Support
+
+Baron makes an effort to support USD-denominated invoices and to record the USD-value at the time of the transaction to help facilitate business accounting records. These features work relatively well but with caveats.
+
+* Baron has two issues described below when dealing with payments that happened during downtime.  While these issues are hypothetically problematic, in practice it may only rarely happen because downtime is extremely rare and a user is highly unlikely to pay when they are unable to load the payment page.
+ * Baron has no way of knowing the true time when the 0-conf payment actually occurred if bitcoind was down.  The best Baron can do is to guess from the blocktime. This is problematic because as the Bitcoin protocol does not guarantee that the blocktime is true, and even if it were true it could be an indeterminate time after the actual 0-conf payment. (We could consider querying one or more explorers to obtain the transaction's first seen time.  We are hesitant to add additional external data sources as it would complicate the code for a rare corner case.) TODO: Baron does not yet actually use the transaction blocktime when recovering from downtime, this will be fixed in Issue #56.
+ * Since Baron was not recording ticker rates during downtime, it has no way of knowing the exchange rate at the time of the payment.  In general Baron uses the most recent ticker rate prior to the transaction time.  This could be substantially different from the true exchange rate if downtime was long.
+* The Volume Weighted Average may differ from your idea of the appropriate market price at a given moment. Baron grabs the USD/BTC exchange rate every 5 minutes from Bitstamp's API.  For the sake of simplicity it uses Bitstamp's volume weighted average price (vwap). The vwap changes slowly so querying every 5 minutes is usually adequate for the purpose of minimizing the rate growth of the ticker database.  The trouble with this is at times of major market movement the vwap may differ from what people consider to be an appropriate market price.  We are willing to consider alternative methods to obtain price data or to allow supplying your own method in configuration.
 
 ## Additional Information
 

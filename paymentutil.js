@@ -4,7 +4,7 @@
 var helper = require(__dirname + '/helper');
 var validate = require(__dirname + '/validate');
 var BigNumber = require('bignumber.js');
-var bitstamped = require(__dirname + '/bitstamped');
+var tickerJob = require(__dirname + '/jobs/tickerjob');
 var bitcoinUtil = require(__dirname + '/bitcoinutil');
 var db = require(__dirname + '/db');
 var config = require(__dirname + '/config');
@@ -31,7 +31,7 @@ function stopWatchingPayment(paymentId) {
 
 function resetPayment(payment, expectedAmount, cb) {
   var curTime = new Date().getTime();
-  bitstamped.getTicker(curTime, function(err, docs) {
+  tickerJob.getTicker(curTime, function(err, docs) {
     if (!err && docs.rows && docs.rows.length > 0) {
       var tickerData = docs.rows[0].value;
       var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
@@ -58,7 +58,7 @@ function resetPayment(payment, expectedAmount, cb) {
 // Inserts a new payment into the db
 function insertPayment(invoice, address, expectedAmount, cb) {
   var curTime = new Date().getTime();
-  bitstamped.getTicker(curTime, function(err, docs) {
+  tickerJob.getTicker(curTime, function(err, docs) {
     if (!err && docs.rows && docs.rows.length > 0) {
       var tickerData = docs.rows[0].value;
       var rate = Number(tickerData.vwap); // Bitcoin volume weighted average price
@@ -201,7 +201,7 @@ function createNewPaymentWithTransaction(invoiceId, transaction, cb) {
     if (err) {
       return cb(err);
     }
-    bitstamped.getTicker(paidTime, function(err, docs) {
+    tickerJob.getTicker(paidTime, function(err, docs) {
       if (!err && docs.rows && docs.rows.length > 0) {
         var tickerData = docs.rows[0].value;
         var rate = new BigNumber(tickerData.vwap);
@@ -298,7 +298,7 @@ var updatePayment = function(transaction, cb) {
             // If payment is not watched update spot rate.
             if (!payment.watched) {
               var paidTime = transaction.time * 1000;
-              bitstamped.getTicker(paidTime, function(err, docs) {
+              tickerJob.getTicker(paidTime, function(err, docs) {
                 if (!err && docs.rows && docs.rows.length > 0) {
                   var tickerData = docs.rows[0].value;
                   var rate = new BigNumber(tickerData.vwap);

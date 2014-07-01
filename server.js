@@ -9,7 +9,7 @@ var db = require(__dirname + '/db');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
-var bitstamped = require(__dirname + '/bitstamped');
+var tickerJob = require(__dirname + '/jobs/tickerjob');
 var sanityCheck = require(__dirname + '/sanitycheck');
 var async = require('async');
 
@@ -21,9 +21,12 @@ async.waterfall([
     sanityCheck.proceedWhenBitcoindIsReady(cb);
   },
   function (cb) {
-    // create baron db
-    // abort if unsafe couchdb UUID algorithm or error
+    // create or use baron db
     db.instantiateDb(cb);
+  },
+  function (cb) {
+    // create or use tickerJob db
+    tickerJob.startTickerJob(cb);
   },
   function (cb) {
     // Update previously watched payments before getting anything new from bitcoind
@@ -74,7 +77,6 @@ async.waterfall([
         res.status(err.status || 500);
         res.render('error', { appTitle: config.appTitle, errorMsg: err.message || 'Internal Server Error' });
       });
-      bitstamped.init(db.getCouchUrl());
       blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
