@@ -70,6 +70,7 @@ var runWatchPaymentsJob = function () {
   setInterval(function(){
     watchPaymentsJob();
   }, config.updateWatchListInterval);
+  console.log('Baron Init: watchPaymentsJob running every ' + (config.updateWatchListInterval / 1000) + ' seconds.');
 };
 
 module.exports = {

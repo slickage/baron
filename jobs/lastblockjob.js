@@ -143,6 +143,7 @@ var runLastBlockJob = function () {
   setInterval(function(){
     lastBlockJob();
   }, config.lastBlockJobInterval);
+  console.log('Baron Init: lastBlockJob running every ' + (config.lastBlockJobInterval / 1000) + ' seconds.');
 };
 
 module.exports = {
