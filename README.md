@@ -13,6 +13,27 @@ Baron is a Bitcoin payment processor that anyone can deploy
 
 ![Baron Screenshot](http://i.imgur.com/vjagTVl.gif)
 
+## License and Disclaimer
+```
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+```
+
 ## External Dependencies
 * [node](http://nodejs.org)
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
@@ -20,19 +41,16 @@ Baron is a Bitcoin payment processor that anyone can deploy
 * [curl](http://curl.haxx.se/dlwiz/?type=bin)
 * [foreman](https://github.com/ddollar/foreman) (optional)
 
-## Installation and Running
+## Install
 Clone the repository:
 ```sh
 $ git clone https://github.com/slickage/baron.git
-```
-
-Change directories to Baron and install dependencies:
-```sh
+$ cd baron
 $ npm install
 ```
 
 ### Baron Configuration
-Configurations can be changed by setting the environment variables listed in the tables below. One way of setting environment variables is using [foreman](https://github.com/ddollar/foreman) and an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
+Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
 
 #### CouchDB Options
 * `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
@@ -228,6 +246,3 @@ The app notified by the webhook can trust the incoming payment notification beca
 **Security Consideration**
 
 Both the webhook and payment status check can be subject to attack if intra-app communication is over the Internet without the protection of SSL. Verification with `/api/invoices/:invoiceId` can successfully guard against a forged payment if at least the Baron side is protected by SSL. You can avoid these issues by communicating over an internal network or VPN between the two apps.
-
-## License
-MIT
