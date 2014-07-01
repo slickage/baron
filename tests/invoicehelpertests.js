@@ -1,5 +1,5 @@
 var assert = require('assert');
-var invoiceHelper = require(__dirname + '/../invoicehelper');
+var invoiceHelper = require(__dirname + '/../lib/invoices');
 
 describe('invoicehelper', function() {
   describe('#calculateLineTotals', function() {

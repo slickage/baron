@@ -1,8 +1,9 @@
 /* jshint node: true */
 'use strict';
 
-var db = require(__dirname + '/../db');
-var config = require(__dirname + '/../config');
+var rootDir = __dirname + '/../';
+var db = require(rootDir + 'db');
+var config = require(rootDir + 'config');
 var invoiceRouteUtil = require(__dirname + '/utils/invoices');
 
 var invoices = function(app) {

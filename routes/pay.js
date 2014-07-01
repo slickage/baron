@@ -11,7 +11,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     payRouteUtil.findOrCreatePayment(invoiceId, function (err) {
       if (err) {
-        console.log('>>> POST ERROR: ' + JSON.stringify(err));
+        console.log('[/PAY POST ERROR]: ' + JSON.stringify(err));
         return res.render('error', { appTitle: config.appTitle, errorMsg: err.message });
       }
       else {
@@ -25,7 +25,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     payRouteUtil.createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
-        console.log('>>> GET ERROR ' + JSON.stringify(err));
+        console.log('[/PAY GET ERROR]: ' + JSON.stringify(err));
         return res.render('error', { appTitle: config.appTitle,  errorMsg: err.message });
       }
       else {

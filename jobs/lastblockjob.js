@@ -1,16 +1,16 @@
 /* jshint node: true */
 'use strict';
 
-var config = require(__dirname + '/../config');
-var bitcoinUtil = require(__dirname + '/../bitcoinutil');
-var paymentUtil = require(__dirname + '/../paymentutil');
-var db = require(__dirname + '/../db');
+var rootDir = __dirname + '/../';
+var config = require(rootDir + 'config');
+var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
+var paymentsLib = require(rootDir + 'lib/payments');
+var db = require(rootDir + 'db');
 var async = require('async');
-var lastBlockHash;
-var lastBlockJobTime; // Milliseconds since previous lastBlockJob
+var lastBlockHash, lastBlockJobTime; // Milliseconds since previous lastBlockJob
 
 function findPastValidBlock(blockHash, cb) {
-  bitcoinUtil.getBlock(blockHash, function(err, block) {
+  bitcoinRpc.getBlock(blockHash, function(err, block) {
     if (block && block.error && block.error.code && block.error.code === -5) {
       console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.');
       process.exit(255);
@@ -31,7 +31,7 @@ function findPastValidBlock(blockHash, cb) {
 }
 
 function findGenesisBlock(cb) {
-  bitcoinUtil.getBlockHash(0, function(err,info) {
+  bitcoinRpc.getBlockHash(0, function(err,info) {
     if (err) {
       return cb(err);
     }
@@ -79,7 +79,7 @@ function pickPastBlockHash(cb) {
 
 // Update all transactions from bitcoind that happened since blockHash
 function updatePaymentsSinceBlock(blockHash, cb) {
-  bitcoinUtil.listSinceBlock(blockHash, function (err, info) {
+  bitcoinRpc.listSinceBlock(blockHash, function (err, info) {
     if (err) {
       return cb(err);
     }
@@ -92,7 +92,7 @@ function updatePaymentsSinceBlock(blockHash, cb) {
     });
     var newBlockHash = info.lastblock;
     async.eachSeries(transactions, function(transaction, cbSeries) {
-      paymentUtil.updatePayment(transaction, function() {
+      paymentsLib.updatePayment(transaction, function() {
         cbSeries(); // We dont care if update fails just run everything in series until completion
       });
     },

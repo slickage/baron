@@ -1,16 +1,16 @@
 /* jshint node: true */
 'use strict';
 
-var validate = require(__dirname + '/validate');
-var config = require(__dirname + '/config');
+var rootDir = __dirname + '/../';
+var validate = require(rootDir + 'lib/validate');
+var config = require(rootDir + 'config');
+var helper = require(rootDir + 'lib/helper');
 var ddoc = require(__dirname + '/ddoc');
-var nano;
-var dbName = config.couchdb.name;
-var BigNumber = require('bignumber.js');
 var async = require('async');
-var baronDb;
-var helper = require(__dirname + '/helper');
+var BigNumber = require('bignumber.js');
 var sanitizeHtml = require('sanitize-html');
+var dbName = config.couchdb.name;
+var nano, baronDb;
 
 var getCouchUrl = function() {
   var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';

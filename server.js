@@ -1,16 +1,16 @@
 /* jshint node: true */
 'use strict';
 
+var db = require(__dirname + '/db');
 var config = require(__dirname + '/config');
 var watchJob = require(__dirname + '/jobs/watchpaymentjob');
 var blockJob = require(__dirname + '/jobs/lastblockjob');
+var tickerJob = require(__dirname + '/jobs/tickerjob');
 var webhooksJob = require(__dirname + '/jobs/webhooksjob');
-var db = require(__dirname + '/db');
+var sanityCheck = require(__dirname + '/lib/sanitycheck');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
-var tickerJob = require(__dirname + '/jobs/tickerjob');
-var sanityCheck = require(__dirname + '/sanitycheck');
 var async = require('async');
 
 // Sanity checks prior to start

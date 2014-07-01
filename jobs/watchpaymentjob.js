@@ -1,11 +1,12 @@
 /* jshint node: true */
 'use strict';
 
-var config = require(__dirname + '/../config');
-var helper = require(__dirname + '/../helper');
-var db = require(__dirname + '/../db');
-var paymentUtil = require(__dirname + '/../paymentutil');
-var bitcoinUtil = require(__dirname + '/../bitcoinutil');
+var rootDir = __dirname + '/../';
+var config = require(rootDir + 'config');
+var helper = require(rootDir + 'lib/helper');
+var db = require(rootDir + 'db');
+var paymentsLib = require(rootDir + 'lib/payments');
+var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
 
 function updateWatchedPayment(payment, transaction) {
   var receiveDetails = helper.getReceiveDetails(transaction.details);
@@ -19,7 +20,7 @@ function updateWatchedPayment(payment, transaction) {
     // Convert to transaction format matching listsinceblock
     transaction.address = matchingDetail ? matchingDetail.address : payment.address;
     transaction.amount = matchingDetail ? matchingDetail.amount : payment.amount_paid;
-    paymentUtil.updatePaymentWithTransaction(payment, transaction, function(err) {
+    paymentsLib.updatePaymentWithTransaction(payment, transaction, function(err) {
       if (err) {
         console.log(err);
       }
@@ -47,8 +48,7 @@ var watchPaymentsJob = function () {
     paymentsArr.forEach(function(payment) {
       if (payment.txid) { // payment received, now watching
         paidCount++;
-
-        bitcoinUtil.getTransaction(payment.txid, function (err, transaction) {
+        bitcoinRpc.getTransaction(payment.txid, function (err, transaction) {
           if (err) {
             console.log(err);
           }

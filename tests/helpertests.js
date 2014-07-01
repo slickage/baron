@@ -1,5 +1,5 @@
 var assert = require('assert');
-var helper = require(__dirname + '/../helper');
+var helper = require(__dirname + '/../lib/helper');
 
 describe('helper', function() {
   describe('#decialPlaces', function() {

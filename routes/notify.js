@@ -1,10 +1,11 @@
 /* jshint node: true */
 'use strict';
 
-var config = require(__dirname + '/../config');
-var paymentUtil = require(__dirname + '/../paymentutil');
-var bitcoinUtil = require(__dirname + '/../bitcoinutil');
-var helper = require(__dirname + '/../helper');
+var rootDir = __dirname + '/../';
+var config = require(rootDir + 'config');
+var paymentsLib = require(rootDir + 'lib/payments');
+var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
+var helper = require(rootDir + 'lib/helper');
 var _ = require('lodash');
 
 var notify = function(app) {
@@ -19,8 +20,7 @@ var notify = function(app) {
       res.end();
     }
     else {
-      //console.log(txid);
-      bitcoinUtil.getTransaction(txid, function(err, info) {
+      bitcoinRpc.getTransaction(txid, function(err, info) {
         if (err) {
           res.send(500);
         }
@@ -32,7 +32,7 @@ var notify = function(app) {
             var txToProcess = count++ > 0 ? _.cloneDeep(transaction) : transaction;
             txToProcess.address = receiveDetail.address;
             txToProcess.amount = receiveDetail.amount;
-            paymentUtil.updatePayment(txToProcess, function(err) {
+            paymentsLib.updatePayment(txToProcess, function(err) {
               if (err) {
                 console.log(err);
               }
@@ -54,7 +54,6 @@ var notify = function(app) {
     }
     else {
       //console.log(req.body.blockhash);
-
       // Disable lastBlockJob for now.
       // Keeping this code as blocknotify will likely be useful for something else in the future.
       //blockJob.lastBlockJob();

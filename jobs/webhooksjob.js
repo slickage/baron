@@ -1,9 +1,10 @@
 /* jshint node: true */
 'use strict';
 
-var config = require(__dirname + '/../config');
-var invoiceWebhooks = require(__dirname + '/../invoicewebhooks');
-var db = require(__dirname + '/../db');
+var rootDir = __dirname + '/../';
+var config = require(rootDir + 'config');
+var webhooks = require(rootDir + 'lib/webhooks');
+var db = require(rootDir + 'db');
 var async = require('async');
 
 function webhooksJob() {
@@ -11,8 +12,9 @@ function webhooksJob() {
     if (!err && webhooksArr) {
       console.log('Retrying Failed Webhooks [' + webhooksArr.length + ']');
       async.eachSeries(webhooksArr, function(webhookObj, cb) {
-        invoiceWebhooks.postToWebhookIgnoreFailure(webhookObj, cb);
-      }, function(err) {
+        webhooks.postToWebhookIgnoreFailure(webhookObj, cb);
+      },
+      function(err) {
         if (!err) {
           //console.log('DEBUG > Done processing failed webhooks.');
         }

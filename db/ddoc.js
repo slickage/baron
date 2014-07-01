@@ -1,7 +1,7 @@
 /* jshint node: true, couch: true */
 'use strict';
 
-var config = require(__dirname + '/config');
+var config = require(__dirname + '/../config');
 
 var ddoc = {
   _id: '_design/' + (config.couchdb.name || 'baron'),
@@ -9,8 +9,6 @@ var ddoc = {
   lists: {},
   shows: {}
 };
-
-module.exports = ddoc;
 
 ddoc.views.invoicesWithPayments = {
   map: function(doc) {
@@ -94,3 +92,5 @@ ddoc.views.webhooks = {
     }
   }
 };
+
+module.exports = ddoc;

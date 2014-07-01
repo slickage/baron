@@ -1,12 +1,13 @@
 /* jshint node: true, couch: true */
 'use strict';
 
-var config = require(__dirname + '/../config');
-var baronDb = require(__dirname + '/../db');
+var rootDir = __dirname + '/../';
+var config = require(rootDir + 'config');
+var baronDb = require(rootDir + 'db');
 var request = require('request');
 var async = require('async');
 var nano = require('nano')(baronDb.getCouchUrl());
-var ddoc = require('../db/ddoc-ticker');
+var ddoc = require(rootDir + 'db/ddoc-ticker');
 var dbName = 'ticker_usd';
 var db;
 

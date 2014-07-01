@@ -1,14 +1,15 @@
 /* jshint node: true */
 'use strict';
 
-var paymentUtil = require(__dirname + '/../../paymentutil');
-var invoiceHelper = require(__dirname + '/../../invoicehelper');
-var helper = require(__dirname + '/../../helper');
-var validate = require(__dirname + '/../../validate');
-var bitcoinUtil = require(__dirname + '/../../bitcoinutil');
-var config = require(__dirname + '/../../config');
+var rootDir = __dirname + '/../../';
+var paymentsLib = require(rootDir + 'lib/payments');
+var invoicesLib = require(rootDir + 'lib/invoices');
+var helper = require(rootDir + 'lib/helper');
+var validate = require(rootDir + 'lib/validate');
+var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
+var config = require(rootDir + 'config');
 var BigNumber = require('bignumber.js');
-var db = require(__dirname + '/../../db');
+var db = require(rootDir + 'db');
 var async = require('async');
 
 var findOrCreatePayment = function(invoiceId, cb) {
@@ -16,7 +17,7 @@ var findOrCreatePayment = function(invoiceId, cb) {
     if (err) {
       return cb(err, null);
     }
-    var activePayment = invoiceHelper.getActivePayment(paymentsArr);
+    var activePayment = invoicesLib.getActivePayment(paymentsArr);
 
     // Invoice is expired and unpaid
     if (invoice.is_void) {
@@ -43,11 +44,11 @@ var findOrCreatePayment = function(invoiceId, cb) {
     }
 
     // Create a new payment object for invoices without a payment or with a partial payment
-    invoiceHelper.getAmountDueBTC(invoice, paymentsArr, function(err, amountDue) {
+    invoicesLib.getAmountDueBTC(invoice, paymentsArr, function(err, amountDue) {
       if (err) {
         return cb(err, null);
       }
-      paymentUtil.createNewPayment(invoiceId, amountDue, function(err, newPayment) {
+      paymentsLib.createNewPayment(invoiceId, amountDue, function(err, newPayment) {
         if (err) {
           return cb(err, null);
         }
@@ -83,7 +84,7 @@ var createPaymentDataForView = function(invoiceId, callback) {
     function(cb) {
       // Get confirmations from getBlock
       if (activePayment.blockhash) {
-        bitcoinUtil.getBlock(activePayment.blockhash, function(err, block) {
+        bitcoinRpc.getBlock(activePayment.blockhash, function(err, block) {
           if (err) {
             err.which = 'createPaymentDataForView getBlock';
             cb(err, null);

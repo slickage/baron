@@ -13,9 +13,11 @@ var paymentqr = function(app) {
     var address = req.query.address;
     if (req.host !== referrerHostname) {
       res.send(403, 'Rejected referrer.');
-    } else if (!address) {
+    }
+    else if (!address) {
       res.send(400, 'Address is invalid: No address.');
-    } else {
+    }
+    else {
       var amount = Number(req.query.amount) || undefined;
       var code = qr.image('bitcoin:' + address + '?amount=' + amount, { type: 'svg' });
       res.type('svg');

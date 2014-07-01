@@ -5,11 +5,12 @@ var ddoc = {
   shows: {}
 };
 
-module.exports = ddoc;
-
 ddoc.views.tickerByTime = {
   map: function(doc) {
-    if (doc.type === 'ticker')
+    if (doc.type === 'ticker') {
       emit(doc.timestamp, doc);
+    }
   }
 };
+
+module.exports = ddoc;
