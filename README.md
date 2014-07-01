@@ -50,7 +50,7 @@ $ npm install
 ```
 
 ### Baron Configuration
-Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with an [environment file](http://ddollar.github.io/foreman/#ENVIRONMENT).
+Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file.  Alternatively node applications are often launched with a [systemd](http://www.freedesktop.org/wiki/Software/systemd/) .service definition.  `foreman export` can generate systemd files from an `.env` file.
 
 #### CouchDB Options
 * `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
@@ -115,7 +115,7 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 ### Running Baron
 Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.
 
-Running Baron with [node](http://nodejs.org)
+Running Baron with [node](http://nodejs.org).  Note that the environment variables must be set by wrapper shell script, systemd `EnvironmentFile` or foreman `.env` file.
 ```sh
 $ node server.js
 ```
@@ -125,7 +125,7 @@ Running Baron with [foreman](https://github.com/ddollar/foreman) and [nodemon](h
 $ foreman start -f Procfile-dev
 ```
 
-### Limitations: USD Support
+## Important Note about USD Support
 
 Baron makes an effort to support USD-denominated invoices and to record the USD-value at the time of the transaction to help facilitate business accounting records. These features work relatively well but with caveats.
 
@@ -133,6 +133,12 @@ Baron makes an effort to support USD-denominated invoices and to record the USD-
  * Baron has no way of knowing the true time when the 0-conf payment actually occurred if bitcoind was down.  The best Baron can do is to guess from the blocktime. This is problematic because as the Bitcoin protocol does not guarantee that the blocktime is true, and even if it were true it could be an indeterminate time after the actual 0-conf payment. (We could consider querying one or more explorers to obtain the transaction's first seen time.  We are hesitant to add additional external data sources as it would complicate the code for a rare corner case.) TODO: Baron does not yet actually use the transaction blocktime when recovering from downtime, this will be fixed in Issue #56.
  * Since Baron was not recording ticker rates during downtime, it has no way of knowing the exchange rate at the time of the payment.  In general Baron uses the most recent ticker rate prior to the transaction time.  This could be substantially different from the true exchange rate if downtime was long.
 * The Volume Weighted Average may differ from your idea of the appropriate market price at a given moment. Baron grabs the USD/BTC exchange rate every 5 minutes from Bitstamp's API.  For the sake of simplicity it uses Bitstamp's volume weighted average price (vwap). The vwap changes slowly so querying every 5 minutes is usually adequate for the purpose of minimizing the rate growth of the ticker database.  The trouble with this is at times of major market movement the vwap may differ from what people consider to be an appropriate market price.  We are willing to consider alternative methods to obtain price data or to allow supplying your own method in configuration.
+
+## Security
+
+Posting an invoice to Baron or the webhook callbacks to inform apps of payment activity can expose shared secrets to hostile attackers if that intra-app communication is trasmitted without encryption over a public network. An eavesdropper who steals the `api_key` can cause trouble for the Baron deployment.  If an attacker steals the webhook `token` they could possibly fool the application into believing a payment has occurred when it really did not.
+
+Ideally the app and Baron would be on the same local network. If separated by a public network you are highly advised protect the communication between the two apps with HTTP SSL or VPN.  Node apps typically rely on a reverse proxy to serve via HTTP SSL.  [nginx](http://nginx.org/) `proxy_pass` is most frequently used for this purpose.
 
 ## Additional Information
 
@@ -250,8 +256,4 @@ var newInvoice = {
 * `url` - The url Baron should ***POST*** to when the payment event occurs
 
 ### Webhook Verification
-The app notified by the webhook can trust the incoming payment notification because it has a matching secret token that was set when the Invoice was created. Further information about the Invoice can optionally be queried from Baron via the `/api/invoices/:invoiceId` route.  For example, the Invoice can be verified as paid if `is_paid` is `true`.
-
-**Security Consideration**
-
-Both the webhook and payment status check can be subject to attack if intra-app communication is over the Internet without the protection of SSL. Verification with `/api/invoices/:invoiceId` can successfully guard against a forged payment if at least the Baron side is protected by SSL. You can avoid these issues by communicating over an internal network or VPN between the two apps.
+The app notified by the webhook can trust the incoming payment notification because it contains a matching webhook `token` that was set when the Invoice was created. Further information about the Invoice can optionally be queried from Baron via the `/api/invoices/:invoiceId` route.  For example, the Invoice can be verified as paid if `is_paid` is `true`.  Note that this intra-app communication can be at risk if transmitted unencrypted over the Internet.
