@@ -34,6 +34,7 @@ var config = {
   minimumBTC: process.env.MIN_BTC || 0.00001,
   minimumUSD: process.env.MIN_USD || 0.01,
   port: process.env.PORT || 8080,
+  trustProxy: process.env.TRUST_PROXY || false,
   publicURL: process.env.PUBLIC_URL ||  'http://localhost:8080',
   senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,

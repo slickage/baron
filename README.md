@@ -68,6 +68,7 @@ Options are read from environment variables listed in the tables below. A common
 #### Baron Options (mandatory)
 * `BARON_API_KEY` - Secret api key, used to post invoices to Baron <sup>[1]</sup>
 * `PORT` - Baron listens on this TCP port
+* `TRUST_PROXY` - Set to `true` if Baron is behind a reverse proxy, see note below
 * `PUBLIC_URL` - Should match Baron's public URL (protocol, hostname and optional port)
 * `ADMIN_EMAILS` - Comma separated list of Baron admin email addresses
 * `SENDER_EMAIL` - Outgoing email from Baron use this address
@@ -88,6 +89,26 @@ Options are read from environment variables listed in the tables below. A common
 * Most properties have sane default values, see [config.js](https://github.com/slickage/baron/blob/master/config.js) for defaults.
 * The `BARON_API_KEY` is a shared secret between Baron and applications who post invoices.
 * Support for USD invoices is experimental at this time. If payments for fiat invoices are made while Baron is down, it cannot retrieve an accurate exchange rate when starting back up. Baron will record the latest exchange rate it was aware of before going down.
+
+#### Reverse Proxy Configuration
+
+You must use a reverse proxy as you will need SSL to protect the security of Baron.  [nginx](http://nginx.org/) `proxy_pass` is most frequently used for this purpose.  This example nginx configuration snippet forwards requests to a SSL virtualhost to Baron running on localhost:8080.
+```
+server {
+  listen       443;
+  server_name  baron.example.com;
+  ssl on;
+  ssl_certificate_key /etc/pki/tls/private/baron.example.com.key;
+  ssl_certificate     /etc/pki/tls/certs/baron.example.com.pem;
+  location / {
+    proxy_pass http://localhost:8080;
+    proxy_set_header        Host             $host;
+    proxy_set_header        X-Forwarded-For  $proxy_add_x_forwarded_for;
+  }
+}
+```
+
+When using a remote proxy you must enable Baron's `TRUST_PROXY` option.  Baron will then be able to ascertain the client IP address from the **X-Forwarded-For** header.
 
 ### Example Bitcoin Configuration
 Modify bitcoin's [bitcoin.conf](https://en.bitcoin.it/wiki/Running_Bitcoin#Bitcoin.conf_Configuration_File):
@@ -138,7 +159,7 @@ Baron makes an effort to support USD-denominated invoices and to record the USD-
 
 Posting an invoice to Baron or the webhook callbacks to inform apps of payment activity can expose shared secrets to hostile attackers if that intra-app communication is trasmitted without encryption over a public network. An eavesdropper who steals the `api_key` can cause trouble for the Baron deployment.  If an attacker steals the webhook `token` they could possibly fool the application into believing a payment has occurred when it really did not.
 
-Ideally the app and Baron would be on the same local network. If separated by a public network you are highly advised protect the communication between the two apps with HTTP SSL or VPN.  Node apps typically rely on a reverse proxy to serve via HTTP SSL.  [nginx](http://nginx.org/) `proxy_pass` is most frequently used for this purpose.
+Ideally the app and Baron would be on the same local network. If separated by a public network you are highly advised protect the communication between the two apps with HTTP SSL or VPN.
 
 ## Additional Information
 

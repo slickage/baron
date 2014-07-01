@@ -50,6 +50,10 @@ async.waterfall([
       app.use(bodyParser.json());
       app.use(bodyParser.urlencoded({ extended: true }));
       app.use(express.static(path.join(__dirname, 'public')));
+      // Trust X-Forwarded-For
+      if (config.trustProxy) {
+        app.enable('trust proxy');
+      }
       // Cache busting for the routes.
       app.use(function(req, res, next){
         res.set('Cache-Control', 'no-cache, must-revalidate');
