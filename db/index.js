@@ -12,6 +12,9 @@ var sanitizeHtml = require('sanitize-html');
 var dbName = config.couchdb.name;
 var nano, baronDb;
 
+// Increment when model changes in an incompatible way
+var currentDbVersion = 1;
+
 var getCouchUrl = function() {
   var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';
   var credentials = '';
@@ -20,6 +23,40 @@ var getCouchUrl = function() {
   }
   var couchUrl = protocol + credentials + config.couchdb.host;
   return couchUrl;
+};
+
+var checkDbVersion = function(cb) {
+  baronDb.get('db_version', function(err, dbVersionObj) {
+    if (!err) {
+      if (dbVersionObj.version !== currentDbVersion) {
+        // Upgrade needed
+        console.log('Baron Database Requires Upgrade.');
+        // TODO: Replace with db conversion function
+        process.exit(255);
+      }
+      else {
+        console.log('Baron Database version ' + dbVersionObj.version);
+        cb();
+      }
+    }
+    else {
+      if (err.reason && err.reason === 'missing' || err.reason === 'deleted' ) {
+        // insert
+        dbVersionObj = {};
+        dbVersionObj._id = 'db_version';
+        dbVersionObj.version = currentDbVersion;
+        baronDb.insert(dbVersionObj, function() {
+          console.log('Baron Database version ' + dbVersionObj.version);
+          cb();
+        });
+      }
+      else {
+        // FATAL other error
+        console.log('checkDbVersion Fatal Error' + JSON.stringify(err));
+        process.exit(1);
+      }
+    }
+  });
 };
 
 var instantiateDb = function (cb) {
@@ -62,7 +99,7 @@ var instantiateDb = function (cb) {
     }
     else {
       baronDb = nano.use(dbName);
-      cb();
+      checkDbVersion(cb);
     }
   });
 };
