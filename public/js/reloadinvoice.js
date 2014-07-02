@@ -58,8 +58,9 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
           statusBanner.style.display = 'none';
         }
         else {
-          statusBanner.style.display = 'block';
           statusBannerText.innerText = 'Invoice will expire in ' + getExpirationCountDown(expiration) + '.';
+          statusBannerText.textContent = statusBannerText.innerText;
+          statusBanner.style.display = 'block';
         }
       }, 1000);
     }
@@ -151,27 +152,31 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
 
     // Update Status Banner
     if (isPaid) {
-      statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-success';
-      statusBanner.style.display = 'block';
       if (invoice.is_overpaid) {
         statusBannerText.innerHTML = 'Invoice has been <strong>overpaid</strong>.';
+        statusBannerText.textContent = statusBannerText.innerText;
       }
       else {
         statusBannerText.innerText = 'Invoice has been paid in full.';
+        statusBannerText.textContent = statusBannerText.innerText;
       }
+      statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-success';
+      statusBanner.style.display = 'block';
     }
     else if (isVoid) {
+      statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
+      statusBannerText.textContent = statusBannerText.innerText;
       statusBanner.style.display = 'block';
       payButton.style.display = 'none';
-      statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
       statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
       pageOverlayImage.className = 'page-overlay-void';
       pageOverlayLayer.className = 'container page-overlay';
     }
     else if (isExpired) {
+      statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
+      statusBannerText.textContent = statusBannerText.innerText;
       statusBanner.style.display = 'block';
       payButton.style.display = 'none';
-      statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
       statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
       pageOverlayImage.className = 'page-overlay-expired';
       pageOverlayLayer.className = 'container page-overlay';
@@ -182,6 +187,7 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
       amountPaid = newAmountPaid;
       Array.prototype.forEach.call(amountPaidSpans, function(span) {
         span.innerText = newAmountPaid;
+        span.textContent = span.innerText;
       });
     }
 
@@ -195,6 +201,7 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
       }
       Array.prototype.forEach.call(amountDueSpans, function(span) {
         span.innerText = newAmountDue;
+        span.textContent = span.innerText;
       });
       amountDue = newAmountDue;
     }
@@ -213,9 +220,10 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     }
     else if (isVoid) {
       clearInterval(reloadInvoiceInterval);
+      statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
+      statusBannerText.textContent = statusBannerText.innerText;
       statusBanner.style.display = 'block';
       payButton.style.display = 'none';
-      statusBannerText.innerText = 'Invoice has been void. Payments will no longer be accepted.';
       statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
       pageOverlayImage.className = 'page-overlay-void';
       pageOverlayLayer.className = 'container page-overlay';
@@ -223,9 +231,10 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     }
     else if (isExpired) {
       clearInterval(reloadInvoiceInterval);
+      statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
+      statusBannerText.textContent = statusBannerText.innerText;
       statusBanner.style.display = 'block';
       payButton.style.display = 'none';
-      statusBannerText.innerText = 'Invoice is expired. Payments will no longer be accepted.';
       statusBannerText.className = 'col-sm-12 alert xsmall-text alert-box alert-warning';
       pageOverlayImage.className = 'page-overlay-expired';
       pageOverlayLayer.className = 'container page-overlay';

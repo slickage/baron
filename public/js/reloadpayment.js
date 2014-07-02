@@ -72,6 +72,8 @@ var reloadPayment = function (queryUrl, expiration) {
       if (chainExplorerUrl) {
         expirationTextSpans.item(0).innerText = '';
         expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(0).textContent = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(1).textContent = expirationTextSpans.item(0).innerText;
         return clearInterval(this);
       }
       var curTime = new Date().getTime();
@@ -82,12 +84,16 @@ var reloadPayment = function (queryUrl, expiration) {
         ellipsis = '.'.repeat(ellipsis.length + 1);
         expirationTextSpans.item(0).innerText = 'Fetching new exchange rate' + ellipsis;
         expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(0).textContent = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(1).textContent = expirationTextSpans.item(0).innerText;
         requestPayment();
       }
       else {
         expirationTextSpans.item(0).innerText = 'Payment rate will refresh in ' +
           getExpirationCountDown(expiration) + '.';
         expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(0).textContent = expirationTextSpans.item(0).innerText;
+        expirationTextSpans.item(1).textContent = expirationTextSpans.item(0).innerText;
       }
     }, 1000);
   }
@@ -129,6 +135,8 @@ var reloadPayment = function (queryUrl, expiration) {
       expirationTextSpans.item(0).innerText = 'Payment rate will refresh in ' +
         getExpirationCountDown(expiration) + '.';
       expirationTextSpans.item(1).innerText = expirationTextSpans.item(0).innerText;
+      expirationTextSpans.item(0).textContent = expirationTextSpans.item(0).innerText;
+      expirationTextSpans.item(1).textContent = expirationTextSpans.item(0).innerText;
     }
 
     // Update Amount
@@ -159,6 +167,7 @@ var reloadPayment = function (queryUrl, expiration) {
       confirmations = newConfirmations;
       Array.prototype.forEach.call(confirmationSpans, function(span) {
         span.innerText = newConfirmations;
+        span.textContent = span.innerText;
       });
     }
 
@@ -217,6 +226,7 @@ var reloadPayment = function (queryUrl, expiration) {
           });
         }
         span.innerText = newStatusText;
+        span.textContent = span.innerText;
       });
     }
   };
