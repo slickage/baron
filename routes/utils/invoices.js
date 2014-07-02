@@ -44,7 +44,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
         amountUSD = helper.roundToDecimal(amountUSD, 2);
         payment.amount_usd = amountUSD;
       }
-      payment.url = config.publicURL + '/redirect/address/' + payment.txid; // populate chain explorer url
+      payment.url = config.publicURL + '/redirect/txid/' + payment.txid; // populate chain explorer url
       hasPending = payment.status.toLowerCase() === 'pending';
       delete payment._id;
       delete payment._rev;

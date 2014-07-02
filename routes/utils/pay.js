@@ -108,7 +108,7 @@ var createPaymentDataForView = function(invoiceId, callback) {
       var expiration = activePayment.created + validMins;
       var isUSD = invoice.currency.toUpperCase() === 'USD';
       var amountToDisplay = activePayment.amount_paid > 0 ? activePayment.amount_paid : owedAmount;
-      var chainExplorerUrl = activePayment.txid ? config.publicURL + '/redirect/address/' + activePayment.txid : null;
+      var chainExplorerUrl = activePayment.txid ? config.publicURL + '/redirect/txid/' + activePayment.txid : null;
       var txid = activePayment.txid ? activePayment.txid : null;
       var invoicePaid;
       if (activePayment.blockhash && remainingBalance <= 0 && activePayment.status !=='pending') {
