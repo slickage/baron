@@ -39,6 +39,7 @@ var config = {
   senderEmail: process.env.SENDER_EMAIL || 'info@example.com',
   spotRateValidForMinutes: process.env.SPOTRATE_VALID_FOR_MINUTES || 5,
   trackPaymentUntilConf: process.env.TRACK_PAYMENT_UNTIL_CONF || 100,
+  demoMode: process.env.DEMO_MODE || false,
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,

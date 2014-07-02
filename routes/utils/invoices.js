@@ -61,6 +61,7 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     delete invoice.webhooks;
     delete invoice.metadata;
     delete invoice._rev;
+    invoice.demo_mode = config.demoMode || false;
     return cb(null, invoice, origInvoice);
   });
 };
