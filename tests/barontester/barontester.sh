@@ -1,14 +1,13 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )"
 
-# Read barontester.conf
-if [ ! -e barontester.conf ]; then
-  echo "ERROR: barontester.conf not found."
+if [ ! -e $SCRIPTDIR/barontester.conf ]; then
+  echo "ERROR: $SCRIPTDIR/barontester.conf not found."
   exit 255
 else
   . $SCRIPTDIR/barontester.conf
   [ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in barontester.conf."
-  [ -n "$BARONPORT" ]   || BARONPORT=8080
+  [ -n "$BARONPORT" ]   || BARONPORT=58080
   [ -n "$DBNAME" ]      || DB_NAME=baronregtest
   [ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/barontester/tmp
 fi
@@ -21,9 +20,14 @@ errorexit() {
 # Sanity Checks
 cd $SCRIPTDIR
 for f in postwatcher.js testinvoices/simple.json; do
-  [ ! -e $f ] && errorexit "File not found: $SCRIPTDIR/$f"
+  [ ! -e $f ] && errorexit "ERROR: File not found: $SCRIPTDIR/$f"
 done
 cd - > /dev/null
+for CMD in curl jq node bitcoind; do
+  if ! which $CMD > /dev/null 2>&1; then
+    errorexit "ERROR: Command not found: $CMD"
+  fi
+done
 
 setupbitcoind() {
   mkdir -p $BARONTMPDIR/${1}
@@ -58,6 +62,24 @@ startbtc() {
   set +e
   bitcoind -datadir=$BARONTMPDIR/$1 &
   LASTPID=$!
+  case "$1" in
+    1)
+    BTC_PID1=$LASTPID
+    ;;
+    2)
+    BTC_PID2=$LASTPID
+    ;;
+    3)
+    BTC_PID3=$LASTPID
+    ;;
+    4)
+    BTC_PID4=$LASTPID
+    ;;
+    *)
+    echo "ERROR: startbtc() should never reach here."
+    exit 255
+    ;;
+  esac
   while true; do
     sleep 0.1
     btc $1 getinfo > /dev/null 2>&1
@@ -180,18 +202,26 @@ startbaron() {
   cd - > /dev/null
 }
 
-#### CLEAR BITCOIND AND NODE ####
-killall bitcoind 2> /dev/null
-killall node     2> /dev/null
+# Exit handler: killall node and bitcoind instances along with tester
+cleanexit() {
+  set +e;
+  kill $BARON_PID 2> /dev/null
+  kill $POSTWATCHER_PID 2> /dev/null
+  kill $BTC_PID1 2> /dev/null
+  kill $BTC_PID2 2> /dev/null
+  kill $BTC_PID3 2> /dev/null
+  kill $BTC_PID4 2> /dev/null
+  exit 0
+}
+trap cleanexit SIGINT SIGTERM EXIT
+echo "Press CTRL-C to stop tester."
+
+### Initialize Test Environment ###
+# Wipe CouchDB baronregtest
 curl -s -o /dev/null -X DELETE http://localhost:5984/$DB_NAME/
-sleep 1
 
 rm -rf $BARONTMPDIR
 mkdir -p $BARONTMPDIR
-
-# Exit handler: killall node and bitcoind instances along with tester
-trap "echo 'BARONTESTER DONE'; set +e; killall node 2> /dev/null; killall bitcoind 2> /dev/null; exit 0" SIGINT SIGTERM EXIT
-echo "Use CTRL-C to kill tester, Baron and bitcoind."
 
 # Detect browser
 unset OPEN
@@ -235,6 +265,7 @@ echo "[STARTING POSTWATCHER]"
 export PORT=9242
 cd $SCRIPTDIR
 node postwatcher.js &
+POSTWATCHER_PID=$?
 cd - > /dev/null
 waitforbaron
 
