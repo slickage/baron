@@ -81,8 +81,8 @@
         </form>
       </div>
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
-        <span class="visible-xs float-left medium-text">Total</span>
-        <span class="hidden-xs float-left">Balance Total</span>
+        <span class="visible-xs float-left medium-text">Total</span><!-- phone -->
+        <span class="hidden-xs float-left">Invoice Total</span>
         <span class="visible-xs medium-text"><%= balance_due %> <%= currency.toUpperCase() %></span>
         <span class="hidden-xs"><%= balance_due %> <%= currency.toUpperCase() %></span>
       </div>
@@ -90,7 +90,7 @@
 
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
-          <span class="float-left dark-gray">Paid</span>
+          <span class="float-left dark-gray">Paid</span><!-- phone -->
           <span class="amount-paid-text green"><%= total_paid %></span>
           <span class="green"> <%= currency.toUpperCase() %></span>
       </div>
@@ -107,7 +107,7 @@
 
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
-          <span class="float-left dark-gray">Due</span>
+          <span class="float-left dark-gray">Due</span><!-- phone -->
           <span class="amount-due-text red"><%= remaining_balance %></span>
           <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
@@ -116,7 +116,7 @@
     <div class="row hidden-xs">
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
-          <span class="float-left dark-gray">Amount Due</span>
+          <span class="float-left dark-gray">Balance Due</span>
           <span class="amount-due-text red"><%= remaining_balance %></span>
           <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
