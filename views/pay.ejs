@@ -31,9 +31,6 @@
                 Invoice has been paid in full.
             <% } %>
           </span>
-          <a href="/invoices/<%= invoiceId %>">
-            View Invoice
-          </a>
         </div>
       </div>
 
@@ -103,6 +100,10 @@
         </span>
         <input type="text" spellcheck="false" onclick="this.select()" class="address-input form-control address-spacer" value="<%= address %>" />
         <div>
+          <a class="small-text" href="/invoices/<%= invoiceId %>">
+            &#10094; Back to Invoice
+          </a>
+          <br />
           <% if (!txid && isUSD) { %>
             <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
           <% } %>
@@ -163,6 +164,10 @@
             <input type="text" spellcheck="false" onclick="this.select()" class="address-input form-control address-spacer" value="<%= address %>" />
           </div>
           <div>
+            <a class="small-text" href="/invoices/<%= invoiceId %>">
+              &#10094; Back to Invoice
+            </a>
+            <br />
             <% if (!txid && isUSD) { %>
               <span class="expiration-text red">Payment rate will refresh in <%= expires %>.</span>
             <% } %>

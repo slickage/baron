@@ -193,12 +193,13 @@ a:hover, a:active {
   width: 300px;
   margin: 0 auto;
 }
+
 .address-spacer-small {
   margin: 10px 0;
 }
 
 .address-spacer {
-  margin: 40px 0;
+  margin: 40px 0px 0px 0px;
 }
 
 .invoice-data-width {
