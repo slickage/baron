@@ -16,12 +16,11 @@ var nano, baronDb;
 var currentDbVersion = 1;
 
 var getCouchUrl = function() {
-  var protocol = 'http' + (config.couchdb.ssl ? 's' : '') + '://';
   var credentials = '';
   if (config.couchdb.user && config.couchdb.pass) {
     credentials = encodeURIComponent(config.couchdb.user) + ':' + encodeURIComponent(config.couchdb.pass) + '@';
   }
-  var couchUrl = protocol + credentials + config.couchdb.host;
+  var couchUrl = config.couchdb.proto + "://" + credentials + config.couchdb.host;
   return couchUrl;
 };
 

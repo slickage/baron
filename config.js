@@ -17,7 +17,7 @@ var config = {
   couchdb: {
     host: process.env.DB_HOST || 'localhost:5984',
     name: process.env.DB_NAME || 'baron',
-    ssl: process.env.DB_SSL || false,
+    proto: process.env.DB_PROTO || 'http',
     user: process.env.DB_USER || null,
     pass: process.env.DB_PASS || null
   },

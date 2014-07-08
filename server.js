@@ -17,7 +17,10 @@ var async = require('async');
 async.waterfall([
   function (cb) {
     // wait until bitcoind is ready
-    // abort if error
+    sanityCheck.proceedWhenCouchIsReady(cb);
+  },
+  function (cb) {
+    // wait until couchdb is ready
     sanityCheck.proceedWhenBitcoindIsReady(cb);
   },
   function (cb) {

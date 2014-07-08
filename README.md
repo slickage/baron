@@ -55,7 +55,7 @@ Options are read from environment variables listed in the tables below. A common
 #### CouchDB Options
 * `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
 * `DB_NAME` - The name of Baron's database
-* `DB_SSL` - Set to true if couchdb is configured to use SSL
+* `DB_PROTO` - Default 'http', use 'https' for SSL
 * `DB_USER` - If configured, the database admin username
 * `DB_PASS` - If configured, the database admin's password
 
