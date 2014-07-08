@@ -72,7 +72,7 @@ var invoices = function(app) {
           res.status(200).write('Invoice ' + invoiceId + ' is already void.');
           res.end();
         }
-        else if (Number(invoice.total_paid) > 0) {
+        else if (Number(invoice.amount_paid) > 0) {
           res.status(400).write('Invoice ' + invoiceId + ' has payments, cannot be void.');
           res.end();
         }

@@ -72,9 +72,27 @@
       </div>
     <% }); %>
 
+    <% discounts.forEach(function(item){ %>
+      <div class="row line-item thin-underline discount">
+        <% if (item.amount && !item.percentage) { %>
+          <div class="col-xs-12 col-sm-9"><%= item.description %></div>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Discount</div>
+          <div class="col-xs-8 col-sm-3 right">(<%= item.amount %> <%= currency.toUpperCase() %>)</div>
+        <% } else if (item.amount && item.percentage) { %>
+          <div class="col-xs-12 col-sm-6"><%= item.description %></div>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Percentage</div>
+          <div class="col-xs-8 col-sm-3 right"><%= item.percentage %> % off</div>
+          <div class="col-xs-4 visible-xs mobile-lbl-text">Discount</div>
+          <div class="col-xs-8 col-sm-3 right">
+            (<%= item.amount %> <%= currency.toUpperCase() %>)
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+
     <div class="row">
       <div class="col-xs-12 col-sm-4">
-        <form id="pay-button" style="<% if (remaining_balance <= 0 || is_paid || is_void || is_expired) { %>display: none;<% } %>" method="POST" action="/pay/<%= _id %>">
+        <form id="pay-button" style="<% if (balance_due <= 0 || is_paid || is_void || is_expired) { %>display: none;<% } %>" method="POST" action="/pay/<%= _id %>">
           <button type="submit" class="btn btn-lg btn-default btn-wide">
             Pay Now
           </button>
@@ -83,15 +101,15 @@
       <div class="col-xs-12 col-sm-8 spacer-5 right dark-gray">
         <span class="visible-xs float-left medium-text">Total</span><!-- phone -->
         <span class="hidden-xs float-left">Invoice Total</span>
-        <span class="visible-xs medium-text"><%= balance_due %> <%= currency.toUpperCase() %></span>
-        <span class="hidden-xs"><%= balance_due %> <%= currency.toUpperCase() %></span>
+        <span class="visible-xs medium-text"><%= invoice_total %> <%= currency.toUpperCase() %></span>
+        <span class="hidden-xs"><%= invoice_total %> <%= currency.toUpperCase() %></span>
       </div>
     </div>
 
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Paid</span><!-- phone -->
-          <span class="amount-paid-text green"><%= total_paid %></span>
+          <span class="amount-paid-text green"><%= amount_paid %></span>
           <span class="green"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
@@ -100,7 +118,7 @@
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Amount Paid</span>
-          <span class="amount-paid-text green"><%= total_paid %></span>
+          <span class="amount-paid-text green"><%= amount_paid %></span>
           <span class="green"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
@@ -108,7 +126,7 @@
     <div class="row visible-xs medium-text">
       <div class="col-xs-12 right gray">
           <span class="float-left dark-gray">Due</span><!-- phone -->
-          <span class="amount-due-text red"><%= remaining_balance %></span>
+          <span class="amount-due-text red"><%= balance_due %></span>
           <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
     </div>
@@ -117,7 +135,7 @@
       <div class="col-sm-4"></div>
       <div class="col-sm-8 right gray">
           <span class="float-left dark-gray">Balance Due</span>
-          <span class="amount-due-text red"><%= remaining_balance %></span>
+          <span class="amount-due-text red"><%= balance_due %></span>
           <span class="red"> <%= currency.toUpperCase() %></span>
       </div>
     </div>

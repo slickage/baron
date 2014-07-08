@@ -38,6 +38,55 @@ describe('invoicehelper', function() {
 });
 
 describe('invoicehelper', function() {
+  describe('#calculateDiscountTotals', function() {
+    it('should calculate discount totals given percentage or amount', function() {
+      var invoiceBTC = {
+        currency: 'BTC',
+        line_items: [
+          { quantity: 2, amount: 0.5 },
+          { quantity: 9, amount: 1 }
+        ],
+        discounts: [
+          { amount: 2.5 },
+          { percentage: 55 },
+          { percentage: 25.643 },
+          { percentage: 1 },
+          { percentage: 0.5 }
+        ]
+      };
+      invoiceHelper.calculateDiscountTotals(invoiceBTC);
+      assert.equal('2.5', invoiceBTC.discounts[0].amount.toString());
+      assert.equal('5.5', invoiceBTC.discounts[1].amount.toString());
+      assert.equal('2.5643', invoiceBTC.discounts[2].amount.toString());
+      assert.equal('0.1', invoiceBTC.discounts[3].amount.toString());
+      assert.equal('0.05', invoiceBTC.discounts[4].amount.toString());
+
+      var invoiceUSD = {
+        currency: 'USD',
+        line_items: [
+          { quantity: 3, amount: 50.13 },
+          { quantity: 4, amount: 100.64 }
+        ],
+        discounts: [
+          { amount: 10.45 },
+          { percentage: 55 },
+          { percentage: 25.643 },
+          { percentage: 1 },
+          { percentage: 0.5 }
+        ]
+      };
+      invoiceHelper.calculateDiscountTotals(invoiceUSD);
+      assert.equal('10.45', invoiceUSD.discounts[0].amount.toString());
+      assert.equal('304.12', invoiceUSD.discounts[1].amount.toString());
+      assert.equal('141.79', invoiceUSD.discounts[2].amount.toString());
+      assert.equal('5.53', invoiceUSD.discounts[3].amount.toString());
+      assert.equal('2.76', invoiceUSD.discounts[4].amount.toString());
+
+    });
+  });
+});
+
+describe('invoicehelper', function() {
   describe('#getActivePayment', function() {
     it('should return payment with latest creation date', function() {
       var curTime = new Date().getTime();

@@ -272,12 +272,28 @@ var createInvoice = function(invoice, callback) {
       invoice.api_key = undefined;
       invoice.created = new Date().getTime();
       invoice.type = 'invoice';
-      var balanceDue = new BigNumber(0);
+      var invoiceTotal = new BigNumber(0);
       invoice.line_items.forEach(function(item) {
         var lineCost = new BigNumber(item.amount).times(item.quantity);
-        balanceDue = balanceDue.plus(lineCost);
+        invoiceTotal = invoiceTotal.plus(lineCost);
       });
-      invoice.balance_due = Number(balanceDue.valueOf());
+      var isUSD = invoice.currency.toUpperCase() === 'USD';
+      var discountTotal = new BigNumber(0);
+      invoice.discounts.forEach(function(item) {
+        var roundedAmount = 0;
+        if (item.amount) {
+          roundedAmount = isUSD ? helper.roundToDecimal(item.amount, 2) : item.amount;
+        }
+        else if (item.percentage) {
+          var percentage = new BigNumber(item.percentage).dividedBy(100);
+          var discountAmount = Number(invoiceTotal.times(percentage).valueOf());
+          roundedAmount = isUSD ? helper.roundToDecimal(discountAmount, 2) : discountAmount;
+        }
+        discountTotal = discountTotal.plus(roundedAmount);
+      });
+      invoiceTotal = invoiceTotal.minus(discountTotal);
+      invoice.invoice_total = Number(invoiceTotal.valueOf());
+      invoice.invoice_total = isUSD ? helper.roundToDecimal(invoice.invoice_total, 2) : Number(invoice.invoice_total);
       if (invoice.text) {
         invoice.text = sanitizeHtml(invoice.text); // remove hostile elements
       }

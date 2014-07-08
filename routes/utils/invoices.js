@@ -21,18 +21,18 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
 
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     invoicesLib.calculateLineTotals(invoice);
-    invoice.total_paid = invoicesLib.getTotalPaid(invoice, paymentsArr);
-    invoice.balance_due = isUSD ? helper.roundToDecimal(invoice.balance_due, 2) : Number(invoice.balance_due);
-    invoice.remaining_balance = invoicesLib.getAmountDue(invoice.balance_due, invoice.total_paid, invoice.currency);
+    invoicesLib.calculateDiscountTotals(invoice);
+    invoice.amount_paid = invoicesLib.getTotalPaid(invoice, paymentsArr);
+    invoice.balance_due = invoicesLib.getAmountDue(invoice.invoice_total, invoice.amount_paid, invoice.currency);
     invoice.is_expired = false;
     invoice.is_void = invoice.is_void ? invoice.is_void : false;
     invoice.expiration = invoice.expiration ? invoice.expiration : null;
     invoice.text = invoice.text ? invoice.text : null;
 
     var invoiceExpired = validate.invoiceExpired(invoice);
-    invoice.is_expired = invoiceExpired && invoice.remaining_balance > 0;
+    invoice.is_expired = invoiceExpired && invoice.balance_due > 0;
     invoice.expiration_time = null;
-    if (invoice.expiration && !invoiceExpired && invoice.remaining_balance > 0) {
+    if (invoice.expiration && !invoiceExpired && invoice.balance_due > 0) {
       invoice.expiration_time = helper.getExpirationCountDown(invoice.expiration);
     }
 
@@ -55,8 +55,8 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
       return payment.created;
     });
 
-    invoice.is_paid = !hasPending && invoice.remaining_balance <= 0;
-    invoice.is_overpaid = !hasPending && invoice.remaining_balance < 0;
+    invoice.is_paid = !hasPending && invoice.balance_due <= 0;
+    invoice.is_overpaid = !hasPending && invoice.balance_due < 0;
 
     delete invoice.webhooks;
     delete invoice.metadata;

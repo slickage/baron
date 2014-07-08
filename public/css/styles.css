@@ -136,6 +136,10 @@ a:hover, a:active {
   color: #41a323;
 }
 
+.info, .discount, .blue {
+  color: #024FB1;
+}
+
 .gray {
   color: #999;
 }

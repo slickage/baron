@@ -146,8 +146,8 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     isPaid = invoice.is_paid;
     isVoid = invoice.is_void;
     isExpired = invoice.is_expired;
-    var newAmountPaid = invoice.total_paid;
-    var newAmountDue = invoice.remaining_balance;
+    var newAmountPaid = invoice.amount_paid;
+    var newAmountDue = invoice.balance_due;
     paymentHistory = invoice.payment_history;
 
     // Update Status Banner
