@@ -7,9 +7,15 @@
   "line_items": [
       {
           "description": "Line Item #1",
-          "quantity": 1,
+          "quantity": 2,
           "amount": 50
       }
+  ],
+  "discounts": [
+    {
+      "description": "Discount Item #1",
+      "percentage": 50
+    }
   ],
   "webhooks":{ 
     "token": "token", 
