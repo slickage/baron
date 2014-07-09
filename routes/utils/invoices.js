@@ -22,6 +22,9 @@ var findInvoiceAndPaymentHistory = function(invoiceId, cb) {
     var isUSD = invoice.currency.toUpperCase() === 'USD';
     invoicesLib.calculateLineTotals(invoice);
     invoicesLib.calculateDiscountTotals(invoice);
+    if (!invoice.discounts) {
+      invoice.discounts = [];
+    }
     invoice.amount_paid = invoicesLib.getTotalPaid(invoice, paymentsArr);
     invoice.balance_due = invoicesLib.getAmountDue(invoice.invoice_total, invoice.amount_paid, invoice.currency);
     invoice.is_expired = false;
