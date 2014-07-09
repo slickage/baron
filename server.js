@@ -80,9 +80,9 @@ async.waterfall([
         }
       });
       // Catch all for any other errors
-      app.use(function(req, res) {
-        res.status(err.status || 500);
-        res.render('error', { appTitle: config.appTitle, errorMsg: err.message || 'Internal Server Error' });
+      app.use(function(error, req, res) {
+        res.status(error.status || 500);
+        res.render('error', { appTitle: config.appTitle, errorMsg: error.message || 'Internal Server Error' });
       });
       blockJob.runLastBlockJob();
       watchJob.runWatchPaymentsJob();
