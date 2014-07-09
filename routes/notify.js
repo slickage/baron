@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + '/log');
 var config = require(rootDir + 'config');
 var paymentsLib = require(rootDir + 'lib/payments');
 var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
@@ -15,7 +16,7 @@ var notify = function(app) {
     var api_key = req.body.api_key;
     if (!api_key || api_key && api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      console.log(req.ip + ' attempted to /walletnotify with an invalid API key.');
+      log.error({ client_ip: req.ip }, req.ip + ' attempted to /walletnotify with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
@@ -34,7 +35,7 @@ var notify = function(app) {
             txToProcess.amount = receiveDetail.amount;
             paymentsLib.updatePayment(txToProcess, function(err) {
               if (err) {
-                console.log(err);
+                log.error(err, 'walletnotify -> updatePayment error');
               }
             });
           });
@@ -48,12 +49,12 @@ var notify = function(app) {
     var api_key = req.body.api_key;
     if (!api_key || api_key && api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      console.log(req.ip + ' attempted to /blocknotify with an invalid API key.');
+      log.error({ client_ip: req.ip }, req.ip + ' attempted to /blocknotify with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
     else {
-      //console.log(req.body.blockhash);
+      //log.debug({ blockhash: req.body.blockhash }, 'blockhash: ' + req.body.blockhash);
       // Disable lastBlockJob for now.
       // Keeping this code as blocknotify will likely be useful for something else in the future.
       //blockJob.lastBlockJob();

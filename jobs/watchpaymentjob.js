@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + 'log');
 var config = require(rootDir + 'config');
 var helper = require(rootDir + 'lib/helper');
 var db = require(rootDir + 'db');
@@ -22,7 +23,7 @@ function updateWatchedPayment(payment, transaction) {
     transaction.amount = matchingDetail ? matchingDetail.amount : payment.amount_paid;
     paymentsLib.updatePaymentWithTransaction(payment, transaction, function(err) {
       if (err) {
-        console.log(err);
+        log.error(err, 'updatePaymentWithTransaction error');
       }
     });
   }
@@ -40,7 +41,7 @@ function checkPaymentExpiration(payment) {
 var watchPaymentsJob = function () {
   db.getWatchedPayments(function (err, paymentsArr) {
     if (err || !paymentsArr) {
-      return err ? console.log(err) : null;
+      return err ? log.error(err, 'getWatchedPayments error') : null;
     }
     // Process all watched payments
     var paidCount = 0;
@@ -50,7 +51,7 @@ var watchPaymentsJob = function () {
         paidCount++;
         bitcoinRpc.getTransaction(payment.txid, function (err, transaction) {
           if (err) {
-            console.log(err);
+            log.error(err, 'getTransaction error');
           }
           else {
             updateWatchedPayment(payment, transaction.result);
@@ -62,7 +63,7 @@ var watchPaymentsJob = function () {
         checkPaymentExpiration(payment);
       }
     });
-    //console.log('DEBUG watchPaymentsJob: total: ' + paymentsArr.length + ' paid: ' + paidCount + ' unpaid: ' + unpaidCount);
+    log.debug('watchPaymentsJob total: ' + paymentsArr.length + ' paid: ' + paidCount + ' unpaid: ' + unpaidCount);
   });
 };
 
@@ -70,7 +71,7 @@ var runWatchPaymentsJob = function () {
   setInterval(function(){
     watchPaymentsJob();
   }, config.updateWatchListInterval);
-  console.log('Baron Init: watchPaymentsJob running every ' + (config.updateWatchListInterval / 1000) + ' seconds.');
+  log.info('Baron Init: watchPaymentsJob running every ' + (config.updateWatchListInterval / 1000) + ' seconds.');
 };
 
 module.exports = {

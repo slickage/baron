@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + 'log');
 var config = require(rootDir + 'config');
 var webhooks = require(rootDir + 'lib/webhooks');
 var db = require(rootDir + 'db');
@@ -10,13 +11,13 @@ var async = require('async');
 function webhooksJob() {
   db.getWebhooks(function (err, webhooksArr) {
     if (!err && webhooksArr) {
-      console.log('Retrying Failed Webhooks [' + webhooksArr.length + ']');
+      log.info({ failedWebhooksArr: webhooksArr }, 'Retrying Failed Webhooks [' + webhooksArr.length + ']');
       async.eachSeries(webhooksArr, function(webhookObj, cb) {
         webhooks.postToWebhookIgnoreFailure(webhookObj, cb);
       },
       function(err) {
         if (!err) {
-          //console.log('DEBUG > Done processing failed webhooks.');
+          log.debug('Done processing failed webhooks.');
         }
       });
     }

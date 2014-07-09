@@ -197,7 +197,7 @@ startbaron() {
   export BITCOIND_PORT=20013
   export LAST_BLOCK_JOB_INTERVAL=4133
   export UPDATE_WATCH_LIST_INTERVAL=5000
-  node server.js &
+  node server.js | ./node_modules/.bin/bunyan -o short &
   BARON_PID=$!
   cd - > /dev/null
 }

@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + '/log');
 var validate = require(rootDir + 'lib/validate');
 var config = require(rootDir + 'config');
 var helper = require(rootDir + 'lib/helper');
@@ -29,12 +30,12 @@ var checkDbVersion = function(cb) {
     if (!err) {
       if (dbVersionObj.version !== currentDbVersion) {
         // Upgrade needed
-        console.log('Baron Database Requires Upgrade.');
+        log.warn('Baron Database Requires Upgrade.');
         // TODO: Replace with db conversion function
         process.exit(255);
       }
       else {
-        console.log('Baron Database version ' + dbVersionObj.version);
+        log.info('Baron Database version ' + dbVersionObj.version);
         cb();
       }
     }
@@ -45,13 +46,13 @@ var checkDbVersion = function(cb) {
         dbVersionObj._id = 'db_version';
         dbVersionObj.version = currentDbVersion;
         baronDb.insert(dbVersionObj, function() {
-          console.log('Baron Database version ' + dbVersionObj.version);
+          log.info('Baron Database version ' + dbVersionObj.version);
           cb();
         });
       }
       else {
         // FATAL other error
-        console.log('checkDbVersion Fatal Error' + JSON.stringify(err));
+        log.fatal(err, 'checkDbVersion Fatal Error');
         process.exit(1);
       }
     }
@@ -63,25 +64,25 @@ var instantiateDb = function (cb) {
   nano.db.get(dbName, function(err) {
     if (err) {
       if (err.error === 'unauthorized') {
-        console.log('Error: CouchDB credentials are invalid. Attempted connection with credentials [' + config.couchdb.user + ':' + config.couchdb.pass + ']');
+        log.error(err, 'CouchDB credentials are invalid. Attempted connection with credentials [' + config.couchdb.user + ':' + config.couchdb.pass + ']');
         return process.exit(1);
       }
       else if (err.code && err.code === 'ECONNREFUSED') {
-        console.log('Error: CouchDB connection refused at ' + config.couchdb.host);
+        log.error(err, 'CouchDB connection refused at ' + config.couchdb.host);
         return process.exit(1);
       }
       else if (err.reason && err.reason === 'no_db_file') {
         nano.db.create(dbName, function(err) {
           if (err) {
-            console.log('Error: Failed to create database:\n' + err);
+            log.error(err, 'Failed to create database');
             return process.exit(1);
           }
           else {
-            console.log('Database created.');
+            log.info('Database created.');
             baronDb = nano.use(dbName);
             baronDb.insert(ddoc, function(err) {
               if (err) {
-                console.log('Error: Failed to push design document:\n' + err);
+                log.error(err, 'Failed to push design document');
                 return process.exit(1);
               }
               else {
@@ -92,7 +93,7 @@ var instantiateDb = function (cb) {
         });
       }
       else {
-        console.log(err);
+        log.error(err, 'instantiateDb error');
         return process.exit(1);
       }
     }

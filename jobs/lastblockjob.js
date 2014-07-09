@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + 'log');
 var config = require(rootDir + 'config');
 var bitcoinRpc = require(rootDir + 'lib/bitcoinrpc');
 var paymentsLib = require(rootDir + 'lib/payments');
@@ -12,7 +13,7 @@ var lastBlockHash, lastBlockJobTime; // Milliseconds since previous lastBlockJob
 function findPastValidBlock(blockHash, cb) {
   bitcoinRpc.getBlock(blockHash, function(err, block) {
     if (block && block.error && block.error.code && block.error.code === -5) {
-      console.log('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.');
+      log.fatal('Fatal Error: Blockhash ' + blockHash + ' is not known to bitcoind.  This should never happen.');
       process.exit(255);
     }
     else if (err) {
@@ -56,7 +57,7 @@ function pickPastBlockHash(cb) {
             cb(err);
           }
           else {
-            console.log('lastBlockHash Initialized: ' + blockHash);
+            log.info('lastBlockHash Initialized: ' + blockHash);
             cb(null, blockHash);
           }
         });
@@ -68,7 +69,7 @@ function pickPastBlockHash(cb) {
             cb(err);
           }
           else {
-            console.log('lastBlockHash Initialized from Genesis: ' + blockHash);
+            log.info('lastBlockHash Initialized from Genesis: ' + blockHash);
             cb(null, blockHash);
           }
         });
@@ -117,12 +118,12 @@ var lastBlockJob = function(callback) {
         pickPastBlockHash(cb);
       },
       function(blockHash, cb) {
-        //console.log('DEBUG updatePaymentsSinceBlock:  ' + blockHash);
+        log.debug('updatePaymentsSinceBlock:  ' + blockHash);
         updatePaymentsSinceBlock(blockHash, cb);
       }
       ], function(err, blockHash) {
         if (err) {
-          console.log('lastBlockJob Error: ' + JSON.stringify(err));
+          log.error(err, 'lastBlockJob Error');
         }
         else if (blockHash) {
           lastBlockHash = blockHash;
@@ -143,7 +144,7 @@ var runLastBlockJob = function () {
   setInterval(function(){
     lastBlockJob();
   }, config.lastBlockJobInterval);
-  console.log('Baron Init: lastBlockJob running every ' + (config.lastBlockJobInterval / 1000) + ' seconds.');
+  log.info('Baron Init: lastBlockJob running every ' + (config.lastBlockJobInterval / 1000) + ' seconds.');
 };
 
 module.exports = {

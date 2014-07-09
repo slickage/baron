@@ -11,7 +11,7 @@ var paymentqr = function(app) {
     referrer = referrer ? url.parse(referrer): null;
     var referrerHostname = referrer ? referrer.hostname : null;
     var address = req.query.address;
-    if (req.host !== referrerHostname) {
+    if (req.hostname !== referrerHostname) {
       res.send(403, 'Rejected referrer.');
     }
     else if (!address) {

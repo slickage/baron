@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + 'log');
 var config = require(rootDir + 'config');
 var baronDb = require(rootDir + 'db');
 var request = require('request');
@@ -57,13 +58,13 @@ var startTickerJob = function(callback) {
           // does not exist, create before use
           nano.db.create(dbName, function(err) {
             if (err) {
-              console.log('Error creating ticker database\n' + err);
+              log.error(err, 'Error creating ticker database');
               return process.exit(1);
             }
             db = nano.use(dbName);
             db.insert(ddoc, function(err) {
               if (err) {
-                console.log('Error pushing ticker design document\n' + err);
+                log.error(err, 'Error pushing ticker design document');
                 return process.exit(1);
               }
               else {
@@ -79,7 +80,7 @@ var startTickerJob = function(callback) {
       tickerJob(function() {
         // start the periodic job, don't care about callback
         setInterval(tickerJob, config.tickerJobInterval, function() {});
-        console.log('Baron Init: Recording vwap from Bitstamp API every ' + (config.tickerJobInterval / 1000 / 60) + ' minutes.');
+        log.info('Baron Init: Recording vwap from Bitstamp API every ' + (config.tickerJobInterval / 1000 / 60) + ' minutes.');
         cb();
       });
     }

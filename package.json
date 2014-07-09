@@ -10,7 +10,9 @@
   ],
   "main": "server.js",
   "scripts": {
-    "test": "mocha -R spec ./tests"
+    "test": "mocha -R spec ./tests",
+    "start": "foreman start -f Procfile",
+    "start-dev": "foreman start -f Procfile-dev"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
     "bignumber.js": "^1.4.1",
     "bitcore": "^0.1.24",
     "body-parser": "^1.4.3",
+    "bunyan": "^0.23.1",
     "ejs": "^1.0.0",
     "express": "^4.4.5",
     "heckler": "git+https://github.com/slickage/heckler",

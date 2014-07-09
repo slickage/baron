@@ -3,6 +3,7 @@
 
 var db = require(__dirname + '/db');
 var config = require(__dirname + '/config');
+var log = require(__dirname + '/log');
 var watchJob = require(__dirname + '/jobs/watchpaymentjob');
 var blockJob = require(__dirname + '/jobs/lastblockjob');
 var tickerJob = require(__dirname + '/jobs/tickerjob');
@@ -42,7 +43,7 @@ async.waterfall([
   }
   ], function (err) {
     if (err) {
-      console.log('Baron Init: Error: ' + JSON.stringify(err));
+      log.error(err, 'Baron Init Error');
       process.exit(1);
     }
     else {
@@ -88,9 +89,9 @@ async.waterfall([
       watchJob.runWatchPaymentsJob();
       webhooksJob.runWebhooksJob();
       app.listen(config.port);
-      console.log('CouchDB server:    http://' + config.couchdb.host + '/' + config.couchdb.name);
-      console.log('Bitcoind RPC:      http://' + config.bitcoind.host + ':' + config.bitcoind.port);
-      console.log('Baron listening:   http://0.0.0.0:' + config.port);
+      log.info('CouchDB server:    http://' + config.couchdb.host + '/' + config.couchdb.name);
+      log.info('Bitcoind RPC:      http://' + config.bitcoind.host + ':' + config.bitcoind.port);
+      log.info('Baron listening:   http://0.0.0.0:' + config.port);
     }
   }
 );

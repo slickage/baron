@@ -2,6 +2,7 @@
 'use strict';
 
 var rootDir = __dirname + '/../';
+var log = require(rootDir + '/log');
 var db = require(rootDir + 'db');
 var config = require(rootDir + 'config');
 var invoiceRouteUtil = require(__dirname + '/utils/invoices');
@@ -29,14 +30,14 @@ var invoices = function(app) {
     var invoice = req.body;
     if (!invoice.api_key || invoice.api_key && invoice.api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      console.log(req.ip + ' attempted to create an invoice with an invalid API key.');
+      log.error({ client_ip: req.ip }, req.ip + ' attempted to create an invoice with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
     else {
       db.createInvoice(req.body, function(err, invoiceData) {
         if(err) {
-          console.log(req.ip + ' createInvoice Error: ' + require('util').inspect(err.message));
+          log.error({err: err, client_ip: req.ip }, req.ip + ' createInvoice Error: ' + require('util').inspect(err.message));
           if (invoice.api_key && typeof invoice.api_key === 'string') {
             // Hide api_key from reply to reduce risk of leaks to users
             invoice.api_key = invoice.api_key.replace(/./g, 'X');
@@ -45,7 +46,7 @@ var invoices = function(app) {
           res.end();
         }
         else {
-          console.log(req.ip + ' created Invoice ' + invoiceData.id);
+          log.info({ client_ip: req.ip }, req.ip + ' created Invoice ' + invoiceData.id);
           res.json(invoiceData);
         }
       });
@@ -58,7 +59,7 @@ var invoices = function(app) {
     var apiKey = req.body.api_key;
     if (!apiKey || apiKey && apiKey !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid access token.');
-      console.log(req.ip + ' attempted to void an invoice with an invalid access token.');
+      log.info({ client_ip: req.ip }, req.ip + ' attempted to void an invoice with an invalid access token.');
       res.status(401).write(err.message);
       res.end();
     }
