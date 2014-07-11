@@ -80,6 +80,9 @@ Options are read from environment variables listed in the tables below. A common
 #### Baron Options (optional)
 * `APP_TITLE` - Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
 * `CHAIN_EXPLORER_URL` - Address prior to /txid in explorer (defaults to blockr.io)
+* `LOG_FILE_ENABLED` - Enables logging to file
+* `LOG_FILE` - Path of the file that Baron should log to
+* `LOG_LEVEL` - The logging level. Supports: trace, debug, info, warn, error, fatal
 * `MIN_BTC` - Minimum BTC amount for invoice line items (default 0.00001 BTC)
 * `MIN_USD` - Minimum USD amount for invoice line items (default 0.01 USD)
 * `SPOTRATE_VALID_FOR_MINUTES` - BTC/USD exchange rate frozen for this duration (default 5 minutes)
@@ -136,9 +139,10 @@ blocknotify=curl -o /dev/null -s -H "Content-Type: application/json" --data "{ \
 ### Running Baron
 Both bitcoind and CouchDB must be running and Baron must be correctly configured to reach these external services.
 
-Running Baron with [node](http://nodejs.org).  Note that the environment variables must be set by wrapper shell script, systemd `EnvironmentFile` or foreman `.env` file.
+Running Baron with [node](http://nodejs.org).  Note that the environment variables must be set by wrapper shell script, systemd `EnvironmentFile` or foreman `.env` file. Also note that Baron uses [bunyan](https://github.com/trentm/node-bunyan) for logging and the default stdout is JSON. To enable a human readable stdout, Baron output needs to be piped through the [bunyan CLI](https://github.com/trentm/node-bunyan#cli-usage) tool.
+
 ```sh
-$ node server.js
+$ node server.js | ./node_modules/.bin/bunyan -o short
 ```
 
 Running Baron with [foreman](https://github.com/ddollar/foreman) and [nodemon](https://github.com/remy/nodemon)

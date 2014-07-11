@@ -3,6 +3,23 @@
 
 var bunyan = require('bunyan');
 var config = require(__dirname + '/config');
-var appName = config.appTitle.toLowerCase();
-// Default to info level
-module.exports = bunyan.createLogger({name: appName, level: 30});
+
+var streams = [{ stream: process.stdout }];
+
+if (config.logFileEnabled) {
+  streams.push({ path: config.logFile });
+}
+
+var log = bunyan.createLogger({
+  name: config.appTitle.toLowerCase(),
+  level: config.logLevel,
+  streams: streams
+});
+
+if (config.logFileEnabled) {
+  process.on('SIGUSR2', function () {
+    log.reopenFileStreams();
+  });
+}
+
+module.exports =  log;

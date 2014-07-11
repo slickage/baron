@@ -43,7 +43,10 @@ var config = {
   updateWatchListInterval: process.env.UPDATE_WATCH_LIST_INTERVAL || 15000,
   webhooksJobInterval: process.env.WEBHOOKS_JOB_INTERVAL || 15000,
   lastBlockJobInterval: process.env.LAST_BLOCK_JOB_INTERVAL || 15000,
-  tickerJobInterval: process.env.TICKER_JOB_INTERVAL || 1000 * 300
+  tickerJobInterval: process.env.TICKER_JOB_INTERVAL || 1000 * 300,
+  logFileEnabled: process.env.LOG_FILE_ENABLED || false,
+  logFile: process.env.LOG_FILE || __dirname + '/baron.log',
+  logLevel: process.env.LOG_LEVEL || 'info' // supported levels: trace, debug, info, warn, error, fatal
 };
 
 module.exports = config;
