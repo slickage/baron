@@ -1,4 +1,5 @@
-# Baron [![Gitter chat](http://img.shields.io/badge/gitter-slickage%2Fbaron-1dce73.svg?style=flat)](https://gitter.im/slickage/baron)[![Build Status](http://img.shields.io/travis/slickage/baron.svg?style=flat)](https://travis-ci.org/slickage/baron)
+# Baron [![Gitter chat](http://img.shields.io/badge/gitter-slickage%2Fbaron-1dce73.svg?style=flat)](https://gitter.im/slickage/baron)[![Build Status](http://img.shields.io/travis/slickage/baron.svg?style=flat)](https://travis-ci.org/slickage/baron) [[Live Demo](http://demo.baronpay.org)]
+
 Baron is a Bitcoin payment processor that anyone can deploy
 
 * Allow creation of invoices denominated in USD or BTC from any other application with the API key.
@@ -50,7 +51,7 @@ $ npm install
 ```
 
 ### Baron Configuration
-Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file.  Alternatively node applications are often launched with a [systemd](http://www.freedesktop.org/wiki/Software/systemd/) .service definition.  `foreman export` can generate systemd files from an `.env` file.
+Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file.  Alternatively node applications are often launched with a [systemd](http://www.freedesktop.org/wiki/Software/systemd/) .service definition file.  `foreman export` can generate systemd files from an `.env` file.
 
 #### CouchDB Options
 * `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
