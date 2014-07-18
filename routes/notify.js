@@ -13,10 +13,10 @@ var notify = function(app) {
 
   app.post('/walletnotify', function(req, res) {
     var txid = req.body.txid;
-    var api_key = req.body.api_key;
-    if (!api_key || api_key && api_key !== config.baronAPIKey) {
+    var apiKey = req.body.api_key;
+    if (!apiKey || apiKey && apiKey !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      log.error({ client_ip: req.ip }, req.ip + ' attempted to /walletnotify with an invalid API key.');
+      log.warn({ client_ip: req.ip, api_key: apiKey }, req.ip + ' attempted to /walletnotify with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
@@ -46,10 +46,10 @@ var notify = function(app) {
   });
 
   app.post('/blocknotify', function(req, res) {
-    var api_key = req.body.api_key;
-    if (!api_key || api_key && api_key !== config.baronAPIKey) {
+    var apiKey = req.body.api_key;
+    if (!apiKey || apiKey && apiKey !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      log.error({ client_ip: req.ip }, req.ip + ' attempted to /blocknotify with an invalid API key.');
+      log.warn({ client_ip: req.ip, api_key: apiKey }, req.ip + ' attempted to /blocknotify with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
