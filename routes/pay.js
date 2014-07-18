@@ -1,6 +1,8 @@
 /* jshint node: true */
 'use strict';
 
+var rootDir = __dirname + '/../';
+var log = require(rootDir + '/log');
 var config = require(__dirname + '/../config');
 var payRouteUtil = require(__dirname + '/utils/pay');
 
@@ -11,7 +13,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     payRouteUtil.findOrCreatePayment(invoiceId, function (err) {
       if (err) {
-        console.log('[/PAY POST ERROR]: ' + JSON.stringify(err));
+        log.error(err, 'Pay route POST error');
         return res.render('error', { appTitle: config.appTitle, errorMsg: err.message });
       }
       else {
@@ -25,7 +27,7 @@ var pay = function(app) {
     var invoiceId = req.params.invoiceId;
     payRouteUtil.createPaymentDataForView(invoiceId, function(err, paymentData) {
       if (err) {
-        console.log('[/PAY GET ERROR]: ' + JSON.stringify(err));
+        log.error(err, 'Pay route GET error');
         return res.render('error', { appTitle: config.appTitle,  errorMsg: err.message });
       }
       else {

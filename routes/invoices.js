@@ -30,7 +30,7 @@ var invoices = function(app) {
     var invoice = req.body;
     if (!invoice.api_key || invoice.api_key && invoice.api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      log.error({ client_ip: req.ip, api_key: invoice.api_key }, req.ip + ' attempted to create an invoice with an invalid API key.');
+      log.warn({ client_ip: req.ip, api_key: invoice.api_key }, req.ip + ' attempted to create an invoice with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
@@ -59,7 +59,7 @@ var invoices = function(app) {
     var apiKey = req.body.api_key;
     if (!apiKey || apiKey && apiKey !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid access token.');
-      log.info({ client_ip: req.ip }, req.ip + ' attempted to void an invoice with an invalid access token.');
+      log.warn({ client_ip: req.ip, api_key: apiKey }, req.ip + ' attempted to void an invoice with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }
