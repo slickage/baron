@@ -30,7 +30,7 @@ var invoices = function(app) {
     var invoice = req.body;
     if (!invoice.api_key || invoice.api_key && invoice.api_key !== config.baronAPIKey) {
       var err = new Error('Access Denied: Invalid API key.');
-      log.error({ client_ip: req.ip }, req.ip + ' attempted to create an invoice with an invalid API key.');
+      log.error({ client_ip: req.ip, api_key: invoice.api_key }, req.ip + ' attempted to create an invoice with an invalid API key.');
       res.status(401).write(err.message);
       res.end();
     }

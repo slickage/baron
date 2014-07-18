@@ -7,6 +7,8 @@ var config = require(__dirname + '/config');
 var streams = [{ stream: process.stdout }];
 
 if (config.logFileEnabled) {
+  console.log('Baron logging to ' + config.logFile);
+  streams[0].level = 'fatal';
   streams.push({ path: config.logFile });
 }
 

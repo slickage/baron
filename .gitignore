@@ -12,3 +12,4 @@ tags
 README.html
 tests/barontester/barontester.conf
 tests/barontester/tmp/*
+baron.log
