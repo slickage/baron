@@ -151,10 +151,12 @@
       <% payment_history.forEach(function(payment) { %>
         <div class="row line-item thin-underline">
           <div class="col-xs-12 col-sm-5 col-md-4">
-            <span class="visible-xs mobile-address-text"><a href="<%= payment.url %>"><%= payment.txid.substring(0, 25) %>...</a></span>
-            <span class="hidden-xs address-text">
+            <span class="visible-xs mobile-address-text truncate">
+              <a href="<%= payment.url %>"><%= payment.txid %></a>
+            </span>
+            <span class="hidden-xs address-text truncate">
               <a href="<%= payment.url %>">
-                <%= payment.txid.substring(0, 25) %>...
+                <%= payment.txid %>
               </a>
             </span>
           </div>
