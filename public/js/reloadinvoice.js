@@ -90,18 +90,18 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
     }
     paymentHistoryContent.innerHTML = '';
     paymentHistory.forEach(function(payment) {
-      var paymentTx = payment.txid.substring(0, 25) + '...';
+      var paymentTx = payment.txid;
       var amountPaid = payment.amount_paid ? payment.amount_paid + ' BTC' : 0;
       var paymentAmount = payment.amount_usd ? payment.amount_usd + ' USD<br />(' + amountPaid + ')' : amountPaid;
       var paymentHtml =
         '<div class="row line-item thin-underline">' +
           '<div class="col-xs-12 col-sm-5 col-md-4">' +
-            '<span class="visible-xs mobile-address-text">' +
+            '<span class="visible-xs mobile-address-text truncate">' +
               '<a target="_blank" href="' + payment.url + '">' +
                 paymentTx +
               '</a>' +
             '</span>' +
-            '<span class="hidden-xs address-text">' +
+            '<span class="hidden-xs address-text truncate">' +
               '<a target="_blank" href="' + payment.url + '">' +
                 paymentTx +
               '</a>' +
