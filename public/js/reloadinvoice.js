@@ -14,11 +14,13 @@ var reloadInvoice = function(queryUrl, expiration, isExpired, isPaid, isVoid) {
 
   var watchingAnyPayment = function () {
     var retval = false;
-    paymentHistory.forEach(function(payment) {
-      if (payment.watched) {
-        retval = true;
-      }
-    });
+    if (paymentHistory) {
+      paymentHistory.forEach(function(payment) {
+        if (payment.watched) {
+          retval = true;
+        }
+      });
+    }
     return retval;
   };
 
