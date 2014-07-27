@@ -10,7 +10,7 @@
   ],
   "main": "server.js",
   "scripts": {
-    "test": "mocha -R spec ./tests",
+    "test": "./node_modules/.bin/mocha -R spec ./tests",
     "start": "foreman start -f Procfile",
     "start-dev": "foreman start -f Procfile-dev",
     "dev": "foreman run nodemon server.js | ./node_modules/.bin/bunyan -o short"
