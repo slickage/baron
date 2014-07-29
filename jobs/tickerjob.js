@@ -45,35 +45,39 @@ var getTicker = function(timestamp, cb) {
   db.view(dbName, 'tickerByTime', { limit: 1, descending: true, startkey: timestamp }, cb);
 };
 
+var setupTickerDb = function(cb) {
+  nano.db.get(dbName, function(err) {
+    if (!err) {
+      // exists, use it
+      db = nano.use(dbName);
+      cb();
+    }
+    else {
+      // does not exist, create before use
+      nano.db.create(dbName, function(err) {
+        if (err) {
+          log.error(err, 'Error creating ticker database');
+          return process.exit(1);
+        }
+        db = nano.use(dbName);
+        db.insert(ddoc, function(err) {
+          if (err) {
+            log.error(err, 'Error pushing ticker design document');
+            return process.exit(1);
+          }
+          else {
+            cb();
+          }
+        });
+      });
+    }
+  });
+};
+
 var startTickerJob = function(callback) {
   async.waterfall([
     function (cb) {
-      nano.db.get(dbName, function(err) {
-        if (!err) {
-          // exists, use it
-          db = nano.use(dbName);
-          cb();
-        }
-        else {
-          // does not exist, create before use
-          nano.db.create(dbName, function(err) {
-            if (err) {
-              log.error(err, 'Error creating ticker database');
-              return process.exit(1);
-            }
-            db = nano.use(dbName);
-            db.insert(ddoc, function(err) {
-              if (err) {
-                log.error(err, 'Error pushing ticker design document');
-                return process.exit(1);
-              }
-              else {
-                cb();
-              }
-            });
-          });
-        }
-      });
+      setupTickerDb(cb);
     },
     function (cb) {
       // insert ticker data once during startup
@@ -91,6 +95,7 @@ var startTickerJob = function(callback) {
 };
 
 module.exports = {
+  setupTickerDb: setupTickerDb,
   startTickerJob: startTickerJob,
   getTicker: getTicker
 };

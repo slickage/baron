@@ -17,16 +17,16 @@ var async = require('async');
 // Sanity checks prior to start
 async.waterfall([
   function (cb) {
-    // wait until bitcoind is ready
-    sanityCheck.proceedWhenCouchIsReady(cb);
-  },
-  function (cb) {
     // wait until couchdb is ready
-    sanityCheck.proceedWhenBitcoindIsReady(cb);
+    sanityCheck.proceedWhenCouchIsReady(cb);
   },
   function (cb) {
     // create or use baron db
     db.instantiateDb(cb);
+  },
+  function (cb) {
+    // wait until bitcoind is ready
+    sanityCheck.proceedWhenBitcoindIsReady(cb);
   },
   function (cb) {
     // create or use tickerJob db
