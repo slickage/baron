@@ -13,7 +13,7 @@ var dbName = 'ticker_usd';
 var db;
 
 function tickerJob(cb) {
-  request('https://www.bitstamp.net/api/ticker/', function (err, response, body) {
+  request(config.tickerUrl, function (err, response, body) {
     if (!err && response.statusCode === 200) {
       var tickerData = JSON.parse(body);
       Object.keys(tickerData).forEach(function(key) {

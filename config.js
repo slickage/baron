@@ -31,6 +31,7 @@ var config = {
   appTitle: process.env.APP_TITLE || 'Baron',
   baronAPIKey: process.env.BARON_API_KEY || 'youshouldreallychangethis',
   chainExplorerUrl: process.env.CHAIN_EXPLORER_URL || guessExplorerURL(process.env.BITCOIND_PORT || 18332),
+  tickerUrl: process.env.TICKER_URL || 'https://www.bitstamp.net/api/ticker/',
   minimumBTC: process.env.MIN_BTC || 0.00001,
   minimumUSD: process.env.MIN_USD || 0.01,
   port: process.env.PORT || 8080,

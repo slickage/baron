@@ -81,6 +81,7 @@ Options are read from environment variables listed in the tables below. A common
 #### Baron Options (optional)
 * `APP_TITLE` - Default title in invoices and payment views (default to 'Baron', can be overridden per-invoice)
 * `CHAIN_EXPLORER_URL` - Address prior to /txid in explorer (defaults to blockr.io)
+* `TICKER_URL` - Address to alternate ticker (default https://www.bitstamp.net/api/ticker/)
 * `LOG_FILE_ENABLED` - Enables logging to file
 * `LOG_FILE` - Path of the file that Baron should log to
 * `LOG_LEVEL` - The logging level. Supports: trace, debug, info, warn, error, fatal
