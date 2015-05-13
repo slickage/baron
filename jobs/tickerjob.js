@@ -1,4 +1,4 @@
-/* jshint node: true, couch: true */
+/* jshint couch: true */
 'use strict';
 
 var rootDir = __dirname + '/../';

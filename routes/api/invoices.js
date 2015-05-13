@@ -1,4 +1,3 @@
-/* jshint node: true */
 'use strict';
 
 var invoiceRouteUtil = require(__dirname + '/../utils/invoices');
