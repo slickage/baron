@@ -1,4 +1,3 @@
-/* jshint node: true */
 'use strict';
 
 var api = require(__dirname + '/api');

@@ -1,4 +1,3 @@
-/* jshint node: true */
 'use strict';
 
 var payRouteUtil = require(__dirname + '/../utils/pay');
