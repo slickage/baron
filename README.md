@@ -54,7 +54,7 @@ $ npm install
 Options are read from environment variables listed in the tables below. A common way to configure environment variables and launch node applications is using [foreman](https://github.com/ddollar/foreman) with a [.env](http://ddollar.github.io/foreman/#ENVIRONMENT) file.  Alternatively node applications are often launched with a [systemd](http://www.freedesktop.org/wiki/Software/systemd/) .service definition file.  `foreman export` can generate systemd files from an `.env` file.
 
 #### CouchDB Options
-* `DB_HOST` - CouchDB's connection hostname (do not specify protocol)
+* `DB_HOST` - CouchDB's connection hostname:port (do not specify protocol)
 * `DB_NAME` - The name of Baron's database
 * `DB_PROTO` - Default 'http', use 'https' for SSL
 * `DB_USER` - If configured, the database admin username
