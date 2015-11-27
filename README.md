@@ -48,6 +48,7 @@ Run the following commands to install Baron:
 $ git clone https://github.com/slickage/baron.git
 $ cd baron
 $ npm install
+$ npm install -g bitcore
 ```
 
 ### Baron Configuration
