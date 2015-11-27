@@ -1,9 +1,13 @@
 #!/bin/bash
 SCRIPTDIR="$( cd "$( dirname "$0" )" && pwd )"
 
-if [ ! -e $SCRIPTDIR/barontester.conf ]; then
-  echo "ERROR: $SCRIPTDIR/barontester.conf not found."
+errorexit() {
+  echo "$1"
   exit 255
+}
+
+if [ ! -e $SCRIPTDIR/barontester.conf ]; then
+  errorexit "ERROR: $SCRIPTDIR/barontester.conf not found."
 else
   . $SCRIPTDIR/barontester.conf
   [ -n "$BARONDIR" ]    || errorexit "ERROR: BARONDIR must be defined in barontester.conf."
@@ -12,18 +16,13 @@ else
   [ -n "$BARONTMPDIR" ] || BARONTMPDIR=$BARONDIR/tests/barontester/tmp
 fi
 
-errorexit() {
-  echo "$1"
-  exit 255
-}
-
 # Sanity Checks
 cd $SCRIPTDIR
 for f in postwatcher.js testinvoices/simple.json; do
   [ ! -e $f ] && errorexit "ERROR: File not found: $SCRIPTDIR/$f"
 done
 cd - > /dev/null
-for CMD in curl jq node bitcoind; do
+for CMD in curl jq node bitcoind bitcoin-cli; do
   if ! which $CMD > /dev/null 2>&1; then
     errorexit "ERROR: Command not found: $CMD"
   fi
@@ -55,7 +54,7 @@ fi
 btc() {
   N=$1
   shift
-  bitcoind -datadir=$BARONTMPDIR/$N $@
+  bitcoin-cli -datadir=$BARONTMPDIR/$N $@
 }
 
 startbtc() {
@@ -150,7 +149,7 @@ spendfrom() {
 }
 
 printalias() {
-  echo "alias btc${1}='bitcoind -datadir=$BARONTMPDIR/$1'"
+  echo "alias btc${1}='bitcoin-cli -datadir=$BARONTMPDIR/$1'"
 }
 
 printtitle() {
@@ -241,9 +240,9 @@ btc 3 addnode localhost:20014 onetry
 btc 4 addnode localhost:20034 onetry
 
 # Generate blocks to obtain spendable outputs
-btc 1 setgenerate true
+btc 1 generate 1
 waitforbtc 2 getinfo blocks 1
-btc 2 setgenerate true 110
+btc 2 generate 110
 waitforbtc 1 getinfo blocks 111
 waitforbtc 3 getinfo blocks 111
 waitforbtc 4 getinfo blocks 111
@@ -282,19 +281,19 @@ echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID1 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+btc 1 generate 1
 waitforpaid $INVOICEID
 echo "[GENERATE block on node 3]"
-btc 3 setgenerate true
+btc 3 generate 1
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
 waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg.  Payment should now be unconfirmed.]"
-btc 3 setgenerate true
+btc 3 generate 1
 sleep 6
 echo "[GENERATE block on node 1 to reconfirm transaction.]"
-btc 1 setgenerate true
+btc 1 generate 1
 sleep 2
 echo "[END TEST #1]"
 }
@@ -310,19 +309,19 @@ echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID2 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE six blocks on node 1]"
-btc 1 setgenerate true 6
+btc 1 generate 6
 waitforpaid $INVOICEID
 echo "[Double Spend Replace from wallet 4]"
 spendfrom 4 $TXID2 $PAYADDRESS 50
 waitfortx 3 $TXIDSENT
 echo "[GENERATE six blocks on node 3]"
-btc 3 setgenerate true 6
+btc 3 generate 6
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
 waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg]"
-btc 3 setgenerate true
+btc 3 generate 1
 # FIXME: Huge sleep because Baron experiences a major delay in processing this reorg
 sleep 6
 echo "[END TEST #2]"
@@ -339,19 +338,19 @@ echo "[PAY $PAYADDRESS using wallet 2]"
 spendfrom 2 $TXID3 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE six blocks on node 1]"
-btc 1 setgenerate true 6
+btc 1 generate 6
 waitforpaid $INVOICEID
 echo "[Double Spend Theft from wallet 4]"
 spendfrom 4 $TXID3 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 50
 waitfortx 3 $TXIDSENT
 echo "[GENERATE six blocks on node 3]"
-btc 3 setgenerate true 6
+btc 3 generate 6
 sleep 1
 echo "[Reconnect partitions]"
 btc 3 addnode localhost:20014 onetry
 waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to trigger reorg]"
-btc 3 setgenerate true
+btc 3 generate 1
 # FIXME: Huge sleep because Baron experiences a major delay in processing this reorg
 sleep 6
 echo "[END TEST #3]"
@@ -367,7 +366,7 @@ echo "[PAY $PAYADDRESS from wallet 2]"
 spendfrom 2 $TXID4 $PAYADDRESS 50
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+btc 1 generate 1
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
 sleep 1
 echo "[END TEST #4]"
@@ -388,7 +387,7 @@ echo "[PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
 spendfrom 2 $TXID5 $PAYADDRESS1 25 $PAYADDRESS2 25
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+btc 1 generate 1
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
 sleep 1
 echo "[END TEST #5]"
@@ -412,7 +411,7 @@ echo "[PARTIAL PAY $PAYADDRESS1 and $PAYADDRESS2 from wallet 2]"
 spendfrom 2 $TXID7 $PAYADDRESS1 15 $PAYADDRESS2 15 mjAK1JGRAiFiNqb6aCJ5STpnYRNbq4j9f1 20
 waitfortx 1 $TXIDSENT
 echo "[GENERATE block on node 1]"
-btc 1 setgenerate true
+btc 1 generate 1
 waitforbtc 1 gettransaction $TXIDSENT confirmations 1
 sleep 1
 echo "[END TEST #6]"
@@ -432,7 +431,7 @@ waitfortx 3 $TXIDSENT
 btc 3 addnode localhost:20014 onetry
 waitforbtc 1 getinfo connections 2
 echo "[GENERATE block on node 3 to send transactions to node 1]"
-btc 3 setgenerate true
+btc 3 generate 1
 sleep 6
 echo "[END TEST #7]"
 }
