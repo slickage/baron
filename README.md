@@ -36,9 +36,9 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 ```
 
 ## External Dependencies
-* [node](http://nodejs.org)
+* [node](http://nodejs.org) - baron is confirmed to work with nodejs v0.10.36, we need help to make it work with newer versions of node.js
 * [couchdb](http://wiki.apache.org/couchdb/Installation)
-* [bitcoin](https://bitcoin.org/en/download)
+* [bitcoin](https://bitcoin.org/en/download) - latest Bitcoin Core version is recommended, tested with 0.11
 * [curl](http://curl.haxx.se/dlwiz/?type=bin)
 * [foreman](https://github.com/ddollar/foreman) (optional)
 
