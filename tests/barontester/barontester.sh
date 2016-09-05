@@ -41,6 +41,10 @@ upnp=0
 regtest=1
 port=200${1}4
 rpcport=200${1}3
+# HACK: older versions of bitcoind allowed some low-fee transactions
+# this could be made better if spendfrom() calculates bytes * feerate
+# but that also requires changing how the invoices work
+blockprioritysize=50000
 EOF
 
   if [ "$1" == "1" ]; then
