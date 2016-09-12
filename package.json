@@ -28,9 +28,8 @@
   "dependencies": {
     "async": "^0.9.0",
     "bignumber.js": "^1.4.1",
-    "bitcore": "^0.1.32",
     "body-parser": "^1.5.0",
-    "bunyan": "^0.23.1",
+    "bunyan": "^1.8.1",
     "ejs": "^1.0.0",
     "express": "^4.4.5",
     "heckler": "git+https://github.com/slickage/heckler",
