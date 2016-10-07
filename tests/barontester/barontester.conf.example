@@ -1,4 +1,0 @@
-#BARONDIR=/path/to/baron
-#BARONPORT=8080
-#BARONTMPDIR=/path/to/tmp
-#DB_NAME=baronregtest
